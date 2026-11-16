@@ -1,0 +1,3 @@
+# Netlify serves the ready-built game; rebuild with `node build.js` before committing
+[build]
+  publish = "dist/site"
