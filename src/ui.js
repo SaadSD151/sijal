@@ -279,7 +279,7 @@ function cardRefresh(){
   const ally=me.ally[id],war=g.tick-me.lastHit[id]<300||g.tick-n.lastHit[me.id]<300,key=ally+'|'+war,S=$('#cS');
   S.textContent=t(ally?'st_ally':war?'st_war':'st_peace');S.className=ally?'good':war?'bad':'';
   if(key===UI.cardKey)return;UI.cardKey=key;let any=false;for(const m of g.nations)if(m&&m.alive&&me.ally[m.id]&&m.id!==id)any=true;
-  $('#cB').innerHTML=(ally?'':`<button class="btn sm go" data-a="atk:${id}">${t(canAnnex(g,me.id,id)?'b_annexS':'b_atk')}</button>`)+(ally?`<button class="btn sm" data-a="break:${id}">${t('b_break')}</button>`:`<button class="btn sm" data-a="ally:${id}">${t('b_ally')}</button>`)+`<button class="btn sm" data-a="gift:${id}">${t('b_gift',UI.cardGift)}</button>`+(!ally&&any?`<button class="btn sm" data-a="arms:${id}">${t('b_arms')}</button>`:'')+`<button class="btn sm" data-a="find:${id}">${t('b_find')}</button>`;
+  $('#cB').innerHTML=(ally?'':`<button class="btn sm go" data-a="atk:${id}">${t(canAnnex(g,me.id,id)?'b_annexS':'b_atk')}</button><button class="btn sm" data-a="sea:${id}">${t('b_sea')}</button>`)+(ally?`<button class="btn sm" data-a="break:${id}">${t('b_break')}</button>`:`<button class="btn sm" data-a="ally:${id}">${t('b_ally')}</button>`)+`<button class="btn sm" data-a="gift:${id}">${t('b_gift',UI.cardGift)}</button>`+(!ally&&any?`<button class="btn sm" data-a="arms:${id}">${t('b_arms')}</button>`:'')+`<button class="btn sm" data-a="find:${id}">${t('b_find')}</button>`;
 }
 
 // ── player actions ──
@@ -324,6 +324,7 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
+    case'sea':{const ti=UI.cardTile;closeCard();send({k:'sea',d:+v,i:ti,r:UI.ratio});break;}
     case'goatk':{const q=g.attacks.find(q=>q.id===+v),D=q&&q.d?g.nations[q.d]:null;if(D)lookAt(D.cx,D.cy,Math.max(cam.tz,4));else if(q)lookAt(q.ox,q.oy,Math.max(cam.tz,4));break;}
     case'annex':{const n=g.nations[+v];if(n&&n.cap)send({k:'atk',i:n.cap.i,r:UI.ratio});break;}
     case'ally':send({k:'ally',d:+v});break;case'break':send({k:'break',d:+v});break;
