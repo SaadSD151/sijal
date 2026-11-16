@@ -219,7 +219,7 @@ function hudUpdate(){
   const sk=g.season+'|'+Math.floor(now/SEASON_LEN/4),S=$('#sS');
   if(S.dataset.k!==sk){S.dataset.k=sk;S.innerHTML=`<i class="sz s${g.season}"></i><div><b>${t('seas')[g.season]}</b><small></small></div>`;S.title=t('seaTip')[g.season];}
   S.firstChild.style.setProperty('--p',(now%SEASON_LEN)/SEASON_LEN);S.querySelector('small').textContent=t('year',Math.floor(now/SEASON_LEN/4)+1)+' · '+clock(now);
-  UI.war=!me.alive||!g.started||g.over?false:now-me.lastHitAny<200?'def':g.attacks.some(k=>k.a===me.id&&k.d>0)?'atk':false;
+  UI.war=!me.alive||!g.started||g.over?false:g.attacks.some(k=>k.d===me.id&&!g.nations[k.a].minor)?'def':g.attacks.some(k=>k.a===me.id&&k.d>0&&!g.nations[k.d].minor)?'atk':false;
   for(const b of document.querySelectorAll('#spd button'))b.classList.toggle('on',+b.dataset.a.slice(3)===(UI.paused?0:UI.speed));
   $('#rv').textContent=Math.round(UI.ratio*100)+'% · '+fmt(me.troops*UI.ratio);
   for(const k of BAR){
@@ -350,7 +350,7 @@ function handleEvents(){
     if(demo)continue;
     const cn=e.s&&e.s.type==='city'?esc(cityName(e.s.name,UI.lang)):'';
     switch(e.t){
-      case'war':if(e.d===me){feed(t('m_warYou',nmh(A)),'bad');banner(t('m_warYou',natName(A)),'bad');sfx('siren');(UI.threats||(UI.threats=[])).push({id:e.a,until:performance.now()+14000});}break;
+      case'war':if(e.d===me&&A.minor){feed(t('m_warYou',nmh(A)),'bad');}else if(e.d===me){feed(t('m_warYou',nmh(A)),'bad');banner(t('m_warYou',natName(A)),'bad');sfx('siren');(UI.threats||(UI.threats=[])).push({id:e.a,until:performance.now()+14000});}break;
       case'shot':addFx('shot',e.x,e.y,{tx:e.tx,ty:e.ty,dur:420});break;
       case'sunk':addFx('boom',e.x,e.y,{r:2.5,dur:700});if(e.a===me){feed(t('m_sunk'),'good');sfx('boom');}else if(e.d===me){feed(t('m_sunkYou'),'bad');sfx('boom');}break;
       case'cityFall':addFx('ring',e.s.x,e.s.y,{r:7+e.s.level,col:A?A.css:'#fff',dur:1300});
