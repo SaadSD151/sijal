@@ -450,14 +450,14 @@ function statsPass(g){
 function pocketPass(g){
   const W=g.W,N=g.N,own=g.owner,ter=g.M.ter,lab=g.lab,q=g.q,now=g.tick;lab.fill(0);
   for(let s=0;s<N;s++){
-    if(lab[s]||ter[s]<2)continue;const o=own[s];let qh=0,qt=0,nbo=-1,water=false,bad=false;q[qt++]=s;lab[s]=1;
-    while(qh<qt){const c=q[qh++],x=c%W;if(g.structAt[c]||g.fall[c]>now)bad=true;
+    if(lab[s]||ter[s]<2)continue;const o=own[s];let qh=0,qt=0,nbo=-1,water=false,bad=false,hasS=false;q[qt++]=s;lab[s]=1;
+    while(qh<qt){const c=q[qh++],x=c%W;if(g.fall[c]>now)bad=true;if(g.structAt[c])hasS=true;
       for(let d=0;d<4;d++){let j;if(d===0){if(x===0)continue;j=c-1;}else if(d===1){if(x===W-1)continue;j=c+1;}else if(d===2){if(c<W)continue;j=c-W;}else{if(c>=N-W)continue;j=c+W;}
         if(ter[j]<2){water=true;continue;}const p=own[j];
         if(p===o){if(!lab[j]){lab[j]=1;q[qt++]=j;}}else if(nbo===-1)nbo=p;else if(nbo!==p)nbo=-2;}}
-    if(bad||nbo<=0||qt>300)continue;const K=g.nations[nbo];if(!K.alive)continue;
+    if(bad||nbo<=0||qt>300||(hasS&&qt>25))continue;const K=g.nations[nbo];if(!K.alive)continue;
     if(o===0){if(qt>45)continue;}
-    else{const O=g.nations[o];if(water||O.ally[nbo]||now<K.truce[o])continue;O.troops*=Math.max(.3,1-qt/Math.max(O.tiles,1));emit(g,'pocket',{a:nbo,d:o,n:qt,x:s%W,y:(s/W)|0});}
+    else{const O=g.nations[o];if((water&&!hasS)||O.ally[nbo]||now<K.truce[o])continue;O.troops*=Math.max(.3,1-qt/Math.max(O.tiles,1));emit(g,'pocket',{a:nbo,d:o,n:qt,x:s%W,y:(s/W)|0});}
     const list=Array.from(q.subarray(0,qt));for(const i of list)setOwner(g,i,nbo);
   }
 }
