@@ -16,21 +16,24 @@ function applyMode(){
 }
 
 // ── audio: everything is synthesised ──
-const AU={ctx:null,out:null,deg:4,step:0};
-function auInit(){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;try{if(AU.ctx&&AU.ctx.state==='closed')AU.ctx=null;if(!AU.ctx){AU.ctx=new C();AU.out=AU.ctx.createGain();AU.out.gain.value=.55;AU.out.connect(AU.ctx.destination);}
+const AU={ctx:null,out:null,fx:null,mus:null,dst:null,deg:4,step:0};
+function applyVol(){const p=UI.prof;if(!AU.ctx)return;AU.fx.gain.value=p.sound?(p.volS==null?70:p.volS)/100*1.2:0;AU.mus.gain.value=p.music?(p.volM==null?70:p.volM)/100*1.3:0;}
+function auInit(){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;try{if(AU.ctx&&AU.ctx.state==='closed')AU.ctx=null;
+    if(!AU.ctx){const a=AU.ctx=new C();AU.out=a.createGain();AU.out.gain.value=.55;AU.out.connect(a.destination);AU.fx=a.createGain();AU.mus=a.createGain();AU.fx.connect(AU.out);AU.mus.connect(AU.out);applyVol();}
     if(AU.ctx.state!=='running'){AU.ctx.resume();clearTimeout(AU.fix);AU.fix=setTimeout(()=>{if(AU.ctx&&AU.ctx.state!=='running'){try{AU.ctx.close();}catch(e){}AU.ctx=null;}},600);}}catch(e){}}
 function tone(f,d,type,v,slide,delay){
   const a=AU.ctx;if(!a)return;const t0=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);
   if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f*slide),t0+d);
-  g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v||.15,t0+.012);g.gain.exponentialRampToValueAtTime(.0001,t0+d);o.connect(g);g.connect(AU.out);o.start(t0);o.stop(t0+d+.05);
+  g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v||.15,t0+.012);g.gain.exponentialRampToValueAtTime(.0001,t0+d);o.connect(g);g.connect(AU.dst||AU.fx);o.start(t0);o.stop(t0+d+.05);
 }
 function noise(d,v,f0,f1){
   const a=AU.ctx;if(!a)return;const n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),ch=b.getChannelData(0);for(let i=0;i<n;i++)ch[i]=Math.random()*2-1;
   const s=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain(),t0=a.currentTime;s.buffer=b;fl.type='lowpass';fl.frequency.setValueAtTime(f0,t0);fl.frequency.exponentialRampToValueAtTime(f1,t0+d);
-  g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);s.connect(fl);fl.connect(g);g.connect(AU.out);s.start(t0);
+  g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.0001,t0+d);s.connect(fl);fl.connect(g);g.connect(AU.dst||AU.fx);s.start(t0);
 }
 const SFX={
   siren:()=>{for(let i=0;i<3;i++){tone(480,.36,'sawtooth',.1,1.7,i*.42);tone(240,.36,'square',.05,1.7,i*.42);}},
+  trade:()=>{tone(196,.22,'sine',.07);tone(246.9,.3,'sine',.06,1,.12);},
   click:()=>tone(620,.06,'triangle',.1),err:()=>tone(150,.16,'square',.07,.7),
   attack:()=>{tone(196,.28,'sawtooth',.09,1.5);tone(294,.32,'sawtooth',.06,1.25,.07);},
   build:()=>{tone(170,.12,'square',.09,.6);tone(520,.16,'triangle',.09,1,.08);},
@@ -43,23 +46,37 @@ const SFX={
   season:()=>tone(880,.6,'sine',.05,1.5),ult:()=>{tone(220,.5,'sawtooth',.1,3);noise(.5,.15,3000,400);},
   lose1:()=>[330,262,196].forEach((f,i)=>tone(f,.3,'sawtooth',.07,1,i*.13)),win1:()=>[392,523,659].forEach((f,i)=>tone(f,.22,'square',.06,1,i*.08)),
   win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.5,'triangle',.12,1,i*.14)),lose:()=>[392,330,262,196,147].forEach((f,i)=>tone(f,.6,'sawtooth',.07,1,i*.2))};
-function sfx(n){if(UI.prof.sound&&AU.ctx&&SFX[n])SFX[n]();}
-// a slow plucked line over a drone, in a hijaz-coloured scale
-// war theme: pounding drums, a low menacing brass line and sharp stabs; plays while you are fighting
-function warBeat(){
-  const s=AU.step++%16,bass=[73.42,73.42,77.78,73.42,87.31,73.42,77.78,65.41][(AU.step>>4)%8];
-  if([0,3,6,8,10,11,14].indexOf(s)>=0){tone(72,.3,'sine',.32,.4);noise(.1,.14,500,70);}
-  if(s%4===2)noise(.16,.1,6000,1500);
-  if(s%2===0)tone(bass,.4,'sawtooth',.055);
-  if(s%8===0){tone(bass*2,1.7,'sawtooth',.04);tone(bass*3,1.7,'sawtooth',.022);tone(bass/2,1.7,'sine',.09);}
-  if(s===12||s===15)tone([293.66,311.13,349.23,233.08][(AU.step>>4)%4],.34,'square',.035,.94);
+function sfx(n){if(UI.prof.sound&&AU.ctx&&SFX[n]){AU.dst=AU.fx;SFX[n]();}}
+// under attack: slow heavy drums, a heartbeat, a low growling line and uneasy high strings
+function defBeat(){
+  const s=AU.step++%16,bar=(AU.step>>4)%8,bass=[73.42,73.42,69.3,73.42,77.78,73.42,69.3,61.74][bar];
+  if(s===0||s===3||s===8||s===11){tone(66,.34,'sine',.34,.38);noise(.12,.16,420,60);}
+  if(s===6||s===14){tone(52,.5,'sine',.3,.5);noise(.3,.12,900,90);}
+  if(s%4===2)noise(.14,.07,7000,2500);
+  if(s%4===0)tone(bass,.8,'sawtooth',.06);
+  if(s===0){tone(bass/2,3.2,'sine',.11);tone(bass*4,3.3,'sawtooth',.016);tone(bass*4*1.06,3.3,'sawtooth',.016);}
+  if(s%2===1&&bar%2===1)tone(bass*8*(s%4===1?1:1.06),.12,'triangle',.022);
+  if(s===12)tone([233.08,220,207.65,220][bar%4],.9,'square',.03,.9);
+}
+// on the offensive: a fast gallop, bright snare and a rising heroic brass call
+function atkBeat(){
+  const s=AU.step++%16,bar=(AU.step>>4)%8,root=[110,110,130.81,146.83,110,110,164.81,146.83][bar];
+  if(s%4===0){tone(84,.2,'sine',.3,.45);noise(.07,.12,600,90);}
+  if(s%4===2||s===15){noise(.12,.14,8000,1800);tone(190,.08,'triangle',.06,.7);}
+  if(s%4!==1)tone(root,.17,'sawtooth',.055);
+  if(s%2===0)noise(.04,.035,9000,5000);
+  if(s===0){tone(root*2,1.5,'sawtooth',.035);tone(root*3,1.5,'sawtooth',.026);tone(root/2,1.6,'sine',.08);}
+  const mel=[0,-1,7,-1,12,-1,14,12,-1,7,-1,12,15,-1,14,-1][s];if(mel>=0&&bar%2===0)tone(root*2*Math.pow(2,mel/12),.26,'square',.036);
+  if(bar%2===1&&(s===0||s===6||s===12))tone(root*4*[1,1.189,1.498][s/6|0],.5,'triangle',.05);
 }
 function musicTick(){
-  AU.t2=!AU.t2;if(AU.ctx&&UI.prof.music&&UI.prof.sound&&!document.hidden&&AU.ctx.state==='running'&&UI.war&&G&&!G.o.demo)return warBeat();if(AU.t2)return;
-  if(!AU.ctx||!UI.prof.music||!UI.prof.sound||document.hidden||AU.ctx.state!=='running')return;
+  if(!AU.ctx||!UI.prof.music||document.hidden||AU.ctx.state!=='running')return;AU.dst=AU.mus;AU.t2=!AU.t2;
+  if(UI.war&&G&&!G.o.demo){UI.war==='def'?defBeat():atkBeat();AU.dst=AU.fx;return;}
+  if(AU.t2){AU.dst=AU.fx;return;}
   const sc=[146.83,155.56,185,196,220,233.08,261.63,293.66,311.13,370,392];
   if(AU.step++%8===0)for(const f of[73.42,110])tone(f,3.8,'sine',.045);
   if(Math.random()<.6){AU.deg=clamp(AU.deg+((Math.random()*5)|0)-2,0,sc.length-1);tone(sc[AU.deg],1,'triangle',.055);tone(sc[AU.deg]*2,.5,'sine',.014);}
+  AU.dst=AU.fx;
 }
 
 // ── screens ──
@@ -73,7 +90,7 @@ function renderMenu(){
   $('#menu').innerHTML=`<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
   <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
   <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><div class="chips">
-  <button class="chip" data-a="lang">${t('lang')}</button><button class="chip" data-a="snd">${t('sound')}: ${t(p.sound?'on':'off')}</button><button class="chip" data-a="mus">${t('music')}: ${t(p.music?'on':'off')}</button><button class="chip" data-a="ifc">${t('iface')}: ${t('ifs')[p.ui]}</button></div><span class="made">${t('made')}</span></div>`;
+  <button class="chip on" data-a="settings">${t('settings')}</button><button class="chip" data-a="lang">${t('lang')}</button><button class="chip" data-a="snd">${t('sound')}: ${t(p.sound?'on':'off')}</button><button class="chip" data-a="mus">${t('music')}: ${t(p.music?'on':'off')}</button><button class="chip" data-a="ifc">${t('iface')}: ${t('ifs')[p.ui]}</button></div><span class="made">${t('made')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -109,6 +126,13 @@ function renderQuick(){
   $('#help').innerHTML=`<h2>${t('quick')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(520px,100%)"><div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div><div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`;
 }
+function renderSettings(){
+  const p=UI.prof,vm=p.volM==null?70:p.volM,vs=p.volS==null?70:p.volS;
+  $('#help').innerHTML=`<h2>${t('settings')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(460px,100%)">
+  <div><h3>${t('volM')}</h3><div class="rng"><input type="range" id="volM" min="0" max="100" step="5" value="${vm}" aria-label="${t('volM')}"><b id="volMv">${vm}</b></div></div>
+  <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div></div>
+  <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
+}
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
   $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label></div>
@@ -124,7 +148,7 @@ function renderFac(){
   e.innerHTML=`<h4>${t('faction')}</h4><div class="chips">${FKEYS.map(f=>`<button class="chip${p.fac===f?' on':''}" data-a="fac:${f}"><i style="background:rgb(${FAC[f].c})"></i>${t('f_'+f)}</button>`).join('')}</div><small>${t('fp_'+p.fac)} · ${t('fu_'+p.fac)}: ${t('fd_'+p.fac)}</small>`;
 }
 function renderPause(){
-  const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="how">${t('how')}</button>
+  const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="how">${t('how')}</button>
   <button class="btn" data-a="snd">${t('sound')}: ${t(p.sound?'on':'off')}</button><button class="btn" data-a="mus">${t('music')}: ${t(p.music?'on':'off')}</button><button class="btn" data-a="toMenu">${t('quit')}</button></div>`;
 }
 
@@ -191,7 +215,7 @@ function hudUpdate(){
   const sk=g.season+'|'+Math.floor(now/SEASON_LEN/4),S=$('#sS');
   if(S.dataset.k!==sk){S.dataset.k=sk;S.innerHTML=`<i class="sz s${g.season}"></i><div><b>${t('seas')[g.season]}</b><small></small></div>`;S.title=t('seaTip')[g.season];}
   S.firstChild.style.setProperty('--p',(now%SEASON_LEN)/SEASON_LEN);S.querySelector('small').textContent=t('year',Math.floor(now/SEASON_LEN/4)+1)+' · '+clock(now);
-  UI.war=me.alive&&g.started&&!g.over&&(now-me.lastHitAny<200||g.attacks.some(k=>k.a===me.id&&k.d>0));
+  UI.war=!me.alive||!g.started||g.over?false:now-me.lastHitAny<200?'def':g.attacks.some(k=>k.a===me.id&&k.d>0)?'atk':false;
   for(const b of document.querySelectorAll('#spd button'))b.classList.toggle('on',+b.dataset.a.slice(3)===(UI.paused?0:UI.speed));
   $('#rv').textContent=Math.round(UI.ratio*100)+'% · '+fmt(me.troops*UI.ratio);
   for(const k of BAR){
@@ -215,7 +239,7 @@ function hudUpdate(){
   const ab=$('#atk'),seen=new Set();
   for(const k of g.attacks){
     if(k.a!==me.id||k.cancel)continue;seen.add(k.id);let c=UI.chips.get(k.id);
-    if(!c){const d=k.d?g.nations[k.d]:null;c=document.createElement('div');c.className='ac pn';c.innerHTML=`<i style="background:${d?d.css:'#8a8d92'}"></i><span class="n"></span><b></b><button data-a="cancel:${k.id}" title="${t('retreat')}" aria-label="${t('retreat')}">✕</button>`;c.querySelector('.n').textContent=d?natName(d):t('neutral');ab.appendChild(c);UI.chips.set(k.id,c);}
+    if(!c){const d=k.d?g.nations[k.d]:null;c=document.createElement('div');c.className='ac pn';c.dataset.a='goatk:'+k.id;c.style.cursor='pointer';c.innerHTML=`<i style="background:${d?d.css:'#8a8d92'}"></i><span class="n"></span><b></b><button data-a="cancel:${k.id}" title="${t('retreat')}" aria-label="${t('retreat')}">✕</button>`;c.querySelector('.n').textContent=d?natName(d):t('neutral');ab.appendChild(c);UI.chips.set(k.id,c);}
     c.querySelector('b').textContent=fmt(k.troops);
   }
   for(const[id,c]of UI.chips)if(!seen.has(id)){c.remove();UI.chips.delete(id);}
@@ -288,9 +312,9 @@ function act(a){
     case'custom':renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'toMenu':toMenu();break;
     case'how':UI.helpBack=UI.screen;renderHelp();show('help');break;case'helpBack':show(UI.helpBack==='pause'?'pause':'menu');break;
     case'lang':p.lang=UI.lang=UI.lang==='ar'?'en':'ar';applyMode();renderMenu();break;
-    case'snd':p.sound=!p.sound;UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;UI.screen==='pause'?renderPause():renderMenu();break;
+    case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=(p.ui+1)%3;applyMode();renderMenu();break;
-    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
@@ -300,6 +324,7 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
+    case'goatk':{const q=g.attacks.find(q=>q.id===+v),D=q&&q.d?g.nations[q.d]:null;if(D)lookAt(D.cx,D.cy,Math.max(cam.tz,4));else if(q)lookAt(q.ox,q.oy,Math.max(cam.tz,4));break;}
     case'annex':{const n=g.nations[+v];if(n&&n.cap)send({k:'atk',i:n.cap.i,r:UI.ratio});break;}
     case'ally':send({k:'ally',d:+v});break;case'break':send({k:'break',d:+v});break;
     case'gift':if(me.gold<10)return err('gold');send({k:'gift',d:+v,amt:UI.cardGift});break;
@@ -330,7 +355,7 @@ function handleEvents(){
       case'collapse':feed(t('m_collapse',nmh(D),nmh(A)),e.a===me?'good':'');if(e.a===me)sfx('win1');break;
       case'ally':if(e.a===me||e.b===me){feed(t('m_ally',nmh(N[e.a]),nmh(N[e.b])),'good');sfx('city');sayLine(N[e.a===me?e.b:e.a],'ally');UI.cardKey='';}break;
       case'betray':if(e.a===me||e.b===me){feed(t('m_betray',nmh(N[e.a]),nmh(N[e.b])),'bad');if(e.b===me)sfx('alert');UI.cardKey='';}break;
-      case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('coin');}break;
+      case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
       case'dead':if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
       case'proposal':{if(e.b!==me)break;const d=toast(`<span>${t('m_prop',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button><button class="btn sm" data-a="find:${A.id}">${t('b_focus')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
       case'reject':if(e.b===me){feed(t('m_rej',nmh(A)));sayLine(A,'reject');}break;
@@ -401,7 +426,7 @@ function bindInput(){
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
-  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='INPUT'&&e.target.type!=='range')return;const k=e.key.toLowerCase();UI.keys[k]=true;
     if(!G||G.o.demo)return;

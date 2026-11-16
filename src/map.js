@@ -37,6 +37,10 @@ function genMap(o){
   for(let i=0;i<N;i++)if(!land[i]){cd[i]=0;q[qt++]=i;}
   while(qh<qt){const c=q[qh++],d=cd[c]+1,x=c%W;if(d>250)continue;
     if(x>0&&cd[c-1]>d){cd[c-1]=d;q[qt++]=c-1;}if(x<W-1&&cd[c+1]>d){cd[c+1]=d;q[qt++]=c+1;}if(c>=W&&cd[c-W]>d){cd[c-W]=d;q[qt++]=c-W;}if(c<N-W&&cd[c+W]>d){cd[c+W]=d;q[qt++]=c+W;}}
+  const wd=new Uint8Array(N).fill(255);qh=0;qt=0;
+  for(let i=0;i<N;i++)if(land[i]){wd[i]=0;q[qt++]=i;}
+  while(qh<qt){const c=q[qh++],d=wd[c]+1,x=c%W;if(d>6)continue;
+    if(x>0&&wd[c-1]>d){wd[c-1]=d;q[qt++]=c-1;}if(x<W-1&&wd[c+1]>d){wd[c+1]=d;q[qt++]=c+1;}if(c>=W&&wd[c-W]>d){wd[c-W]=d;q[qt++]=c-W;}if(c<N-W&&wd[c+W]>d){wd[c+W]=d;q[qt++]=c+W;}}
   // rivers: steepest descent from the highlands to the sea
   const riv=new Uint8Array(N),rivers=[],want=Math.round(landN/2000)+2;
   for(let t=0;t<want*10&&rivers.length<want;t++){
@@ -58,5 +62,5 @@ function genMap(o){
     let nm;do{nm=(rng()*288)|0;}while(used.has(nm));used.add(nm);
     cities.push({x,y,i,level:1+(rng()<.35?1:0),name:nm});
   }
-  return{W,H,N,seed:o.seed,type:T,ter,elev,val,moist,coastD:cd,big,riv,rivers,land:landN,cities,used,hHill,hMnt,hmax};
+  return{W,H,N,seed:o.seed,type:T,ter,elev,val,moist,coastD:cd,wd,big,riv,rivers,land:landN,cities,used,hHill,hMnt,hmax};
 }

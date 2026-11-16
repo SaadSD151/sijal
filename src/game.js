@@ -291,21 +291,23 @@ function tickBoats(g){
 }
 
 // ── trade ships: each port sends a ship to a foreign port and back; the round trip pays gold ──
-function portPath(g,a,b){
-  const W=g.W,H=g.H,ter=g.M.ter,prev=g.prev,q=g.q,goal=[];prev.fill(-1);let qh=0,qt=0;
+function portPath(g,a,b,open){
+  const W=g.W,H=g.H,ter=g.M.ter,wd=g.M.wd,prev=g.prev,q=g.q,goal=[];prev.fill(-1);let qh=0,qt=0;
+  // with `open`, ships must stay 4+ tiles off any shore except while leaving or entering harbour
+  const ok=(j,x,y)=>ter[j]<2&&(!open||wd[j]>=4||(x-a.x)**2+(y-a.y)**2<=64||(x-b.x)**2+(y-b.y)**2<=64);
   for(let d=0;d<8;d++){const x=b.x+DX8[d],y=b.y+DY8[d];if(x>=0&&y>=0&&x<W&&y<H&&ter[y*W+x]<2)goal.push(y*W+x);}
   for(let d=0;d<8;d++){const x=a.x+DX8[d],y=a.y+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]<2&&prev[j]<0){prev[j]=j;q[qt++]=j;}}
   while(qh<qt){const c=q[qh++];
     if(goal.indexOf(c)>=0){const p=[c];let k=c;while(prev[k]!==k){k=prev[k];p.push(k);}return p.reverse();}
     const cx=c%W,cy=(c/W)|0;
-    for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]<2&&prev[j]<0){prev[j]=c;q[qt++]=j;}}}
+    for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(prev[j]<0&&ok(j,x,y)){prev[j]=c;q[qt++]=j;}}}
   return null;
 }
 function launchTrade(g,s){
   const A=g.nations[s.owner],now=g.tick,c=[];
   for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
   if(!c.length)return;const d=c[(g.rng()*c.length)|0],rt=s.rt||(s.rt={});let path=rt[d.i];
-  if(path===undefined)path=rt[d.i]=portPath(g,s,d);if(!path||path.length<4)return;
+  if(path===undefined)path=rt[d.i]=portPath(g,s,d,true)||portPath(g,s,d,false);if(!path||path.length<4)return;
   g.trades.push({a:s.owner,from:s,to:d,path,p:0,dir:1,spd:.45*(FAC[A.fac].boat||1)});
 }
 function tickTrades(g){
