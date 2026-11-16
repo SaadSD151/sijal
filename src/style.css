@@ -141,6 +141,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px;width:min(780px,100%)}
 .opts .chips{justify-content:flex-start}
 .fld{display:block}
+.fld textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--parch);font:inherit;resize:vertical;-webkit-user-select:text;user-select:text}
 .fld input{width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:rgba(0,0,0,.35);color:var(--parch);font:inherit;-webkit-user-select:text;user-select:text}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .row .btn{min-width:150px}

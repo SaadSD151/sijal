@@ -88,7 +88,7 @@ function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t(
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="suggest">${t('suggest')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
   <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><div class="chips">
   <button class="chip on" data-a="settings">${t('settings')}</button><button class="chip" data-a="lang">${t('lang')}</button><button class="chip" data-a="snd">${t('sound')}: ${t(p.sound?'on':'off')}</button><button class="chip" data-a="mus">${t('music')}: ${t(p.music?'on':'off')}</button><button class="chip" data-a="ifc">${t('iface')}: ${t('ifs')[p.ui]}</button></div><span class="made">${t('made')}</span></div>`;
 }
@@ -136,6 +136,16 @@ function renderSettings(){
 function renderRanks(){
   const p=UI.prof,rk=rankOf(p),R=t('ranks');
   $('#help').innerHTML=`<h2>${t('allRanks')}</h2><div class="rks">${R.map((n,i)=>`<div class="${i===rk?'cur':i<rk?'done':''}"><b>${n}</b><span>${i===0?'0':i===21?'501+':((i-1)*25+1)+' – '+i*25}</span></div>`).join('')}</div><p class="keys">${t('ranksNote')}</p><div class="row"><button class="btn big" data-a="account">${t('back')}</button></div>`;
+}
+function renderSuggest(done){
+  $('#help').innerHTML=`<h2>${t('suggest')}</h2>`+(done?`<p class="best">${t('sgDone')}</p><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`:
+  `<p class="keys">${t('sgNote')}</p><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(560px,100%)"><label class="fld"><h3>${t('sgText')}</h3><textarea id="sgMsg" maxlength="1000" rows="6" placeholder="${t('sgPh')}"></textarea></label></div>
+  <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="sgSend">${t('sgSend')}</button></div>`);
+}
+function sendSuggest(){
+  const el=$('#sgMsg'),msg=(el&&el.value||'').trim(),p=UI.prof;if(msg.length<3)return err('sgShort');if(!/^https?:/.test(location.protocol))return err('sgSite');
+  const body=new URLSearchParams({'form-name':'suggestions',name:p.name||t('defName'),rank:t('ranks')[rankOf(p)]+' ('+p.wins+')',message:msg,'bot-field':''}).toString();loading(true);
+  fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body}).then(r=>{loading(false);if(r.ok)renderSuggest(true);else err('sgFail');}).catch(()=>{loading(false);err('sgFail');});
 }
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
@@ -318,7 +328,7 @@ function act(a){
     case'lang':p.lang=UI.lang=UI.lang==='ar'?'en':'ar';applyMode();renderMenu();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=(p.ui+1)%3;applyMode();renderMenu();break;
-    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
@@ -433,7 +443,7 @@ function bindInput(){
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
-    if(e.target.tagName==='INPUT'&&e.target.type!=='range')return;const k=e.key.toLowerCase();UI.keys[k]=true;
+    if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
     if(!G||G.o.demo)return;
     if(k==='escape'){if(UI.mode)setMode(null);else if(UI.screen==='pause')act('resume');else if(!UI.screen)act('pause');return;}
     if(UI.screen||UI.phase!=='play')return;
