@@ -181,6 +181,13 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .nl>div{background:var(--panel);border:1px solid var(--line2);border-radius:11px;padding:10px 14px}
 .nl b{color:var(--gold2);margin-inline-end:8px}
 .nl ul{margin:6px 0 0;padding-inline-start:20px}
+/* rank ladder */
+.rks{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;width:min(760px,100%)}
+.rks>div{display:flex;justify-content:space-between;gap:8px;background:var(--panel);border:1px solid var(--line2);border-radius:9px;padding:7px 11px}
+.rks span{color:var(--dim);font-variant-numeric:tabular-nums}
+.rks .done{opacity:.6}
+.rks .cur{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold) inset}
+.rks .cur b{color:var(--gold2)}
 /* online lobby */
 .code{font:700 clamp(40px,10vw,72px)/1.1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.18em;color:var(--gold2);-webkit-user-select:text;user-select:text}
 .pls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;width:min(780px,100%)}

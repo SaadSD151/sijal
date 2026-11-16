@@ -133,11 +133,15 @@ function renderSettings(){
   <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
+function renderRanks(){
+  const p=UI.prof,rk=rankOf(p),R=t('ranks');
+  $('#help').innerHTML=`<h2>${t('allRanks')}</h2><div class="rks">${R.map((n,i)=>`<div class="${i===rk?'cur':i<rk?'done':''}"><b>${n}</b><span>${i===0?'0':i===21?'501+':((i-1)*25+1)+' – '+i*25}</span></div>`).join('')}</div><p class="keys">${t('ranksNote')}</p><div class="row"><button class="btn big" data-a="account">${t('back')}</button></div>`;
+}
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
   $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label></div>
   <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(4,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
-  <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p><p class="keys">${t('accNote')}</p><div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p><p class="keys">${t('accNote')}</p><div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 function renderNews(latest){
   const L=(latest?LOG.slice(0,1):LOG.slice(0,10));
@@ -314,7 +318,7 @@ function act(a){
     case'lang':p.lang=UI.lang=UI.lang==='ar'?'en':'ar';applyMode();renderMenu();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=(p.ui+1)%3;applyMode();renderMenu();break;
-    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
