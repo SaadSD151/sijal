@@ -1,0 +1,5 @@
+# Netlify serves the ready-built game from dist/site (rebuild with `node build.js` before committing)
+[build]
+  base = "dist/site"
+  publish = "."
+  command = ""
