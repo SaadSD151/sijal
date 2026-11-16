@@ -9,7 +9,7 @@ const {chromium}=require('playwright');const path=require('path');
   await pg.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await pg.waitForTimeout(1500);
   const tag=mob?'m':'d';await pg.screenshot({path:`${out}/${tag}1-menu.png`});
   await pg.evaluate(()=>__sijal.act('custom'));await pg.waitForTimeout(300);await pg.screenshot({path:`${out}/${tag}2-setup.png`});
-  await pg.evaluate(()=>__sijal.act('go'));await pg.waitForTimeout(1500);await pg.screenshot({path:`${out}/${tag}3-spawn.png`});
+  await pg.evaluate(()=>__sijal.act('go'));await pg.waitForTimeout(2500);await pg.screenshot({path:`${out}/${tag}3-spawn.png`});
   // spawn on a valid tile near the map centre, then play a scripted opening
   const info=await pg.evaluate(()=>{const g=__sijal.G;let best=-1,bd=1e9;for(let i=0;i<g.N;i++){if(g.M.ter[i]<2||g.M.ter[i]===6||g.owner[i])continue;const x=i%g.W,y=(i/g.W)|0;let ok=true;for(const s of g.structs)if(s.type==='city'){const d=(s.x-x)**2+(s.y-y)**2;if(d<(s.owner?196:49))ok=false;}if(!ok)continue;const d=(x-g.W/2)**2+(y-g.H/2)**2;if(d<bd){bd=d;best=i;}}
     __sijal.tap(best,0,0);return{best,phase:__sijal.UI.phase,started:g.started,mob:__sijal.UI.mob};});

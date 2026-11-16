@@ -12,11 +12,11 @@ function aiThink(g,n){
     // tribes: creep into free land, raid each other, and only rarely dare to raid a real realm
     const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai;let has=false;for(const k of g.attacks)if(k.a===n.id)has=true;
     if(has||n.troops/n.maxT<.5)return;
-    if(n.tiles<260&&g.nb[n.id*K]>0){launchAttack(g,n.id,0,.25,-1,-1);return;}
-    if(now<ai.nextWar)return;ai.nextWar=now+250+rng()*450;let best=null,bs=0;
+    if(n.tiles<480&&g.nb[n.id*K]>0){launchAttack(g,n.id,0,.25,-1,-1);return;}
+    if(now<ai.nextWar)return;ai.nextWar=now+110+rng()*200;let best=null,bs=0;
     for(const m of g.nations){if(!m||!m.alive||m===n||g.nb[n.id*K+m.id]<3)continue;
       if(!m.minor&&(rng()>.05||(m.human&&now<g.grace)))continue;
-      const s=n.troops/(m.troops+1)*(m.minor?1:3)+rng()*.4;if(s>1.1&&s>bs){bs=s;best=m;}}
+      const s=n.troops/(m.troops+1)*(m.minor?1:3)+rng()*.4;if(s>.9&&s>bs){bs=s;best=m;}}
     if(best){const c=nearestCity(g,best.id,n.cx,n.cy);launchAttack(g,n.id,best.id,.45,c?c.x:-1,c?c.y:-1);}
     return;
   }
@@ -33,6 +33,10 @@ function aiThink(g,n){
     return;
   }
   const nbN=g.nb[id*K];
+  // tribes are easy prey: raid a neighbouring one whenever the army allows
+  if(myAtk<3&&ratio>.4&&now>=(ai.nextRaid||0)){ai.nextRaid=now+60+rng()*90;let tb=null,tv=0;
+    for(const m of g.nations)if(m&&m.alive&&m.minor&&g.nb[id*K+m.id]>1){const v=n.troops/(m.troops+1)+rng();if(v>1.5&&v>tv){tv=v;tb=m;}}
+    if(tb){const c=tb.cap;launchAttack(g,id,tb.id,.22,c?c.x:-1,c?c.y:-1);myAtk++;}}
   if(nbN>0&&!neut&&ratio>.3&&myAtk<MAX_ATK){
     const c=nearestCity(g,0,n.cx,n.cy),far=c?hyp(c.x-n.cx,c.y-n.cy):99;
     launchAttack(g,id,0,.3+.2*P.agg,far<50?c.x:-1,far<50?c.y:-1);
@@ -64,6 +68,7 @@ function aiBuild(g,n,threat){
   if(wantCity&&G>=buildCost(g,n,'city'))type='city';
   else if(hostile&&n.cnt.fort<1+Math.floor(n.tiles/700)&&G>=buildCost(g,n,'fort')*(wantCity?2.5:1.2))type='fort';
   else if(n.era>=2&&n.coast>8&&n.cnt.port<Math.min(3,1+Math.floor(n.tiles/1500))&&G>=buildCost(g,n,'port')*1.5)type='port';
+  else if(n.era>=2&&n.cnt.port&&n.cnt.coast<n.cnt.port&&G>=buildCost(g,n,'coast')*2)type='coast';
   else if(n.era>=3&&n.cnt.silo<(n.tiles>2500?2:1)&&G>=buildCost(g,n,'silo')*1.2)type='silo';
   else if(n.era>=3&&enemySilo&&n.cnt.shield<1+(n.mon?1:0)&&G>=buildCost(g,n,'shield')*1.4)type='shield';
   if(!type)return;const i=aiSite(g,n,type,hostile);if(i>=0)build(g,n,type,i);
@@ -130,10 +135,10 @@ function aiMissile(g,n){
   const now=g.tick;let tgt=null,ts=0;
   for(const m of g.nations){if(!m||!m.alive||m.id===n.id||n.ally[m.id])continue;
     let s=0;if(now-n.lastHit[m.id]<600||now-n.lastAtk[m.id]<600)s=1;if(g.hegemon===m.id)s+=1;if(m.mon)s+=3;if(s>ts){ts=s;tgt=m;}}
-  if(!tgt)return;const nuke=n.era>=4&&n.gold>=mslCost(n,'nuke')*1.15;if(!nuke&&n.gold<mslCost(n,'rocket')*1.8)return;
+  if(!tgt)return;const doom=n.era>=4&&n.gold>=mslCost(n,'doom')*1.3,nuke=n.era>=4&&n.gold>=mslCost(n,'nuke')*1.15;if(!nuke&&n.gold<mslCost(n,'rocket')*1.8)return;
   const W8={mon:10,silo:6,shield:5,city:2,fort:3,port:2};let best=null,bs=-1;
   for(const s of g.structs)if(!s.dead&&s.owner===tgt.id){const v=W8[s.type]+(s.type==='city'?s.level:0)+g.rng();if(v>bs){bs=v;best=s;}}
-  if(best)launchMissile(g,n.id,nuke?'nuke':'rocket',best.i);
+  if(best)launchMissile(g,n.id,doom?'doom':nuke?'nuke':'rocket',best.i);
 }
 function aiUlt(g,n){
   const U=FAC[n.fac].ult,now=g.tick,e=n.ai.last,m=e&&g.nations[e];

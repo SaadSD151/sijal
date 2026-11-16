@@ -1,5 +1,5 @@
 // ── SIJAL · simulation (pure logic, no DOM) ──
-const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=12,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.7,MON_TIME=1500;
+const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=12,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
   const M=genMap(o),N=M.N;
@@ -18,7 +18,7 @@ function addNation(g,p){
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
     att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
-    cnt:{city:0,fort:0,port:0,silo:0,shield:0,mon:0},mon:null,
+    cnt:{city:0,fort:0,port:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:250+g.rng()*250,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
     st:{conq:0,lost:0,cities:0,kills:0,peak:0,nukes:0}};
   g.nations.push(n);if(n.human)g.human=id;return n;
@@ -35,7 +35,7 @@ function setupNations(g){
   // minor tribes: weak villages scattered over the map, easy prey for whoever reaches them first
   const mc=o.minors==null?60:o.minors,tn=shuffle([...Array(600).keys()],rng);
   for(let b=0;b<mc&&g.nations.length<124;b++){const i=pickSpawn(g,8);if(i<0)break;
-    const n=addNation(g,{fac:'merchants',pers:'sage',color:[135+((rng()*50)|0),125+((rng()*45)|0),105+((rng()*45)|0)],nameIdx:-2});n.minor=true;n.tribe=tn[b];n.troops=2500;spawn(g,n,i);n.cap.level=1;}
+    const n=addNation(g,{fac:'merchants',pers:'sage',color:[135+((rng()*50)|0),125+((rng()*45)|0),105+((rng()*45)|0)],nameIdx:-2});n.minor=true;n.tribe=tn[b];n.ai.nextWar=60+rng()*120;n.troops=2500;spawn(g,n,i);n.cap.level=1;}
   for(const n of g.nations)if(n&&!n.human)for(const m of g.nations)if(m&&m!==n)n.att[m.id]=rng()*40-15+(PERS[n.pers].trust-.5)*20+(m.human?[30,10,-5,-20][o.diff==null?1:o.diff]:0);
 }
 function canSpawn(g,i){
@@ -84,7 +84,7 @@ function canBuild(g,n,type,i){
   if(g.owner[i]!==n.id)return'own';if(g.structAt[i]||g.fall[i]>g.tick)return'busy';
   const x=i%g.W,y=(i/g.W)|0;
   for(const t of g.structs)if(!t.dead){const d=(t.x-x)**2+(t.y-y)**2;if(d<9)return'near';if(type==='city'&&t.type==='city'&&d<CITY_MIN*CITY_MIN)return'cnear';}
-  if(type==='port'&&!portOk(g,i))return'coast';
+  if((type==='port'||type==='coast')&&!portOk(g,i))return'coast';
   return 0;
 }
 function build(g,n,type,i){
@@ -281,7 +281,11 @@ function landing(g,b){
   setOwner(g,i,b.a);pushNb(g,k,i);g.attacks.push(k);emit(g,'landed',{a:b.a,d:o,x:k.ox,y:k.oy});
 }
 function tickBoats(g){
-  for(let j=g.boats.length-1;j>=0;j--){const b=g.boats[j];let rm=!g.nations[b.a].alive;
+  // coastal batteries shell hostile ships in range once a second
+  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=170,bc=0;
+    for(const b of g.boats){if(b.a===s.owner||O.ally[b.a]||b.sunk)continue;const c=b.path[Math.min(b.path.length-1,Math.floor(b.p))],d=(c%W-s.x)**2+(((c/W)|0)-s.y)**2;if(d<bd){bd=d;best=b;bc=c;}}
+    if(best){best.troops-=Math.max(800,best.troops*.15);emit(g,'shot',{x:s.x,y:s.y,tx:bc%W,ty:(bc/W)|0});if(best.troops<300){best.sunk=true;emit(g,'sunk',{a:s.owner,d:best.a,x:bc%W,y:(bc/W)|0});}}}}
+  for(let j=g.boats.length-1;j>=0;j--){const b=g.boats[j];let rm=!g.nations[b.a].alive||b.sunk;
     if(!rm){b.p+=b.spd;if(b.p>=b.path.length-1){landing(g,b);rm=true;}}
     if(rm){g.boats[j]=g.boats[g.boats.length-1];g.boats.pop();}}
 }
@@ -311,6 +315,21 @@ function tickTrades(g){
       else if(b.dir<0&&b.p<=0){const amt=Math.round((60+b.path.length*2.2)*(1+.25*(A.era-1))*(FAC[A.fac].port||1));A.gold+=amt;emit(g,'trade',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trades[j]=g.trades[g.trades.length-1];g.trades.pop();}}
 }
+// nearest enemy shore reachable by sea from our own coast (used when the tapped spot has no usable beach)
+function seaLanding(g,a,o){
+  const W=g.W,H=g.H,N=g.N,ter=g.M.ter,own=g.owner,prev=g.prev,q=g.q,now=g.tick;prev.fill(-1);let qh=0,qt=0;
+  for(let i=0;i<N;i++)if(ter[i]<2&&adjOwn(g,i,a)){prev[i]=i;q[qt++]=i;}
+  while(qh<qt){const c=q[qh++],cx=c%W,cy=(c/W)|0;
+    for(let d=0;d<4;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]>1&&own[j]===o&&g.fall[j]<=now)return j;}
+    for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]<2&&prev[j]<0){prev[j]=c;q[qt++]=j;}}}
+  return -1;
+}
+// a port may be placed a little inland: it snaps to the nearest free shore tile
+function snapPort(g,n,i,R,ty){ty=ty||'port';
+  if(!canBuild(g,n,ty,i))return i;const W=g.W,x0=i%W,y0=(i/W)|0;let b=i,bd=1e9;
+  for(let y=Math.max(0,y0-R);y<=Math.min(g.H-1,y0+R);y++)for(let x=Math.max(0,x0-R);x<=Math.min(W-1,x0+R);x++){const d=(x-x0)**2+(y-y0)**2;if(d<bd&&d<=R*R&&!canBuild(g,n,ty,y*W+x)){bd=d;b=y*W+x;}}
+  return b;
+}
 // ── missiles, blasts, ultimates ──
 function mslCost(n,type){return Math.round(MSL[type].cost*(FAC[n.fac].msl||1));}
 function launchMissile(g,a,type,ti){
@@ -326,8 +345,8 @@ function tickMissiles(g){
   for(let j=g.missiles.length-1;j>=0;j--){const m=g.missiles[j];m.t+=1/m.dur;if(m.t<1)continue;g.missiles.splice(j,1);
     let hit=true;
     for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SHIELD_R*SHIELD_R){
-      s.cd=g.tick+60;if(g.rng()<(m.type==='nuke'?.5:.8)){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
-    if(hit){const nk=m.type==='nuke';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:nk?600:100,kill:nk?3:1.6,lvl:nk?2:1});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+      s.cd=g.tick+60;if(g.rng()<(m.type==='doom'?.35:m.type==='nuke'?.5:.8)){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
+    if(hit){const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 function blast(g,cx,cy,R,by,o){
   const W=g.W,H=g.H,now=g.tick,hits=new Map();
@@ -423,7 +442,7 @@ function statsPass(g){
     if(y<H-1&&ter[i+W]>1){const p=own[i+W];if(p!==o){nb[o*K+p]++;nb[p*K+o]++;}}
   }
   for(const n of ns)if(n&&n.alive&&ct[n.id]){const x=Math.round(sx[n.id]/ct[n.id]),y=Math.round(sy[n.id]/ct[n.id]);
-    if(own[y*W+x]===n.id){n.cx=x;n.cy=y;}else if(n.cap){n.cx=n.cap.x;n.cy=n.cap.y;}}
+    if(own[y*W+x]===n.id){n.cx=x;n.cy=y;}else{let f=false;for(let r=2;r<=60&&!f;r+=2)for(let d=0;d<8&&!f;d++){const X=x+DX8[d]*r,Y=y+DY8[d]*r;if(X>=0&&Y>=0&&X<W&&Y<H&&own[Y*W+X]===n.id){n.cx=X;n.cy=Y;f=true;}}if(!f&&n.cap){n.cx=n.cap.x;n.cy=n.cap.y;}}}
 }
 // encirclement: small landlocked enemy pockets and tiny neutral gaps fall to whoever surrounds them
 function pocketPass(g){
@@ -466,7 +485,7 @@ function checkOver(g){
   if(g.over)emit(g,'over',g.over);
 }
 function snapshot(g){
-  const W=g.W,dv=g.N>120000?3:2,w=(W/dv)|0,h=(g.H/dv)|0,s=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++)s[y*w+x]=g.owner[y*dv*W+x*dv];
+  const W=g.W,dv=g.N>250000?4:g.N>120000?3:2,w=(W/dv)|0,h=(g.H/dv)|0,s=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++)s[y*w+x]=g.owner[y*dv*W+x*dv];
   g.snaps.push(s);if(g.snaps.length>360){g.snaps=g.snaps.filter((_,i)=>i%2===0);g.snapEvery*=2;}
 }
 function tick(g){

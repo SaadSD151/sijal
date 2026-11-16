@@ -175,6 +175,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #fpick h4{font-size:13px;color:var(--gold2)}
 #fpick .chip i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:6px}
 .mob #fpick{top:98px}
+.btn.ok{background:linear-gradient(#7fe0a0,#2f9a58);border-color:#c9ffd9;color:#06200f}
 .btn.go{background:linear-gradient(#e2685a,#a8322a);border-color:#ffb0a4;color:#fff}
 .nl{display:flex;flex-direction:column;gap:10px;width:min(640px,100%)}
 .nl>div{background:var(--panel);border:1px solid var(--line2);border-radius:11px;padding:10px 14px}

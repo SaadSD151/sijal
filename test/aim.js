@@ -1,6 +1,6 @@
 const {chromium}=require('playwright');const path=require('path');
 (async()=>{const b=await chromium.launch(),pg=await(await b.newContext({viewport:{width:1366,height:768}})).newPage(),errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  await pg.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await pg.waitForTimeout(700);await pg.evaluate(()=>__sijal.act('quick'));await pg.waitForTimeout(1500);
+  await pg.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await pg.waitForTimeout(700);await pg.evaluate(()=>(__sijal.act('quick'),__sijal.act('go')));await pg.waitForTimeout(1500);
   await pg.evaluate(()=>{const S=__sijal,g=S.G;let sp=-1;for(let i=0;i<g.N&&sp<0;i++){const x=i%g.W,y=(i/g.W)|0;if(g.M.ter[i]===2&&g.M.coastD[i]>6&&!g.owner[i]&&g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>300))sp=i;}S.tap(sp,0,0);});
   await pg.waitForTimeout(1200);
   const r=await pg.evaluate(()=>({cx:__sijal.cam.x,n:__sijal.G.attacks.length}));

@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const path=require('path');
   const out=process.argv[2],b=await chromium.launch(),pg=await(await b.newContext({viewport:{width:1366,height:768}})).newPage(),errs=[];
   pg.on('pageerror',e=>errs.push('PAGEERR '+e.message+'\n'+(e.stack||'').split('\n').slice(0,5).join('\n')));pg.on('console',m=>{if(m.type()==='error')errs.push('CONSOLE '+m.text());});
   await pg.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await pg.waitForTimeout(800);
-  await pg.evaluate(()=>{__sijal.act('lang');__sijal.UI.prof.fac='scholars';__sijal.UI.prof.type='islands';__sijal.act('quick');});await pg.waitForTimeout(1500);
+  await pg.evaluate(()=>{__sijal.act('lang');__sijal.UI.prof.fac='scholars';__sijal.UI.prof.type='islands';(__sijal.act('quick'),__sijal.act('go'));});await pg.waitForTimeout(1500);
   const log=await pg.evaluate(()=>{
     const S=__sijal,g=S.G,L=[],me=g.nations[g.human],W=g.W;
     let sp=-1;for(let i=0;i<g.N&&sp<0;i++){const x=i%W,y=(i/W)|0;if(g.M.ter[i]===2&&g.M.coastD[i]>3&&!g.owner[i]&&g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>250))sp=i;}
