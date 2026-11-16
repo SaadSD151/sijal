@@ -1,0 +1,10 @@
+const {chromium}=require('playwright');const path=require('path');
+(async()=>{const b=await chromium.launch(),pg=await b.newPage({viewport:{width:1200,height:800}}),errs=[];pg.on('pageerror',e=>errs.push(e.message));
+  await pg.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await pg.waitForTimeout(600);
+  const r=await pg.evaluate(()=>{const S=__sijal,o={};o.menuChips=document.querySelectorAll('#menu .chip').length;S.act('settings');o.ctrl=document.querySelectorAll('#help input[type=range]').length+'/'+document.querySelectorAll('#help .chip').length;
+    S.act('lang:en');o.en=document.querySelector('#help h2').textContent;S.act('lang:ar');S.act('ifc:2');o.mob=S.UI.mob;S.act('ifc:0');S.act('setBack');o.back=S.UI.screen;
+    S.act('quick');S.act('go');return o;});
+  await pg.waitForTimeout(2500);
+  const r2=await pg.evaluate(()=>{const S=__sijal;S.act('pause');const n=document.querySelectorAll('#pause .btn').length;S.act('settings');S.act('lang:en');const hud=document.querySelector('#lb h4').textContent;S.act('lang:ar');S.act('setBack');return{pauseBtns:n,hudEn:hud,back:S.UI.screen};});
+  await pg.evaluate(()=>{__sijal.act('toMenu');});await pg.waitForTimeout(300);await pg.screenshot({path:process.argv[2]+'/menu2.png'});
+  console.log(JSON.stringify(r),JSON.stringify(r2),errs.join('|')||'no errors');await b.close();})();

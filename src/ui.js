@@ -88,9 +88,8 @@ function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t(
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="suggest">${t('suggest')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
-  <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><div class="chips">
-  <button class="chip on" data-a="settings">${t('settings')}</button><button class="chip" data-a="lang">${t('lang')}</button><button class="chip" data-a="snd">${t('sound')}: ${t(p.sound?'on':'off')}</button><button class="chip" data-a="mus">${t('music')}: ${t(p.music?'on':'off')}</button><button class="chip" data-a="ifc">${t('iface')}: ${t('ifs')[p.ui]}</button></div><span class="made">${t('made')}</span></div>`;
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="suggest">${t('suggest')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
+  <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -130,7 +129,9 @@ function renderSettings(){
   const p=UI.prof,vm=p.volM==null?70:p.volM,vs=p.volS==null?70:p.volS;
   $('#help').innerHTML=`<h2>${t('settings')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(460px,100%)">
   <div><h3>${t('volM')}</h3><div class="rng"><input type="range" id="volM" min="0" max="100" step="5" value="${vm}" aria-label="${t('volM')}"><b id="volMv">${vm}</b></div></div>
-  <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div></div>
+  <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div>
+  <div><h3>${t('langName')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${UI.lang==='ar'?' on':''}" data-a="lang:ar">العربية</button><button class="chip${UI.lang==='en'?' on':''}" data-a="lang:en">English</button></div></div>
+  <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
 function renderRanks(){
@@ -163,7 +164,7 @@ function renderFac(){
 }
 function renderPause(){
   const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="how">${t('how')}</button>
-  <button class="btn" data-a="snd">${t('sound')}: ${t(p.sound?'on':'off')}</button><button class="btn" data-a="mus">${t('music')}: ${t(p.music?'on':'off')}</button><button class="btn" data-a="toMenu">${t('quit')}</button></div>`;
+  <button class="btn" data-a="toMenu">${t('quit')}</button></div>`;
 }
 
 // ── match lifecycle ──
@@ -325,9 +326,9 @@ function act(a){
     case'online':renderNet();show('net');break;case'hostRoom':netHost();break;case'join':netJoin(($('#inCode')||{}).value);break;case'netStart':hostStart();break;case'leave':netClose();renderMenu();show('menu');break;case'daily':renderDaily();show('help');break;case'dailyGo':startMatch({daily:true});break;
     case'custom':renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'toMenu':toMenu();break;
     case'how':UI.helpBack=UI.screen;renderHelp();show('help');break;case'helpBack':show(UI.helpBack==='pause'?'pause':'menu');break;
-    case'lang':p.lang=UI.lang=UI.lang==='ar'?'en':'ar';applyMode();renderMenu();break;
+    case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
-    case'ifc':p.ui=(p.ui+1)%3;applyMode();renderMenu();break;
+    case'ifc':p.ui=v==null?(p.ui+1)%3:+v;applyMode();resize();renderSettings();break;
     case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
