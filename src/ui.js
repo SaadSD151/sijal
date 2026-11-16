@@ -301,7 +301,7 @@ function onMapTap(i,x,y){
   if(UI.phase==='spawn')return send({k:'spawn',i,fac:UI.prof.fac});
   if(UI.phase!=='play'||!me.alive)return;
   const m=UI.mode;
-  if(m){if(UI.mob){UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
+  if(m){if(UI.mob){if(m[0]==='b'){const k=m.slice(2);if(k==='port'||k==='coast')i=snapPort(g,me,i,6,k);const r=canBuild(g,me,k,i);if(r)return err(r);}UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
     placeAt(i);return;}
   if(g.M.ter[i]<2)return closeCard();
   const o=g.owner[i];if(o===me.id)return closeCard();if(o&&me.ally[o])return openCard(o);
@@ -464,6 +464,6 @@ function boot(){
   bindInput();renderMenu();show('menu');startDemo();requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
-  window.__sijal={get G(){return G;},NET,UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};
+  window.__sijal={get G(){return G;},cb:canBuild,NET,UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
 boot();

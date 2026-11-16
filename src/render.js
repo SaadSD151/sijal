@@ -206,11 +206,14 @@ function draw(g,dt,ts){
     else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
     else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
   }
-  // placement preview (mouse)
+  // placement preview: range circle plus a ghost of the building where it will actually stand
   if(UI.mode&&UI.hover>=0&&me){
-    const i=UI.hover,p=w2s(i%g.W+.5,((i/g.W)|0)+.5),m=UI.mode,k=m.slice(2),H=g.nations[me];let rad=0,ok=true;
-    if(m[0]==='b'){rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:13}[k]||1.5;ok=!canBuild(g,H,k,k==='port'||k==='coast'?snapPort(g,H,i,UI.mob?6:4,k):i);}else if(m[0]==='m')rad=MSL[k].r;else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
+    const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.hover,rad=0,ok=true;
+    if(m[0]==='b'){if(k==='port'||k==='coast')i=snapPort(g,H,i,UI.mob?6:4,k);rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:13}[k]||1.5;ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
+    const p=w2s(i%g.W+.5,((i/g.W)|0)+.5);
     c.strokeStyle=ok?'rgba(120,240,160,.95)':'rgba(255,100,90,.95)';c.fillStyle=ok?'rgba(120,240,160,.14)':'rgba(255,100,90,.14)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,rad*z,0,7);c.fill();c.stroke();
+    if(m[0]==='b'){const r=clamp(z*1.45,8,12)+2,q=r*1.45;c.globalAlpha=.6+.3*Math.sin(ts/160);c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=ok?H.css:'#a33';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.drawImage(R.glyph[k],p.x-q/2,p.y-q/2,q,q);c.globalAlpha=1;}
+    else{c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.moveTo(p.x-9,p.y);c.lineTo(p.x+9,p.y);c.moveTo(p.x,p.y-9);c.lineTo(p.x,p.y+9);c.stroke();}
   }
   // who is attacking you: a ring on their capital, or an arrow at the screen edge pointing to it
   if(UI.threats&&UI.threats.length&&me){const nw=performance.now();UI.threats=UI.threats.filter(q=>q.until>nw&&g.nations[q.id].alive&&g.nations[q.id].cap);
