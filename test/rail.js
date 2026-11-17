@@ -15,3 +15,11 @@ let n=0,gold=0;for(let t=0;t<3000;t++){tick(g);for(const e of g.ev)if(e.t==='tra
 const cand=g.structs.filter(s=>!s.dead&&s.type==='city'&&s.owner&&s.owner!==A.id&&(s.x-f.x)**2+(s.y-f.y)**2<=4900).length;
 console.log('foreign cities within 70:',cand,'| trains completed in 5 min:',n,'gold',gold,'| trade routes',g.rails.filter(r=>r.f===f&&r.trade).length);
 `+'})()');
+// capture: a factory taken in war keeps standing, changes owner, and lays tracks for the new owner
+vm.runInThisContext('(function(){"use strict";'+['core','map','game','ai'].map(f=>require('fs').readFileSync(__dirname+'/../src/'+f+'.js','utf8')).join('\n')+`
+const g=newGame({w:320,h:200,seed:7,type:'pangaea',bots:6,diff:1,demo:true,minors:0});startGame(g);for(let t=0;t<300;t++){tick(g);g.ev.length=0;g.dirty.length=0;}
+const A=g.nations[1],B=g.nations[2];A.gold=1e6;A.era=3;let fi=-1;for(let i=0;i<g.N&&fi<0;i++)if(g.owner[i]===A.id&&!canBuild(g,A,'factory',i))fi=i;
+build(g,A,'factory',fi);const f=g.structs[g.structAt[fi]-1];for(let t=0;t<100;t++)tick(g);
+setOwner(g,fi,B.id);for(let t=0;t<30;t++){tick(g);g.ev.length=0;}
+console.log('captured factory alive',!f.dead,'| owner now B',f.owner===B.id,'| B factories',B.cnt.factory,'A factories',A.cnt.factory,'| old owner rails left',g.rails.filter(r=>r.f===f&&r.a===A.id).length,'| new owner rails',g.rails.filter(r=>r.f===f&&r.a===B.id).length,'(planned for B:',railPlan(g,B.id,fi).length+')');
+`+'})()');

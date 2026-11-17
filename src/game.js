@@ -109,7 +109,7 @@ function setOwner(g,i,o){
 function captured(g,s,old,o){
   if(g.annexing&&s.type==='city'){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);s.capital=false;s.grow=0;return;}
   if(s.type!=='city'){
-    if(o&&(s.type==='fort'||s.type==='port')){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);}else killStruct(g,s);
+    if(o&&(s.type==='fort'||s.type==='port'||s.type==='factory')){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);if(s.type==='factory'){s.rr=0;s.rt2=null;s.tcd=g.tick+100;}}else killStruct(g,s);
     return;
   }
   touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);s.grow=0;
