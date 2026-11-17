@@ -147,11 +147,11 @@ function draw(g,dt,ts){
   // rubble left where a city was wiped out
   for(const rb of g.ruins){const p=w2s(rb.x+.5,rb.y+.5);if(p.x<-30||p.y<-30||p.x>cw+30||p.y>ch+30)continue;const q=clamp(z*2.6,14,26);c.globalAlpha=.85;c.fillStyle='rgba(40,34,30,.55)';c.beginPath();c.arc(p.x,p.y,q*.62,0,7);c.fill();c.filter='brightness(.55)';c.drawImage(R.glyph.ruin,p.x-q/2,p.y-q/2,q,q);c.filter='none';c.globalAlpha=1;}
   // railways and trains
-  if(g.rails.length){const tw=Math.max(1.6,z*.42);
+  if(g.rails.length){const tw=Math.max(.9,z*.2);
     for(const r of g.rails){const P=r.path;if(P.length<2)continue;c.beginPath();for(let k=0;k<P.length;k++){const p=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5);k?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y);}
-      c.strokeStyle='rgba(30,22,18,.85)';c.lineWidth=tw+2;c.stroke();c.strokeStyle='#8a7a66';c.lineWidth=tw;c.stroke();
-      if(z>=3){c.strokeStyle='rgba(30,22,18,.9)';c.lineWidth=1.2;for(let k=1;k<P.length-1;k+=2){const a=w2s(P[k-1]%g.W+.5,((P[k-1]/g.W)|0)+.5),b=w2s(P[k+1]%g.W+.5,((P[k+1]/g.W)|0)+.5),m=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5),an=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2,l=tw*1.3;c.beginPath();c.moveTo(m.x-Math.cos(an)*l,m.y-Math.sin(an)*l);c.lineTo(m.x+Math.cos(an)*l,m.y+Math.sin(an)*l);c.stroke();}}}
-    for(const tr of g.trains){const W=g.W,P=tr.path,i0=Math.floor(tr.p),n=g.nations[tr.a],s=clamp(z*.9,4,9);
+      c.strokeStyle='rgba(30,22,18,.38)';c.lineWidth=tw+1.2;c.stroke();c.strokeStyle='rgba(138,122,102,.5)';c.lineWidth=tw;c.stroke();
+      if(z>=4){c.strokeStyle='rgba(30,22,18,.4)';c.lineWidth=.8;for(let k=1;k<P.length-1;k+=2){const a=w2s(P[k-1]%g.W+.5,((P[k-1]/g.W)|0)+.5),b=w2s(P[k+1]%g.W+.5,((P[k+1]/g.W)|0)+.5),m=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5),an=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2,l=tw*1.1;c.beginPath();c.moveTo(m.x-Math.cos(an)*l,m.y-Math.sin(an)*l);c.lineTo(m.x+Math.cos(an)*l,m.y+Math.sin(an)*l);c.stroke();}}}
+    for(const tr of g.trains){const W=g.W,P=tr.path,i0=Math.floor(tr.p),n=g.nations[tr.a],s=clamp(z*.7,3,7);
       for(let w=0;w<3;w++){const pp=Math.max(0,Math.min(P.length-1,tr.p-w*tr.dir*1.1)),k0=Math.floor(pp),k1=Math.min(k0+1,P.length-1),f=pp-k0,p=w2s(lerp(P[k0]%W,P[k1]%W,f)+.5,lerp((P[k0]/W)|0,(P[k1]/W)|0,f)+.5);
         if(p.x<-20||p.y<-20||p.x>cw+20||p.y>ch+20)continue;c.fillStyle=w?n.css:'#2a2522';c.strokeStyle='rgba(6,12,20,.9)';c.lineWidth=1;c.beginPath();c.rect(p.x-s*.7,p.y-s*.5,s*1.4,s);c.fill();c.stroke();if(!w){c.fillStyle='#ffe9a8';c.beginPath();c.arc(p.x,p.y,s*.22,0,7);c.fill();}}}}
   // trade ships: small, white-sailed, shuttling between ports
