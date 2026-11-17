@@ -382,6 +382,7 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
+    case'reload':location.reload();break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
     case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
     case'am':p.amode=v;renderAmode();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;
