@@ -45,12 +45,13 @@ function applyCmd(pid,c){
     case'era':if(n.era<4&&!eraUp(g,n)&&mine)err('gold');return;
     case'ally':if(D)propose(g,pid,c.d);return;
     case'break':if(D)breakAlly(g,pid,c.d);return;
+    case'peace':if(D){r=proposePeace(g,pid,c.d);if(mine&&r==='cd')err('pcd');}return;
     case'gift':if(!D)return;r=gift(g,pid,c.d,+c.amt||0);if(mine){if(!r)err('gold');UI.cardGift=Math.max(50,Math.round(n.gold*.25/10)*10);UI.cardKey='';}return;
     case'renew':if(D&&n.ally[c.d])n.allyRen[c.d]=c.y?1:0;return;
     case'aid':if(D){r=sendAid(g,pid,c.d,+c.amt||0);if(mine&&r)err(r);}return;
     case'arms':if(D){const ok=callArms(g,pid,c.d);if(mine)feed(t(ok?'m_arms':'m_noAllies'));}return;
     case'cancel':{const q=g.attacks.find(q=>q.id===c.id&&q.a===pid);if(q)q.cancel=true;return;}
-    case'acc':case'rej':{const j=g.proposals.findIndex(q=>q.from===c.d&&q.to===pid);if(j>=0){g.proposals.splice(j,1);if(c.k==='acc'&&D)setAlly(g,c.d,pid);}return;}
+    case'acc':case'rej':{const j=g.proposals.findIndex(q=>q.from===c.d&&q.to===pid);if(j>=0){const q=g.proposals[j];g.proposals.splice(j,1);if(c.k==='acc'&&D){if(q.k==='peace'){if(atWar(g,c.d,pid))makePeace(g,c.d,pid);}else setAlly(g,c.d,pid);}else if(q.k==='peace')emit(g,'peaceRej',{a:pid,b:c.d,why:'no'});}return;}
   }
 }
 // ── transport: PeerJS data channels, or BroadcastChannel between tabs when testing (?bc=1) ──

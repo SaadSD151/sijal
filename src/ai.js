@@ -117,6 +117,12 @@ function aiDip(g,n){
     else if(!m.human&&age>2400&&rng()<.2)br=true;
     if(br){breakAlly(g,id,m.id);if(m.human)say(g,n,'betray',m.id);return;}
   }
+  for(let k=1;k<K;k++)if(n.pg[k]>0)n.pg[k]=Math.max(0,n.pg[k]-.5);
+  // losing a war against a much stronger realm: ask it for peace (players decide, AIs weigh it up)
+  if(!n.minor&&now-(ai.peaceAt||0)>600)for(const m of g.nations){
+    if(!m||!m.alive||m.id===id||m.minor||!atWar(g,id,m.id))continue;
+    if(m.troops>n.troops*1.8&&n.tiles<m.tiles&&rng()<.25+.2*(1-P.agg)){ai.peaceAt=now;if(m.human){proposePeace(g,id,m.id);say(g,n,'peace',m.id);}else if(peaceScore(g,m,n)>=20)makePeace(g,id,m.id);break;}
+  }
   if(allies<(P.trust>.6?2:1)&&rng()<.35&&now-ai.propAt>300){
     let best=null,bs=18;
     for(const m of g.nations){
@@ -141,7 +147,7 @@ function aiNaval(g,n){
 }
 function aiMissile(g,n){
   const now=g.tick;let tgt=null,ts=0;
-  for(const m of g.nations){if(!m||!m.alive||m.id===n.id||n.ally[m.id])continue;
+  for(const m of g.nations){if(!m||!m.alive||m.id===n.id||n.ally[m.id]||now<n.truce[m.id])continue;
     let s=0;if(now-n.lastHit[m.id]<600||now-n.lastAtk[m.id]<600)s=1;if(g.hegemon===m.id)s+=1;if(m.mon)s+=3;if(s>ts){ts=s;tgt=m;}}
   if(!tgt)return;const doom=n.era>=4&&n.gold>=mslCost(n,'doom')*1.3,nuke=n.era>=4&&n.gold>=mslCost(n,'nuke')*1.15;if(!nuke&&n.gold<mslCost(n,'rocket')*1.8)return;
   const W8={mon:10,silo:6,shield:5,city:2,fort:3,port:2};let best=null,bs=-1;
@@ -150,7 +156,7 @@ function aiMissile(g,n){
 }
 function aiUlt(g,n){
   const U=FAC[n.fac].ult,now=g.tick,e=n.ai.last,m=e&&g.nations[e];
-  if(now<n.ultAt||n.gold<ULT[U].cost*1.5||!m||!m.alive||n.ally[e]||now-n.lastAtk[e]>300)return;
+  if(now<n.ultAt||n.gold<ULT[U].cost*1.5||!m||!m.alive||n.ally[e]||now<n.truce[e]||now-n.lastAtk[e]>300)return;
   if(U==='bribe'){const k=g.attacks.find(k=>k.a===n.id&&k.d===e);if(k)useUlt(g,n,k.oy*g.W+k.ox);return;}
   let best=null;for(const s of g.structs)if(!s.dead&&s.owner===e&&(U==='beam'||g.M.coastD[s.i]<=4)&&(!best||s.level>best.level))best=s;
   if(best)useUlt(g,n,best.i);

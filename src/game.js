@@ -1,5 +1,5 @@
 // ── SIJAL · simulation (pure logic, no DOM) ──
-const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
+const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,PEACE_T=1800,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
   const M=genMap(o),N=M.N;
@@ -16,7 +16,7 @@ function emit(g,t,d){d=d||{};d.t=t;d.tick=g.tick;g.ev.push(d);}
 function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
-    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
+    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),pg:new Float32Array(128),pAsk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
@@ -401,7 +401,7 @@ function snapPort(g,n,i,R,ty){ty=ty||'port';
 function mslCost(n,type){return Math.round(MSL[type].cost*(FAC[n.fac].msl||1));}
 function launchMissile(g,a,type,ti){
   const A=g.nations[a],m=MSL[type],now=g.tick;if(A.era<m.era)return'era';const cost=mslCost(A,type);if(A.gold<cost)return'gold';
-  if(ti==null||ti<0||g.M.ter[ti]<2)return'no';const o=g.owner[ti];if(o&&A.ally[o])return'ally';
+  if(ti==null||ti<0||g.M.ter[ti]<2)return'no';const o=g.owner[ti];if(o&&A.ally[o])return'ally';if(o&&now<A.truce[o])return'truce';
   const tx=ti%g.W,ty=(ti/g.W)|0;let silo=null,bd=1e9;
   for(const s of g.structs)if(!s.dead&&s.owner===a&&s.type==='silo'&&!s.build&&s.cd<=now){const d=hyp(s.x-tx,s.y-ty);if(d<bd){bd=d;silo=s;}}
   if(!silo)return A.cnt.silo?'cd':'nosilo';
@@ -489,9 +489,29 @@ function propose(g,a,b){
   if(B.human){if(g.proposals.some(p=>p.from===a&&p.to===b))return'wait';g.proposals.push({from:a,to:b,until:g.tick+250});emit(g,'proposal',{a,b});return'wait';}
   if(aiAccepts(g,B,A)){setAlly(g,a,b);return'yes';}emit(g,'reject',{a:b,b:a});return'rejected';
 }
+// peace: a 3-minute treaty that stops the war between two realms and sends running offensives home
+function atWar(g,a,b){const A=g.nations[a],B=g.nations[b],now=g.tick;if(A.ally[b]||now<A.truce[b])return false;return now-A.lastHit[b]<300||now-B.lastHit[a]<300||g.attacks.some(k=>(k.a===a&&k.d===b)||(k.a===b&&k.d===a));}
+function makePeace(g,a,b){
+  const A=g.nations[a],B=g.nations[b],now=g.tick;A.truce[b]=B.truce[a]=now+PEACE_T;A.pg[b]=B.pg[a]=0;A.att[b]=Math.max(A.att[b],0);B.att[a]=Math.max(B.att[a],0);
+  for(let j=g.attacks.length-1;j>=0;j--){const k=g.attacks[j];if((k.a===a&&k.d===b)||(k.a===b&&k.d===a)){g.nations[k.a].troops+=k.troops;g.attacks.splice(j,1);}}
+  emit(g,'peace',{a,b});
+}
+// how willing an AI realm B is to make peace with A (accepts at 20 or more)
+function peaceScore(g,B,A){
+  const P=PERS[B.pers],r=A.troops/Math.max(B.troops,1);let s=-30+P.trust*20-P.agg*20+clamp((B.att[A.id]+100)/5,0,40)+B.pg[A.id];
+  if(r>=3)s+=45;else if(r>=2)s+=30;else if(r>=1.3)s+=15;else if(r<.7)s-=25;
+  if(commonEnemy(g,B,A))s+=10;if(g.hegemon===A.id)s-=40;if(A.mon)s-=40;return s;
+}
+function proposePeace(g,a,b){
+  const A=g.nations[a],B=g.nations[b],now=g.tick;if(!A.alive||!B.alive||B.minor||!atWar(g,a,b))return'no';
+  if(now-A.pAsk[b]<150)return'cd';A.pAsk[b]=now;
+  if(B.human){if(g.proposals.some(p=>p.from===a&&p.to===b))return'wait';g.proposals.push({from:a,to:b,until:now+250,k:'peace'});emit(g,'peaceProp',{a,b});return'wait';}
+  if(peaceScore(g,B,A)>=20){makePeace(g,a,b);return'yes';}
+  emit(g,'peaceRej',{a:b,b:a,why:A.troops<B.troops?'weak':'trust'});return'rejected';
+}
 function gift(g,a,b,amt){
   const A=g.nations[a],B=g.nations[b];amt=Math.floor(Math.min(amt,A.gold));if(amt<10)return false;A.gold-=amt;B.gold+=amt;
-  B.att[a]=Math.min(100,B.att[a]+Math.min(40,amt/(B.income*2+20)*10));emit(g,'gift',{a,b,amt});return true;
+  B.att[a]=Math.min(100,B.att[a]+Math.min(40,amt/(B.income*2+20)*10));B.pg[a]=Math.min(80,B.pg[a]+Math.min(40,amt/(B.income*10+100)*15));emit(g,'gift',{a,b,amt});return true;
 }
 function sendAid(g,a,b,amt){
   const A=g.nations[a],B=g.nations[b];if(!A||!B||!A.alive||!B.alive||!A.ally[b])return'no';amt=Math.floor(Math.min(amt,A.troops-100));if(amt<100)return'few';

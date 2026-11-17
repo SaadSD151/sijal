@@ -364,11 +364,11 @@ function cardRefresh(){if(UI.bs)return buildRefresh();
   const g=G,id=UI.sel,c=$('#card');if(!id||!c||c.hidden)return;const n=g.nations[id],me=g.nations[g.human];if(!n.alive||!me.alive)return closeCard();
   $('#cT').textContent=fmt(n.troops);$('#cL').textContent=(n.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=n.cnt.city;
   const a=n.att[me.id],mi=a<-40?0:a<-10?1:a<10?2:a<40?3:4,M=$('#cM');M.textContent=t('moods')[mi];M.className='m'+mi;$('#cMd').className='md m'+mi;
-  const ally=me.ally[id],war=g.tick-me.lastHit[id]<300||g.tick-n.lastHit[me.id]<300,key=ally+'|'+war,S=$('#cS');
-  S.textContent=t(ally?'st_ally':war?'st_war':'st_peace')+(ally?' · '+t('allyLeft',clock(Math.max(0,me.allyUntil[id]-g.tick))):'');S.className=ally?'good':war?'bad':'';
+  const ally=me.ally[id],tr=!ally&&g.tick<me.truce[id],war=!tr&&!ally&&atWar(g,me.id,id),key=ally+'|'+war+'|'+tr,S=$('#cS');
+  S.textContent=t(ally?'st_ally':tr?'st_truce':war?'st_war':'st_peace')+(ally?' · '+t('allyLeft',clock(Math.max(0,me.allyUntil[id]-g.tick))):tr?' · '+clock(me.truce[id]-g.tick):'');S.className=ally||tr?'good':war?'bad':'';
   if(key===UI.cardKey)return;UI.cardKey=key;let any=false;for(const m of g.nations)if(m&&m.alive&&me.ally[m.id]&&m.id!==id)any=true;
   const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
-  $('#cB').innerHTML=(ally?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'ship',t('c_sea'),t('b_sea'),'sea'))
+  $('#cB').innerHTML=(war&&!n.minor?B('peace:'+id,'flag',t('c_peace'),t('b_peace'),'ok'):'')+(ally||tr?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'ship',t('c_sea'),t('b_sea'),'sea'))
     +(ally?B('break:'+id,'ally',t('c_break'),t('b_break'),'warn')+B('aidOpen:'+id,'sword',t('c_aid'),t('b_aid'),'ok'):B('ally:'+id,'ally',t('c_ally'),t('b_ally')))
     +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('find:'+id,'eye',t('c_find'),t('b_find'));
 }
@@ -424,7 +424,7 @@ function act(a){
     case'sea':closeCard();setMode('s:'+v);break;
     case'goatk':{const q=g.attacks.find(q=>q.id===+v),D=q&&q.d?g.nations[q.d]:null;if(D)lookAt(D.cx,D.cy,Math.max(cam.tz,4));else if(q)lookAt(q.ox,q.oy,Math.max(cam.tz,4));break;}
     case'annex':{const n=g.nations[+v];if(n&&n.cap)send({k:'atk',i:n.cap.i,r:UI.ratio});break;}
-    case'ally':send({k:'ally',d:+v});break;case'break':send({k:'break',d:+v});break;
+    case'ally':send({k:'ally',d:+v});break;case'break':send({k:'break',d:+v});break;case'peace':send({k:'peace',d:+v});break;
     case'gift':if(me.gold<10)return err('gold');send({k:'gift',d:+v,amt:UI.cardGift});break;
     case'arms':send({k:'arms',d:+v});break;
     case'find':{const n=g.nations[+v];if(n.cap)lookAt(n.cap.x,n.cap.y,Math.max(cam.tz,5));if(UI.mob)closeCard();break;}
@@ -464,6 +464,9 @@ function handleEvents(){
       case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
       case'dead':if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
       case'proposal':{if(e.b!==me)break;const d=toast(`<span>${t('m_prop',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button><button class="btn sm" data-a="find:${A.id}">${t('b_focus')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
+      case'peaceProp':{if(e.b!==me)break;const d=toast(`<span>${t('m_peaceProp',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
+      case'peace':if(e.a===me||e.b===me){feed(t('m_peace',nmh(N[e.a===me?e.b:e.a])),'good');sfx('city');UI.cardKey='';}break;
+      case'peaceRej':if(e.b===me){feed(t(e.why==='weak'?'m_peaceWeak':e.why==='trust'?'m_peaceTrust':'m_peaceNo',nmh(A)),'bad');}break;
       case'reject':if(e.b===me){feed(t('m_rej',nmh(A)));sayLine(A,'reject');}break;
       case'say':if(e.to==null||e.to===me)sayLine(A,e.key);break;
       case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');}break;
