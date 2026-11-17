@@ -326,8 +326,36 @@ function amtOpen(kind,id){
   <div class="row"><button class="btn sm" data-a="amtX">${t('cancel')}</button><button class="btn sm ok" data-a="amtSend">${t('c_send')} <span id="amtS">${fmt(UI.cardAmt.v)}</span></button></div>`;
 }
 function amtSet(v){const A=UI.cardAmt;if(!A)return;A.v=clamp(Math.round(v),1,A.max);const r=$('#amtR');if(r)r.value=A.v;$('#amtV').textContent=fmt(A.v);$('#amtS').textContent=fmt(A.v);}
-function closeCard(){const c=$('#card');if(c)c.hidden=true;UI.sel=0;}
-function cardRefresh(){
+// building card: tap your own building to see its level and upgrade it
+function structNear(g,i,o){const W=g.W,x0=i%W,y0=(i/W)|0;let b=null,bd=9;for(let y=y0-1;y<=y0+1;y++)for(let x=x0-1;x<=x0+1;x++){if(x<0||y<0||x>=W||y>=g.H)continue;const si=g.structAt[y*W+x];if(!si)continue;const s=g.structs[si-1];const d=(x-x0)**2+(y-y0)**2;if(!s.dead&&s.owner===o&&d<bd){bd=d;b=s;}}return b;}
+function effText(s,lv){
+  switch(s.type){
+    case'city':return t('ef_city',fmt(4000*lv*(s.capital?1.5:1)),1+lv);
+    case'fort':return t('ef_fort',5+lv-1,fmt(70000*lv),R_FORT+lv-1);
+    case'port':return t('ef_port',2*lv,35*(lv-1));
+    case'coast':return t('ef_coast',13+2*(lv-1),35*(lv-1));
+    case'silo':return t('ef_silo',15*(lv-1));
+    case'shield':return t('ef_shield',Math.round(SH_P.rocket[lv]*100),Math.round(SH_P.nuke[lv]*100),Math.round(SH_P.doom[lv]*100),SH_R(lv));
+  }return'';
+}
+function openBuild(s){
+  const g=G,me=g.nations[g.human];if(!s||s.dead||s.owner!==me.id||UI.phase!=='play')return;UI.sel=0;UI.bs=s;UI.bKey='';const c=$('#card');c.hidden=false;
+  const nm=s.type==='city'?cityName(s.name,UI.lang)+' · '+t('s_city'):t('s_'+s.type);
+  c.innerHTML=`<div class="ch"><img class="bi" src="${R.url[s.capital?'cap':s.type]}" alt=""><div><b>${esc(nm)}</b><small id="bLv"></small></div><button class="ib" data-a="closeCard" aria-label="close">✕</button></div>
+  <div class="lvd" id="bDots"></div><div class="bef" id="bNow"></div><div class="bef nx" id="bNext"></div><div id="bBtn"></div>`;
+  buildRefresh();
+}
+function buildRefresh(){
+  const g=G,s=UI.bs,c=$('#card');if(!s||!c||c.hidden)return;const me=g.nations[g.human];if(s.dead||s.owner!==me.id)return closeCard();
+  $('#bLv').textContent=t('lvl',s.level);$('#bDots').innerHTML=[1,2,3,4,5].map(k=>`<i class="${k<=s.level?'on':''}"></i>`).join('');
+  $('#bNow').textContent=effText(s,s.level);
+  const r=canUp(g,me,s),key=s.level+'|'+r+'|'+(s.upAt>g.tick?Math.ceil((s.upAt-g.tick)/TPS):0);if(key===UI.bKey)return;UI.bKey=key;
+  $('#bNext').textContent=s.level<5?'⬆ '+effText(s,s.level+1):'';
+  $('#bBtn').innerHTML=s.level>=5?`<p class="good">${t('upMax')}</p>`:s.upAt>g.tick?`<p class="warn">${t('upBusy',Math.ceil((s.upAt-g.tick)/TPS))}</p>`:
+    `<button class="btn sm ok up" data-a="upB"${r&&r!=='gold'?' disabled':''}>${t('upTo',s.level+1)} · ${fmt(upCost(s))}</button>${r==='era'?`<p class="bad">${t('upNeed',t('eras')[upEra(s)-1])}</p>`:r==='gold'?`<p class="bad">${t('e_gold')}</p>`:''}`;
+}
+function closeCard(){UI.bs=null;const c=$('#card');if(c)c.hidden=true;UI.sel=0;}
+function cardRefresh(){if(UI.bs)return buildRefresh();
   const g=G,id=UI.sel,c=$('#card');if(!id||!c||c.hidden)return;const n=g.nations[id],me=g.nations[g.human];if(!n.alive||!me.alive)return closeCard();
   $('#cT').textContent=fmt(n.troops);$('#cL').textContent=(n.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=n.cnt.city;
   const a=n.att[me.id],mi=a<-40?0:a<-10?1:a<10?2:a<40?3:4,M=$('#cM');M.textContent=t('moods')[mi];M.className='m'+mi;$('#cMd').className='md m'+mi;
@@ -358,7 +386,7 @@ function onMapTap(i,x,y){
   if(m){if(UI.mob){if(m[0]==='b'){const k=m.slice(2);if(k==='port'||k==='coast')i=snapPort(g,me,i,6,k);const r=canBuild(g,me,k,i);if(r)return err(r);}UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):m[0]==='s'?t('c_sea'):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
     placeAt(i);return;}
   if(g.M.ter[i]<2)return closeCard();
-  const o=g.owner[i];if(o===me.id)return closeCard();if(o&&me.ally[o])return openCard(o);
+  const o=g.owner[i];if(o===me.id){const st=structNear(g,i,me.id);return st?openBuild(st):closeCard();}if(o&&me.ally[o])return openCard(o);
   if(o&&UI.mob&&!g.nations[o].minor)return openCard(o,i);
   send({k:'atk',i,r:UI.ratio,m:UI.prof.amode||'pt'});
 }
@@ -382,6 +410,7 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
+    case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.reload();break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
     case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
@@ -425,6 +454,7 @@ function handleEvents(){
       case'cityHit':addFx('ring',e.s.x,e.s.y,{r:4,col:'#b9b0a6',dur:900});if(e.d===me)feed(t('m_cityRuinYou',cn),'bad');else if(e.a===me)feed(t('m_cityRuin',cn),'good');break;
       case'cityGone':addFx('ring',e.s.x,e.s.y,{r:8,col:'#ff9a5a',dur:1500});if(e.d===me){feed(t('m_cityGoneYou',cn),'bad');banner(t('m_cityGoneYou',cn),'bad');}else if(e.a===me)feed(t('m_cityGone',cn),'good');break;
       case'aid':if(e.a===me){feed(t('m_aidSent',fmt(e.amt),nmh(N[e.b])),'good');sayLine(N[e.b],'thanks');}else if(e.b===me)feed(t('m_aidGot',nmh(A),fmt(e.amt)),'good');break;
+      case'upDone':if(e.a===me){feed(t('m_upDone',e.s.type==='city'?esc(cityName(e.s.name,UI.lang)):t('s_'+e.s.type),e.s.level),'good');sfx('era');addFx('ring',e.s.x,e.s.y,{r:5,col:'#ffe9a8',dur:900});UI.bKey='';}break;
       case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
       case'dead':if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
       case'proposal':{if(e.b!==me)break;const d=toast(`<span>${t('m_prop',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button><button class="btn sm" data-a="find:${A.id}">${t('b_focus')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}

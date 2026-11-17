@@ -74,7 +74,11 @@ function aiBuild(g,n,threat){
   else if(n.era>=2&&n.cnt.port&&n.cnt.coast<n.cnt.port&&G>=buildCost(g,n,'coast')*2)type='coast';
   else if(n.era>=3&&n.cnt.silo<(n.tiles>2500?2:1)&&G>=buildCost(g,n,'silo')*1.2)type='silo';
   else if(n.era>=3&&enemySilo&&n.cnt.shield<1+(n.mon?1:0)&&G>=buildCost(g,n,'shield')*1.4)type='shield';
-  if(!type)return;const i=aiSite(g,n,type,hostile);if(i>=0)build(g,n,type,i);
+  if(!type){
+    // spare gold goes into upgrades, weakest buildings first
+    if(G>2500&&g.rng()<.35){const own=g.structs.filter(s=>!s.dead&&s.owner===n.id&&!canUp(g,n,s));if(own.length){own.sort((a,b)=>a.level-b.level||a.i-b.i);upgrade(g,n,own[0]);}}
+    return;}
+  const i=aiSite(g,n,type,hostile);if(i>=0)build(g,n,type,i);
 }
 function aiSite(g,n,type,hostile){
   const W=g.W,H=g.H,rng=g.rng,own=g.owner,w=n.x1-n.x0+1,h=n.y1-n.y0+1;let best=-1,bs=-1e9;

@@ -71,7 +71,7 @@ function killStruct(g,s){
 }
 function defOf(g,n){
   if(n.defDirty){n.defDirty=false;const a=n.defS=[];
-    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,R_FORT*R_FORT,9);}}
+    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,(R_FORT+s.level-1)**2,9+s.level);}}
   return n.defS;
 }
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
@@ -167,10 +167,10 @@ function annex(g,a,d){
 // ── attacks: fronts spread tile by tile from a priority queue ──
 function adjOwn(g,i,a){const W=g.W,own=g.owner,x=i%W;return(x>0&&own[i-1]===a)||(x<W-1&&own[i+1]===a)||(i>=W&&own[i-W]===a)||(i<g.N-W&&own[i+W]===a);}
 // a fort is at full strength against attacks of up to 70K troops, then fades, and is useless (and razed) at 700K
-function fortF(k){return clamp(1-(k.troops-70000)/630000,0,1);}
+function fortF(k,lv){lv=lv||1;return clamp(1-(k.troops-70000*lv)/(630000*lv),0,1);}
 function tileDelay(g,k,n,par){
   let dl=T_DELAY[g.M.ter[n]];if(k.d)dl*=1.35;
-  if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]===9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){dl*=1+3*fortF(k);break;}}}
+  if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
   return dl*(.55+g.rng()*.9)*g.sSpd*g.nations[k.a].mSpd;
 }
@@ -181,7 +181,7 @@ function tileCost(g,k,i,A,D){
     else for(const s of neutCities(g)){const dx=x-s.x,dy=y-s.y;if(dx*dx+dy*dy<=10){c*=3;break;}}
     return c*g.sCost/A.mAtk;}
   const dens=D.troops/Math.max(D.tiles,25),ds=defOf(g,D);let z=1;
-  for(let j=0;j<ds.length;j+=4){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy>ds[j+2])continue;const m=ds[j+3]===9?1+5*fortF(k):ds[j+3];if(m>z)z=m;}
+  for(let j=0;j<ds.length;j+=4){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy>ds[j+2])continue;const m=ds[j+3]>=9?1+(4+ds[j+3]-9)*fortF(k,ds[j+3]-9):ds[j+3];if(m>z)z=m;}
   return(T_COST[t]+dens*T_DEF[t]*z*D.mDef+garrison(g,i,D)*D.mDef)*g.sCost/A.mAtk;
 }
 // a city is held by a share of its nation's whole army: sieges need real force
@@ -236,7 +236,7 @@ function tickAttacks(g){
         const c=tileCost(g,k,i,A,D);if(k.troops<c){done=true;break;}
         k.troops-=c;k.gain++;A.st.conq++;
         if(D){D.troops-=Math.min(D.troops,D.troops/Math.max(D.tiles,25)+garrison(g,i,D)*.5);D.st.lost++;D.lastHitAny=now;D.lastHit[k.a]=now;A.lastAtk[k.d]=now;}
-        if(k.troops>=700000&&g.structAt[i]&&g.structs[g.structAt[i]-1].type==='fort')killStruct(g,g.structs[g.structAt[i]-1]);
+        if(g.structAt[i]){const fs=g.structs[g.structAt[i]-1];if(fs.type==='fort'&&k.troops>=700000*fs.level)killStruct(g,fs);}
         setOwner(g,i,k.a);
         if(D&&!D.alive){done=true;break;}
         pushNb(g,k,i);
@@ -284,9 +284,9 @@ function landing(g,b){
 }
 function tickBoats(g){
   // coastal batteries shell hostile ships in range once a second
-  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=170,bc=0;
+  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=(13+2*(s.level-1))**2,bc=0;
     for(const b of g.boats){if(b.a===s.owner||O.ally[b.a]||b.sunk)continue;const c=b.path[Math.min(b.path.length-1,Math.floor(b.p))],d=(c%W-s.x)**2+(((c/W)|0)-s.y)**2;if(d<bd){bd=d;best=b;bc=c;}}
-    if(best){best.troops-=Math.max(800,best.troops*.15);emit(g,'shot',{x:s.x,y:s.y,tx:bc%W,ty:(bc/W)|0});if(best.troops<300){best.sunk=true;emit(g,'sunk',{a:s.owner,d:best.a,x:bc%W,y:(bc/W)|0});}}}}
+    if(best){best.troops-=Math.max(800,best.troops*.15)*(1+.35*(s.level-1));emit(g,'shot',{x:s.x,y:s.y,tx:bc%W,ty:(bc/W)|0});if(best.troops<300){best.sunk=true;emit(g,'sunk',{a:s.owner,d:best.a,x:bc%W,y:(bc/W)|0});}}}}
   for(let j=g.boats.length-1;j>=0;j--){const b=g.boats[j];let rm=!g.nations[b.a].alive||b.sunk;
     if(!rm){b.p+=b.spd;if(b.p>=b.path.length-1){landing(g,b);rm=true;}}
     if(rm){g.boats[j]=g.boats[g.boats.length-1];g.boats.pop();}}
@@ -310,17 +310,24 @@ function launchTrade(g,s){
   for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
   if(!c.length)return;const d=c[(g.rng()*c.length)|0],rt=s.rt||(s.rt={});let path=rt[d.i];
   if(path===undefined)path=rt[d.i]=portPath(g,s,d,true)||portPath(g,s,d,false);if(!path||path.length<4)return;
-  g.trades.push({a:s.owner,from:s,to:d,path,p:0,dir:1,spd:.45*(FAC[A.fac].boat||1)});
+  g.trades.push({a:s.owner,lv:s.level,from:s,to:d,path,p:0,dir:1,spd:.45*(FAC[A.fac].boat||1)});
 }
 function tickTrades(g){
   for(let j=g.trades.length-1;j>=0;j--){const b=g.trades[j],A=g.nations[b.a];let rm=!A.alive||b.from.dead||b.from.owner!==b.a;
     if(!rm){b.p+=b.spd*b.dir;
       if(b.dir>0&&b.p>=b.path.length-1){b.p=b.path.length-1;b.dir=-1;if(b.to.dead||!b.to.owner)rm=true;else g.nations[b.to.owner].gold+=b.path.length*.6;}
-      else if(b.dir<0&&b.p<=0){const amt=Math.round((60+b.path.length*2.2)*(1+.25*(A.era-1))*(FAC[A.fac].port||1));A.gold+=amt;emit(g,'trade',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
+      else if(b.dir<0&&b.p<=0){const amt=Math.round((60+b.path.length*2.2)*(1+.25*(A.era-1))*(FAC[A.fac].port||1)*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'trade',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trades[j]=g.trades[g.trades.length-1];g.trades.pop();}}
 }
 // nearest enemy shore reachable by sea from our own coast (used when the tapped spot has no usable beach)
 // nearest shore tile of realm o within R of a tapped spot (land or sea), facing open water
+// ── building upgrades: every building can be raised to level 5 ──
+const UP_MULT=[0,0,1,1.6,2.6,4],SH_P={rocket:[0,.7,.8,.9,.95,1],nuke:[0,.25,.4,.6,.8,.95],doom:[0,0,0,.15,.4,.75]};
+const SH_R=lv=>SHIELD_R+2*(lv-1),SH_CD=lv=>60-8*(lv-1);
+function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type].cost)*UP_MULT[s.level+1]/10)*10;}
+function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
+function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}
+function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
 function shoreNear(g,i,o,R){
   const W=g.W,x0=i%W,y0=(i/W)|0;let b=-1,bd=1e9;
   for(let y=Math.max(0,y0-R);y<=Math.min(g.H-1,y0+R);y++)for(let x=Math.max(0,x0-R);x<=Math.min(W-1,x0+R);x++){
@@ -349,14 +356,14 @@ function launchMissile(g,a,type,ti){
   const tx=ti%g.W,ty=(ti/g.W)|0;let silo=null,bd=1e9;
   for(const s of g.structs)if(!s.dead&&s.owner===a&&s.type==='silo'&&!s.build&&s.cd<=now){const d=hyp(s.x-tx,s.y-ty);if(d<bd){bd=d;silo=s;}}
   if(!silo)return A.cnt.silo?'cd':'nosilo';
-  A.gold-=cost;silo.cd=now+m.cd;if(type==='nuke')A.st.nukes++;
+  A.gold-=cost;silo.cd=now+Math.round(m.cd*(1-.15*(silo.level-1)));if(type==='nuke')A.st.nukes++;
   g.missiles.push({a,type,sx:silo.x,sy:silo.y,tx,ty,t:0,dur:clamp(bd*.55,22,80)});emit(g,'launch',{a,type,x:tx,y:ty,d:o});return 0;
 }
 function tickMissiles(g){
   for(let j=g.missiles.length-1;j>=0;j--){const m=g.missiles[j];m.t+=1/m.dur;if(m.t<1)continue;g.missiles.splice(j,1);
     let hit=true;
-    for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SHIELD_R*SHIELD_R){
-      s.cd=g.tick+60;if(g.rng()<(m.type==='doom'?.35:m.type==='nuke'?.5:.8)){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
+    for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
+      s.cd=g.tick+SH_CD(s.level);if(g.rng()<SH_P[m.type][s.level]){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
     if(hit){const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 // missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;
@@ -459,9 +466,10 @@ function structPass(g){
   const ns=g.nations;let ports=0;for(const n of ns)if(n){n._pop=0;n._inc=0;}
   for(const s of g.structs)if(!s.dead&&s.type==='port')ports++;
   for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;}
+    if(s.upAt&&s.upAt<=g.tick){s.upAt=0;s.level=Math.min(5,s.level+1);n.defDirty=true;emit(g,'upDone',{a:n.id,s});}
     if(s.type==='city'){const rn=s.ruin>g.tick;n._pop+=4000*s.level*(s.capital?1.5:1)*(rn?.3:1);if(!rn)n._inc+=1+s.level;
-      if(!rn&&s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}
-    else if(s.type==='port'){n._inc+=2*(FAC[n.fac].port||1);if(g.tick>=(s.tcd||0)){s.tcd=g.tick+250+((g.rng()*120)|0);launchTrade(g,s);}}}
+      if(!rn&&!s.upAt&&s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}
+    else if(s.type==='port'){n._inc+=2*s.level*(FAC[n.fac].port||1);if(g.tick>=(s.tcd||0)){s.tcd=g.tick+Math.max(120,250-30*(s.level-1))+((g.rng()*120)|0);launchTrade(g,s);}}}
   for(const n of ns)if(n&&n.alive){const f=FAC[n.fac];
     n.maxT=6000+n.val*120*(1+.12*(n.era-1))+n._pop;if(n.minor)n.maxT*=.5;
     n.income=(3+n.val*.003+n._inc)*(f.gold||1)*g.sGold*(1+.1*(n.era-1))*(n.human?1:g.diff.gold);
