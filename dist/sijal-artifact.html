@@ -349,7 +349,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='1c4edc582e';
+const BUILD_ID='1e2cdb61c8';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -817,6 +817,19 @@ function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type
 function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
 function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}
 function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
+// is the target reached sooner by sea? walks the land from the target to our realm (breadth-first) and compares that
+// with the straight gap from our nearest tile, which must be mostly water
+function seaIsShorter(g,a,o,i){
+  const W=g.W,H=g.H,N=g.N,own=g.owner,ter=g.M.ter,tx=i%W,ty=(i/W)|0;let dOwn=1e9,ox=0,oy=0;
+  for(let j=0;j<N;j++){if(own[j]!==a)continue;const x=j%W,y=(j/W)|0,d=(x-tx)**2+(y-ty)**2;if(d<dOwn){dOwn=d;ox=x;oy=y;}}
+  dOwn=Math.sqrt(dOwn);if(dOwn<4)return false;
+  let w=0,n=0;const steps=Math.max(4,Math.ceil(dOwn));for(let k=1;k<steps;k++){const x=Math.round(ox+(tx-ox)*k/steps),y=Math.round(oy+(ty-oy)*k/steps);n++;if(ter[y*W+x]<2)w++;}
+  if(w/n<=.35)return false;
+  const lim=dOwn*1.7+10,dist=g.bfs||(g.bfs=new Int32Array(N)),q=g.q;dist.fill(-1);let qh=0,qt=0;dist[i]=0;q[qt++]=i;
+  while(qh<qt){const c=q[qh++],dc=dist[c];if(own[c]===a)return false;if(dc>=lim)continue;const x=c%W;
+    for(const nb of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(nb>=0&&dist[nb]<0&&ter[nb]>1){dist[nb]=dc+1;q[qt++]=nb;}}
+  return true;
+}
 function shoreNear(g,i,o,R){
   const W=g.W,x0=i%W,y0=(i/W)|0;let b=-1,bd=1e9;
   for(let y=Math.max(0,y0-R);y<=Math.min(g.H-1,y0+R);y++)for(let x=Math.max(0,x0-R);x<=Math.min(W-1,x0+R);x++){
@@ -1651,6 +1664,8 @@ function applyCmd(pid,c){
       if(o&&canAnnex(g,pid,o)){const T=g.nations[o],nm=nmh(T),pn=natName(T);annex(g,pid,o);if(mine){feed(t('m_annex',nm),'good');sfx('city');banner(t('m_annex',pn));}return;}
       // the tapped spot is on a landmass we do not stand on: go by sea, landing on that landmass
       const lid=g.M.lid[i];let onIt=false;for(let j=0;j<g.N;j++)if(g.owner[j]===pid&&g.M.lid[j]===lid){onIt=true;break;}
+      // same landmass, but the land front is far away and the gap in front of us is sea: sail instead
+      if(onIt&&seaIsShorter(g,pid,o,i)){const cc=shoreNear(g,i,o,10);if(cc>=0){r=launchBoat(g,pid,cc,ratio);if(typeof r==='object'||r!=='nopath'){if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}}}
       if(!onIt){let cc=g.M.coastD[i]===1&&portOk(g,i)?i:nearCoast(g,i,25);if(cc<0)cc=seaLanding(g,pid,o,lid);r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';
         if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}
       const before=n.troops;let boat=false;r=c.m==='all'?launchAttack(g,pid,o,ratio,-1,-1):launchAttack(g,pid,o,ratio,tx,ty,true);
@@ -2399,7 +2414,7 @@ function boot(){
   bindInput();renderMenu();show('menu');startDemo();requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
-  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};
+  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
 boot();
 

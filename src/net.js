@@ -25,6 +25,8 @@ function applyCmd(pid,c){
       if(o&&canAnnex(g,pid,o)){const T=g.nations[o],nm=nmh(T),pn=natName(T);annex(g,pid,o);if(mine){feed(t('m_annex',nm),'good');sfx('city');banner(t('m_annex',pn));}return;}
       // the tapped spot is on a landmass we do not stand on: go by sea, landing on that landmass
       const lid=g.M.lid[i];let onIt=false;for(let j=0;j<g.N;j++)if(g.owner[j]===pid&&g.M.lid[j]===lid){onIt=true;break;}
+      // same landmass, but the land front is far away and the gap in front of us is sea: sail instead
+      if(onIt&&seaIsShorter(g,pid,o,i)){const cc=shoreNear(g,i,o,10);if(cc>=0){r=launchBoat(g,pid,cc,ratio);if(typeof r==='object'||r!=='nopath'){if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}}}
       if(!onIt){let cc=g.M.coastD[i]===1&&portOk(g,i)?i:nearCoast(g,i,25);if(cc<0)cc=seaLanding(g,pid,o,lid);r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';
         if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}
       const before=n.troops;let boat=false;r=c.m==='all'?launchAttack(g,pid,o,ratio,-1,-1):launchAttack(g,pid,o,ratio,tx,ty,true);

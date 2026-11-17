@@ -328,6 +328,19 @@ function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type
 function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
 function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}
 function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
+// is the target reached sooner by sea? walks the land from the target to our realm (breadth-first) and compares that
+// with the straight gap from our nearest tile, which must be mostly water
+function seaIsShorter(g,a,o,i){
+  const W=g.W,H=g.H,N=g.N,own=g.owner,ter=g.M.ter,tx=i%W,ty=(i/W)|0;let dOwn=1e9,ox=0,oy=0;
+  for(let j=0;j<N;j++){if(own[j]!==a)continue;const x=j%W,y=(j/W)|0,d=(x-tx)**2+(y-ty)**2;if(d<dOwn){dOwn=d;ox=x;oy=y;}}
+  dOwn=Math.sqrt(dOwn);if(dOwn<4)return false;
+  let w=0,n=0;const steps=Math.max(4,Math.ceil(dOwn));for(let k=1;k<steps;k++){const x=Math.round(ox+(tx-ox)*k/steps),y=Math.round(oy+(ty-oy)*k/steps);n++;if(ter[y*W+x]<2)w++;}
+  if(w/n<=.35)return false;
+  const lim=dOwn*1.7+10,dist=g.bfs||(g.bfs=new Int32Array(N)),q=g.q;dist.fill(-1);let qh=0,qt=0;dist[i]=0;q[qt++]=i;
+  while(qh<qt){const c=q[qh++],dc=dist[c];if(own[c]===a)return false;if(dc>=lim)continue;const x=c%W;
+    for(const nb of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(nb>=0&&dist[nb]<0&&ter[nb]>1){dist[nb]=dc+1;q[qt++]=nb;}}
+  return true;
+}
 function shoreNear(g,i,o,R){
   const W=g.W,x0=i%W,y0=(i/W)|0;let b=-1,bd=1e9;
   for(let y=Math.max(0,y0-R);y<=Math.min(g.H-1,y0+R);y++)for(let x=Math.max(0,x0-R);x<=Math.min(W-1,x0+R);x++){
