@@ -430,6 +430,10 @@ function gift(g,a,b,amt){
   const A=g.nations[a],B=g.nations[b];amt=Math.floor(Math.min(amt,A.gold));if(amt<10)return false;A.gold-=amt;B.gold+=amt;
   B.att[a]=Math.min(100,B.att[a]+Math.min(40,amt/(B.income*2+20)*10));emit(g,'gift',{a,b,amt});return true;
 }
+function sendAid(g,a,b,amt){
+  const A=g.nations[a],B=g.nations[b];if(!A||!B||!A.alive||!B.alive||!A.ally[b])return'no';amt=Math.floor(Math.min(amt,A.troops-100));if(amt<100)return'few';
+  A.troops-=amt;B.troops+=amt;B.att[a]=Math.min(100,B.att[a]+Math.min(45,amt/(B.troops+2000)*80));emit(g,'aid',{a,b,amt});return 0;
+}
 function callArms(g,a,target){
   let any=false;for(const m of g.nations)if(m&&m.alive&&!m.human&&m.ally[a]&&!m.ally[target]&&m.id!==target){
     m.ai.focus=target;m.ai.focusUntil=g.tick+900;m.ai.nextWar=Math.min(m.ai.nextWar,g.tick+20);m.att[target]=Math.max(-100,m.att[target]-30);any=true;emit(g,'say',{a:m.id,key:'arms',to:a});}

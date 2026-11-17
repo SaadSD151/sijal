@@ -159,9 +159,25 @@ function sendSuggest(){
   const body=new URLSearchParams({'form-name':'suggestions',name:p.name||t('defName'),rank:t('ranks')[rankOf(p)]+' ('+p.wins+')',message:msg,'bot-field':''}).toString();loading(true);
   fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body}).then(r=>{loading(false);if(r.ok)renderSuggest(true);else err('sgFail');}).catch(()=>{loading(false);err('sgFail');});
 }
+// the attack-type picker can be dragged anywhere while it is collapsed; its spot is remembered
+function placeAmode(){
+  const e=$('#amode'),h=$('#hud'),P=UI.prof.amPos;if(!e||!h)return;if(!P){e.removeAttribute('style');return;}if(!h.clientWidth||!e.offsetWidth)return setTimeout(placeAmode,60);
+  const W=h.clientWidth,H=h.clientHeight,w=e.offsetWidth,ht=e.offsetHeight;
+  Object.assign(e.style,{left:clamp(P.x*W,8,Math.max(8,W-w-8))+'px',top:clamp(P.y*H,8,Math.max(8,H-ht-8))+'px',right:'auto',bottom:'auto',transform:'none'});
+}
+function bindAmode(e){
+  if(e.dataset.bound)return;e.dataset.bound=1;let st=null;
+  const move=ev=>{if(!st||ev.pointerId!==st.id)return;const dx=ev.clientX-st.x,dy=ev.clientY-st.y;if(!st.moved&&Math.hypot(dx,dy)<6)return;st.moved=true;
+    const h=$('#hud');UI.prof.amPos={x:(st.ox+dx)/h.clientWidth,y:(st.oy+dy)/h.clientHeight};placeAmode();ev.preventDefault();};
+  const end=ev=>{if(!st||ev.pointerId!==st.id)return;if(st.moved){UI.amDrag=true;setTimeout(()=>{UI.amDrag=false;},350);saveProf();}st=null;
+    removeEventListener('pointermove',move);removeEventListener('pointerup',end);removeEventListener('pointercancel',end);};
+  e.addEventListener('pointerdown',ev=>{if(!UI.prof.amHide)return;const r=e.getBoundingClientRect(),h=$('#hud').getBoundingClientRect();st={x:ev.clientX,y:ev.clientY,ox:r.left-h.left,oy:r.top-h.top,moved:false,id:ev.pointerId};
+    addEventListener('pointermove',move,{passive:false});addEventListener('pointerup',end);addEventListener('pointercancel',end);});
+}
 function renderAmode(){
-  const e=$('#amode'),p=UI.prof,m=p.amode||'pt';if(!e)return;
+  const e=$('#amode'),p=UI.prof,m=p.amode||'pt';if(!e)return;bindAmode(e);e.classList.toggle('mini',!!p.amHide);
   e.innerHTML=`<button class="amh" data-a="amT" aria-expanded="${!p.amHide}">${t('amode')} ${p.amHide?'▸':'▾'}</button>`+(p.amHide?'':`<button class="chip${m==='pt'?' on':''}" data-a="am:pt">${t('am_pt')}</button><button class="chip${m==='all'?' on':''}" data-a="am:all">${t('am_all')}</button>`);
+  placeAmode();
 }
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
@@ -298,18 +314,30 @@ function openCard(id,tile){UI.cardTile=tile==null?-1:tile;
   const g=G,n=g.nations[id];if(!n||!n.alive||id===g.human||UI.phase!=='play')return;UI.sel=id;UI.cardKey='';UI.cardGift=Math.max(50,Math.round(g.nations[g.human].gold*.25/10)*10);
   const c=$('#card');c.hidden=false;
   c.innerHTML=`<div class="ch"><i style="background:${n.css}"></i><div><b>${esc(natName(n))}</b><small>${leader(n)} · ${t('f_'+n.fac)} · ${t('p_'+n.pers)}</small></div><button class="ib" data-a="closeCard" aria-label="close">✕</button></div>
-  <div class="cs"><div><small>${t('troops')}</small><b id="cT"></b></div><div><small>${t('land')}</small><b id="cL"></b></div><div><small>${t('cities')}</small><b id="cC"></b></div><div><small>${t('mood')}</small><b id="cM"></b></div></div><div id="cS"></div><div class="cb" id="cB"></div>`;
+  <div class="cs ci"><div title="${t('troops')}"><img src="${R.url.sword}" alt="${t('troops')}"><b id="cT"></b></div><div title="${t('land')}"><img src="${R.url.flag}" alt="${t('land')}"><b id="cL"></b></div><div title="${t('cities')}"><img src="${R.url.city}" alt="${t('cities')}"><b id="cC"></b></div><div title="${t('mood')}"><i id="cMd"></i><b id="cM"></b></div></div><div id="cS"></div><div class="cg" id="cB"></div><div id="cAmt"></div>`;UI.cardAmt=null;
   cardRefresh();
 }
+// amount picker under the realm card: gold to gift or troops to send
+function amtOpen(kind,id){
+  const g=G,me=g.nations[g.human],max=Math.floor(kind==='gift'?me.gold:me.troops-100);if(max<(kind==='gift'?10:100))return err(kind==='gift'?'gold':'few');
+  UI.cardAmt={kind,id,max,v:Math.max(1,Math.round(max*.25))};const e=$('#cAmt');
+  e.innerHTML=`<div class="amt"><img src="${R.url[kind==='gift'?'coin':'sword']}" alt=""><input type="range" id="amtR" min="1" max="${max}" step="1" value="${UI.cardAmt.v}" aria-label="${t(kind==='gift'?'c_gift':'c_aid')}"><b id="amtV">${fmt(UI.cardAmt.v)}</b></div>
+  <div class="amq">${[10,25,50,100].map(p=>`<button class="chip" data-a="amtP:${p}">${p}%</button>`).join('')}</div>
+  <div class="row"><button class="btn sm" data-a="amtX">${t('cancel')}</button><button class="btn sm ok" data-a="amtSend">${t('c_send')} <span id="amtS">${fmt(UI.cardAmt.v)}</span></button></div>`;
+}
+function amtSet(v){const A=UI.cardAmt;if(!A)return;A.v=clamp(Math.round(v),1,A.max);const r=$('#amtR');if(r)r.value=A.v;$('#amtV').textContent=fmt(A.v);$('#amtS').textContent=fmt(A.v);}
 function closeCard(){const c=$('#card');if(c)c.hidden=true;UI.sel=0;}
 function cardRefresh(){
   const g=G,id=UI.sel,c=$('#card');if(!id||!c||c.hidden)return;const n=g.nations[id],me=g.nations[g.human];if(!n.alive||!me.alive)return closeCard();
   $('#cT').textContent=fmt(n.troops);$('#cL').textContent=(n.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=n.cnt.city;
-  const a=n.att[me.id],mi=a<-40?0:a<-10?1:a<10?2:a<40?3:4,M=$('#cM');M.textContent=t('moods')[mi];M.className='m'+mi;
+  const a=n.att[me.id],mi=a<-40?0:a<-10?1:a<10?2:a<40?3:4,M=$('#cM');M.textContent=t('moods')[mi];M.className='m'+mi;$('#cMd').className='md m'+mi;
   const ally=me.ally[id],war=g.tick-me.lastHit[id]<300||g.tick-n.lastHit[me.id]<300,key=ally+'|'+war,S=$('#cS');
   S.textContent=t(ally?'st_ally':war?'st_war':'st_peace')+(ally?' · '+t('allyLeft',clock(Math.max(0,me.allyUntil[id]-g.tick))):'');S.className=ally?'good':war?'bad':'';
   if(key===UI.cardKey)return;UI.cardKey=key;let any=false;for(const m of g.nations)if(m&&m.alive&&me.ally[m.id]&&m.id!==id)any=true;
-  $('#cB').innerHTML=(ally?'':`<button class="btn sm go" data-a="atk:${id}">${t(canAnnex(g,me.id,id)?'b_annexS':'b_atk')}</button><button class="btn sm" data-a="sea:${id}">${t('b_sea')}</button>`)+(ally?`<button class="btn sm" data-a="break:${id}">${t('b_break')}</button>`:`<button class="btn sm" data-a="ally:${id}">${t('b_ally')}</button>`)+`<button class="btn sm" data-a="gift:${id}">${t('b_gift',UI.cardGift)}</button>`+(!ally&&any?`<button class="btn sm" data-a="arms:${id}">${t('b_arms')}</button>`:'')+`<button class="btn sm" data-a="find:${id}">${t('b_find')}</button>`;
+  const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
+  $('#cB').innerHTML=(ally?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'port',t('c_sea'),t('b_sea')))
+    +(ally?B('break:'+id,'ally',t('c_break'),t('b_break'),'warn')+B('aidOpen:'+id,'sword',t('c_aid'),t('b_aid'),'ok'):B('ally:'+id,'ally',t('c_ally'),t('b_ally')))
+    +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('find:'+id,'eye',t('c_find'),t('b_find'));
 }
 
 // ── player actions ──
@@ -354,7 +382,9 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
-    case'am':p.amode=v;renderAmode();break;case'amT':p.amHide=!p.amHide;renderAmode();break;
+    case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
+    case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
+    case'am':p.amode=v;renderAmode();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;
     case'renew':{send({k:'renew',d:+v,y:+w});for(const d of document.querySelectorAll('.ts[data-ally="'+(+v)+'"]'))d.remove();if(+w)feed(t('m_renewSent',nmh(g.nations[+v])),'good');break;}
     case'sea':{const ti=UI.cardTile;closeCard();send({k:'sea',d:+v,i:ti,r:UI.ratio});break;}
     case'goatk':{const q=g.attacks.find(q=>q.id===+v),D=q&&q.d?g.nations[q.d]:null;if(D)lookAt(D.cx,D.cy,Math.max(cam.tz,4));else if(q)lookAt(q.ox,q.oy,Math.max(cam.tz,4));break;}
@@ -393,6 +423,7 @@ function handleEvents(){
       case'betray':if(e.a===me||e.b===me){feed(t('m_betray',nmh(N[e.a]),nmh(N[e.b])),'bad');if(e.b===me)sfx('alert');UI.cardKey='';}break;
       case'cityHit':addFx('ring',e.s.x,e.s.y,{r:4,col:'#b9b0a6',dur:900});if(e.d===me)feed(t('m_cityRuinYou',cn),'bad');else if(e.a===me)feed(t('m_cityRuin',cn),'good');break;
       case'cityGone':addFx('ring',e.s.x,e.s.y,{r:8,col:'#ff9a5a',dur:1500});if(e.d===me){feed(t('m_cityGoneYou',cn),'bad');banner(t('m_cityGoneYou',cn),'bad');}else if(e.a===me)feed(t('m_cityGone',cn),'good');break;
+      case'aid':if(e.a===me){feed(t('m_aidSent',fmt(e.amt),nmh(N[e.b])),'good');sayLine(N[e.b],'thanks');}else if(e.b===me)feed(t('m_aidGot',nmh(A),fmt(e.amt)),'good');break;
       case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
       case'dead':if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
       case'proposal':{if(e.b!==me)break;const d=toast(`<span>${t('m_prop',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button><button class="btn sm" data-a="find:${A.id}">${t('b_focus')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
@@ -464,7 +495,7 @@ function bindInput(){
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
-  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
     if(!G||G.o.demo)return;
@@ -492,7 +523,7 @@ function boot(){
   cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();
   {const c=mk(64,64),x=c.getContext('2d');x.translate(32,32);x.rotate(.8);x.drawImage(R.glyph.silo,-32,-32);R.glyph.rocket=c;R.url.rocket=c.toDataURL();}
   {const c=mk(64,64),x=c.getContext('2d');x.drawImage(R.glyph.nuke,8,8,48,48);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(32,32,29,0,7);x.stroke();R.glyph.doom=c;R.url.doom=c.toDataURL();}
-  resize();addEventListener('resize',()=>{applyMode();resize();});
+  resize();addEventListener('resize',()=>{applyMode();resize();placeAmode();});
   if(window.ResizeObserver)new ResizeObserver(resize).observe(cv);
   bindInput();renderMenu();show('menu');startDemo();requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}

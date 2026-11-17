@@ -109,6 +109,10 @@ function makeGlyphs(){
   d('nuke',x=>{for(let i=0;i<3;i++){const a=-Math.PI/2+i*2.094;x.beginPath();x.moveTo(32,32);x.arc(32,32,26,a-.52,a+.52);x.closePath();x.fill();}x.globalCompositeOperation='destination-out';x.beginPath();x.arc(32,32,9,0,7);x.fill();x.globalCompositeOperation='source-over';x.beginPath();x.arc(32,32,5,0,7);x.fill();});
   d('coast',x=>{x.beginPath();x.arc(26,40,14,0,7);x.fill();x.lineWidth=9;x.beginPath();x.moveTo(30,34);x.lineTo(55,13);x.stroke();x.fillRect(8,53,40,6);});
   d('ruin',x=>{x.fillRect(8,40,12,16);x.beginPath();x.moveTo(22,56);x.lineTo(22,24);x.lineTo(27,30);x.lineTo(31,18);x.lineTo(36,27);x.lineTo(36,56);x.fill();x.fillRect(40,46,15,10);x.beginPath();x.moveTo(40,46);x.lineTo(46,38);x.lineTo(50,44);x.lineTo(55,40);x.lineTo(55,46);x.fill();x.fillRect(4,56,56,4);});
+  d('ally',x=>{x.lineWidth=7;x.beginPath();x.arc(23,32,14,0,7);x.stroke();x.beginPath();x.arc(41,32,14,0,7);x.stroke();});
+  d('coin',x=>{x.beginPath();x.arc(32,32,24,0,7);x.fill();x.globalCompositeOperation='destination-out';x.lineWidth=4;x.beginPath();x.arc(32,32,16,0,7);x.stroke();x.fillRect(29,20,6,24);x.globalCompositeOperation='source-over';});
+  d('eye',x=>{x.beginPath();x.moveTo(4,32);x.quadraticCurveTo(32,4,60,32);x.quadraticCurveTo(32,60,4,32);x.fill();x.globalCompositeOperation='destination-out';x.beginPath();x.arc(32,32,11,0,7);x.fill();x.globalCompositeOperation='source-over';x.beginPath();x.arc(32,32,6,0,7);x.fill();});
+  d('flag',x=>{x.fillRect(12,8,6,50);x.beginPath();x.moveTo(18,10);x.lineTo(54,20);x.lineTo(18,32);x.fill();});
   d('bolt',x=>poly(x,[[37,5],[15,36],[29,36],[25,59],[49,26],[35,26]]));
   d('sword',x=>{x.lineWidth=6;x.beginPath();x.moveTo(12,52);x.lineTo(48,10);x.moveTo(52,52);x.lineTo(16,10);x.stroke();x.lineWidth=5;x.beginPath();x.moveTo(10,38);x.lineTo(24,52);x.moveTo(54,38);x.lineTo(40,52);x.stroke();});
   d('crown',x=>poly(x,[[8,50],[6,18],[20,32],[32,10],[44,32],[58,18],[56,50]]));
