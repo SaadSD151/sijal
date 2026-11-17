@@ -8,7 +8,7 @@ const {chromium,devices}=require('playwright');const path=require('path');
       const me=g.nations[g.human];me.gold=5e4;me.era=3;const c=me.cap;let ci=-1;for(let r=8;r<16&&ci<0;r++)for(const[dx,dy]of[[1,0],[0,1],[-1,0],[0,-1]]){const i=(c.y+dy*r)*W+c.x+dx*r;if(ci<0&&!S.cb(g,me,'city',i))ci=i;}
       if(ci>=0){S.fn.build(g,me,'city',ci);g.structs[g.structAt[ci]-1].build=0;}
       let fi=-1,bd=1e9;for(let i=0;i<g.N;i++)if(g.owner[i]===me.id&&!S.cb(g,me,'factory',i)){const d=Math.abs(((i%W)-c.x)**2+(((i/W)|0)-c.y)**2-30);if(d<bd){bd=d;fi=i;}}
-      S.UI.mode='b:factory';S.UI.hover=fi;S.cam.tx=S.cam.x=c.x;S.cam.ty=S.cam.y=c.y;S.cam.tz=S.cam.z=5;window.__fi=fi;return{fi,ci,bar:!!document.querySelector('[data-b="factory"],[data-k="factory"]')};});
+      S.UI.mode='b:factory';S.UI.hover=fi;S.cam.tx=S.cam.x=c.x;S.cam.ty=S.cam.y=c.y;S.cam.tz=S.cam.z=3;window.__fi=fi;return{fi,ci,bar:!!document.querySelector('[data-b="factory"],[data-k="factory"]')};});
     await p.waitForTimeout(500);await p.screenshot({path:process.argv[2]+'/rail-prev-'+name+'.png'});
     const o=await p.evaluate(()=>{const S=__sijal,g=S.G,me=g.nations[g.human];S.UI.mode=null;S.UI.hover=-1;S.fn.build(g,me,'factory',window.__fi);const f=g.structs[g.structAt[window.__fi]-1];if(!f)return{err:'nobuild',fi:window.__fi,cb:S.cb(g,me,'factory',window.__fi)};S.run(160);
       for(const n of g.nations)if(n&&n.alive)n.gold=0;f.tcd=0;S.run(300);return{rails:g.rails.filter(r=>r.f===f).length,trains:g.trains.length,txt:document.body.innerText.includes('مصنع')};});

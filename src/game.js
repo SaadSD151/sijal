@@ -320,11 +320,16 @@ function railPlan(g,owner,i){
   c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);const out=[];for(const[,s]of c.slice(0,4)){const p=landPath(g,i,s.i,70);if(p)out.push(p);}return out;
 }
 function railBuild(g,f){g.rails=g.rails.filter(r=>r.f!==f||r.trade);for(const p of railPlan(g,f.owner,f.i))g.rails.push({f,a:f.owner,path:p});}
+// the up-to-3 nearest cities of neighbours at peace that trains from (x,y) can reach
+function trainTargets(g,owner,x,y){
+  const A=g.nations[owner],now=g.tick,c=[];
+  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[owner]<=300)continue;
+    const d=(s.x-x)**2+(s.y-y)**2;if(d<=4900)c.push([d,s]);}
+  c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);return c.slice(0,3).map(e=>e[1]);
+}
 function launchTrain(g,f){
-  const A=g.nations[f.owner],now=g.tick,c=[];
-  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===f.owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[f.owner]<=300)continue;
-    const d=(s.x-f.x)**2+(s.y-f.y)**2;if(d<=4900)c.push([d,s]);}
-  if(!c.length)return;c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);const pick=c[(g.rng()*Math.min(3,c.length))|0][1],rt=f.rt2||(f.rt2={});
+  const c=trainTargets(g,f.owner,f.x,f.y);
+  if(!c.length)return;const pick=c[(g.rng()*c.length)|0],rt=f.rt2||(f.rt2={});
   let path=rt[pick.i];if(path===undefined){path=rt[pick.i]=landPath(g,f.i,pick.i,110)||0;if(path)g.rails.push({f,a:f.owner,path,trade:1});}
   if(!path||path.length<4)return;g.trains.push({a:f.owner,lv:f.level,from:f,to:pick,toOwner:pick.owner,path,p:0,dir:1,spd:.6});
 }

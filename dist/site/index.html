@@ -372,7 +372,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='884d93a71e';
+const BUILD_ID='73bd4e59cd';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -832,11 +832,16 @@ function railPlan(g,owner,i){
   c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);const out=[];for(const[,s]of c.slice(0,4)){const p=landPath(g,i,s.i,70);if(p)out.push(p);}return out;
 }
 function railBuild(g,f){g.rails=g.rails.filter(r=>r.f!==f||r.trade);for(const p of railPlan(g,f.owner,f.i))g.rails.push({f,a:f.owner,path:p});}
+// the up-to-3 nearest cities of neighbours at peace that trains from (x,y) can reach
+function trainTargets(g,owner,x,y){
+  const A=g.nations[owner],now=g.tick,c=[];
+  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[owner]<=300)continue;
+    const d=(s.x-x)**2+(s.y-y)**2;if(d<=4900)c.push([d,s]);}
+  c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);return c.slice(0,3).map(e=>e[1]);
+}
 function launchTrain(g,f){
-  const A=g.nations[f.owner],now=g.tick,c=[];
-  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===f.owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[f.owner]<=300)continue;
-    const d=(s.x-f.x)**2+(s.y-f.y)**2;if(d<=4900)c.push([d,s]);}
-  if(!c.length)return;c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);const pick=c[(g.rng()*Math.min(3,c.length))|0][1],rt=f.rt2||(f.rt2={});
+  const c=trainTargets(g,f.owner,f.x,f.y);
+  if(!c.length)return;const pick=c[(g.rng()*c.length)|0],rt=f.rt2||(f.rt2={});
   let path=rt[pick.i];if(path===undefined){path=rt[pick.i]=landPath(g,f.i,pick.i,110)||0;if(path)g.rails.push({f,a:f.owner,path,trade:1});}
   if(!path||path.length<4)return;g.trains.push({a:f.owner,lv:f.level,from:f,to:pick,toOwner:pick.owner,path,p:0,dir:1,spd:.6});
 }
@@ -1511,7 +1516,9 @@ function draw(g,dt,ts){
   if(UI.mode&&(UI.pend>=0||UI.hover>=0)&&me){
     const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.pend>=0?UI.pend:UI.hover,rad=0,ok=true;
     if(m[0]==='b'){if(k==='port'||k==='coast')i=snapPort(g,H,i,UI.mob?6:4,k);rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:13}[k]||1.5;
-      if(k==='factory'){if(!UI.railPrev||UI.railPrev.i!==i)UI.railPrev={i,paths:railPlan(g,me,i)};c.setLineDash([7,6]);c.strokeStyle='rgba(255,233,168,.95)';c.lineWidth=3;for(const P of UI.railPrev.paths){c.beginPath();P.forEach((t,k)=>{const q=w2s(t%g.W+.5,((t/g.W)|0)+.5);k?c.lineTo(q.x,q.y):c.moveTo(q.x,q.y);});c.stroke();}c.setLineDash([]);}ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else if(m[0]==='s'){const sh=shoreNear(g,i,+k,10);ok=sh>=0;if(sh>=0)i=sh;rad=2.5;}else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
+      if(k==='factory'){if(!UI.railPrev||UI.railPrev.i!==i||g.tick-UI.railPrev.t>50){const tp=[];for(const s of trainTargets(g,me,i%g.W,(i/g.W)|0)){const p=landPath(g,i,s.i,110);if(p)tp.push(p);}UI.railPrev={i,t:g.tick,paths:railPlan(g,me,i),trade:tp};}
+        const dr=(L,col)=>{c.strokeStyle=col;for(const P of L){c.beginPath();P.forEach((t,k)=>{const q=w2s(t%g.W+.5,((t/g.W)|0)+.5);k?c.lineTo(q.x,q.y):c.moveTo(q.x,q.y);});c.stroke();}};
+        c.lineWidth=2.5;c.setLineDash([3,6]);dr(UI.railPrev.trade,'rgba(120,230,160,.9)');c.setLineDash([7,6]);dr(UI.railPrev.paths,'rgba(255,233,168,.95)');c.setLineDash([]);}ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else if(m[0]==='s'){const sh=shoreNear(g,i,+k,10);ok=sh>=0;if(sh>=0)i=sh;rad=2.5;}else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
     const p=w2s(i%g.W+.5,((i/g.W)|0)+.5);
     c.strokeStyle=ok?'rgba(120,240,160,.95)':'rgba(255,100,90,.95)';c.fillStyle=ok?'rgba(120,240,160,.14)':'rgba(255,100,90,.14)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,rad*z,0,7);c.fill();c.stroke();
     if(m[0]==='b'){const r=clamp(z*1.45,8,12)+2,q=r*1.45;c.globalAlpha=.6+.3*Math.sin(ts/160);c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=ok?H.css:'#a33';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.drawImage(R.glyph[k],p.x-q/2,p.y-q/2,q,q);c.globalAlpha=1;}
