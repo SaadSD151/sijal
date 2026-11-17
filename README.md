@@ -4,4 +4,4 @@
 
 - الموقع: https://saadsd151.github.io/sijal/
 - الكود في `src/`، والبناء بأمر `node build.js` اللي يطلّع الملفات الجاهزة في `dist/`.
-- النشر: `./publish.sh` يبني اللعبة ويرفعها على الفرع `gh-pages` اللي يعرضه GitHub Pages.
+- النشر: كل تحديث على الفرع `main` ينشر مجلد `dist/site` على GitHub Pages تلقائياً (`.github/workflows/pages.yml`). شغّل `node build.js` قبل الرفع.
