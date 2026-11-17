@@ -169,19 +169,34 @@ function draw(g,dt,ts){
     if(s.type==='silo'&&s.cd>g.tick&&s.owner===me){c.strokeStyle='#f2b441';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+3,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.cd-g.tick)/50));c.stroke();}
     if(s.build>g.tick){c.globalAlpha=1;c.strokeStyle='#ffe9a8';c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,r+3.5,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.build-g.tick)/100));c.stroke();if(s.owner===me){c.font=`700 11px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.9)';txt(c,Math.ceil((s.build-g.tick)/TPS)+'s',p.x,p.y-r-10,'#ffe9a8');}}
   }
-  // nation labels: drawn last and lifted clear of any building icon
-  for(const n of g.nations){
-    if(!n||!n.alive||!n.tiles)continue;const nm=natName(n),fs=Math.min(Math.sqrt(n.tiles)*z*.22,clamp((n.x1-n.x0+1)*z/(nm.length*.62+1),11,64));if(fs<9&&!n.human)continue;
+  // nation labels: your realm first, then the largest; each one avoids building icons and every label already placed
+  const LB=[],LO=g.nations.filter(n=>n&&n.alive&&n.tiles).sort((a,b)=>(b.id===me)-(a.id===me)||b.tiles-a.tiles),fmax=clamp(Math.min(cw,ch)*.085,22,56);
+  for(const n of LO){
+    const nm=natName(n);let fs=Math.min(Math.sqrt(n.tiles)*z*.22,clamp((n.x1-n.x0+1)*z/(nm.length*.62+1),11,fmax));if(fs<9&&n.id!==me)continue;
     // the label glides to the middle of the realm instead of jumping
     if(n.lx==null||Math.abs(n.lx-n.cx)>80||Math.abs(n.ly-n.cy)>80){n.lx=n.cx;n.ly=n.cy;}else{n.lx+=(n.cx-n.lx)*.06;n.ly+=(n.cy-n.ly)*.06;}
-    const f=Math.max(fs,11),p=w2s(n.lx+.5,n.ly+.5);let y=p.y-f*.6;if(p.x<-300||y<-100||p.x>cw+300||y>ch+100)continue;
-    c.font=`700 ${f}px ${FONT}`;const hw=c.measureText(nm).width/2+6;
-    const y0=y;for(const k of[0,-1.5,1.5]){const yy=y0+k*Math.min(f,24);let hit=false;for(let j=0;j<SP.length&&!hit;j+=3){const r=SP[j+2];hit=Math.abs(SP[j]-p.x)<hw+r&&SP[j+1]+r+18>yy-f*.7&&SP[j+1]-r<yy+f*1.6;}if(!hit){y=yy;break;}}
+    const p=w2s(n.lx+.5,n.ly+.5);if(p.x<-300||p.y<-100||p.x>cw+300||p.y>ch+100)continue;
+    let f=Math.max(fs,11),y=0,hw=0,ok=false;
+    for(let tries=0;tries<3&&!ok;tries++){
+      c.font=`700 ${f}px ${FONT}`;hw=c.measureText(nm).width/2+6;const st=Math.min(f,30)*1.1;
+      for(const k of[0,-1.4,1.4,-2.8,2.8]){
+        const yy=p.y-f*.6+k*st,top=yy-f*.75,bot=yy+f*1.65;
+        let hit=false;for(const L of LB)if(Math.abs(L.x-p.x)<L.hw+hw&&top<L.b&&bot>L.t){hit=true;break;}
+        if(hit)continue;
+        let ic=false;for(let j=0;j<SP.length&&!ic;j+=3){const r=SP[j+2];ic=Math.abs(SP[j]-p.x)<hw+r&&SP[j+1]+r+18>top&&SP[j+1]-r<bot;}
+        if(!ic||k===0&&tries===2){y=yy;ok=true;break;}
+        if(!ok&&y===0)y=yy;
+      }
+      if(!ok){let free=true;for(const L of LB)if(Math.abs(L.x-p.x)<L.hw+hw&&y-f*.75<L.b&&y+f*1.65>L.t){free=false;break;}if(free&&y!==0)ok=true;else{f*=.72;y=0;if(f<10&&n.id!==me)break;}}
+    }
+    if(!ok){if(n.id!==me)continue;c.font=`700 ${f}px ${FONT}`;y=p.y-f*.6;}
+    LB.push({x:p.x,hw,t:y-f*.75,b:y+f*1.65,id:n.id});
     const H=me?g.nations[me]:null,rel=H&&n.id!==me?(H.ally[n.id]?'#a6f0be':(g.tick-H.lastHit[n.id]<300||g.tick-n.lastHit[me]<300)?'#ffb3a8':'#f4e3b0'):'#f4e3b0';
     c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';txt(c,nm,p.x,y,'#fff');
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
   }
+  R.lb=LB;
   // missiles and pending strikes
   for(const m of g.missiles){
     for(let k=0;k<11;k++){const t0=m.t-k*.016,t1=t0-.016;if(t1<0)break;const a=mslPos(m,t0),b=mslPos(m,t1);
