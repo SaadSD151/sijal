@@ -207,8 +207,8 @@ function draw(g,dt,ts){
     else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand
-  if(UI.mode&&UI.hover>=0&&me){
-    const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.hover,rad=0,ok=true;
+  if(UI.mode&&(UI.pend>=0||UI.hover>=0)&&me){
+    const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.pend>=0?UI.pend:UI.hover,rad=0,ok=true;
     if(m[0]==='b'){if(k==='port'||k==='coast')i=snapPort(g,H,i,UI.mob?6:4,k);rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:13}[k]||1.5;ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
     const p=w2s(i%g.W+.5,((i/g.W)|0)+.5);
     c.strokeStyle=ok?'rgba(120,240,160,.95)':'rgba(255,100,90,.95)';c.fillStyle=ok?'rgba(120,240,160,.14)':'rgba(255,100,90,.14)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,rad*z,0,7);c.fill();c.stroke();

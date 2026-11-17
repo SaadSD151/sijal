@@ -959,25 +959,27 @@ function aiThink(g,n){
   }
   const nbN=g.nb[id*K];
   // tribes are easy prey: raid a neighbouring one whenever the army allows
-  if(myAtk<3&&ratio>.4&&now>=(ai.nextRaid||0)){ai.nextRaid=now+60+rng()*90;let tb=null,tv=0;
+  if(myAtk<4&&ratio>.25&&now>=(ai.nextRaid||0)){ai.nextRaid=now+40+rng()*60;let tb=null,tv=0;
     for(const m of g.nations)if(m&&m.alive&&m.minor&&g.nb[id*K+m.id]>1){const v=n.troops/(m.troops+1)+rng();if(v>1.5&&v>tv){tv=v;tb=m;}}
     if(tb){const c=tb.cap;launchAttack(g,id,tb.id,.22,c?c.x:-1,c?c.y:-1);myAtk++;}}
   if(nbN>0&&!neut&&ratio>.3&&myAtk<MAX_ATK){
     const c=nearestCity(g,0,n.cx,n.cy),far=c?hyp(c.x-n.cx,c.y-n.cy):99;
     launchAttack(g,id,0,.3+.2*P.agg,far<50?c.x:-1,far<50?c.y:-1);
   }
-  if(myAtk<3&&now>=ai.nextWar&&ratio>(nbN>0?.66:.5)){
-    let best=null,bs=P.thr;const nd=n.troops/Math.max(n.tiles,1);
+  if(myAtk<3&&now>=ai.nextWar&&ratio>.3){
+    // a full army may pick any war; a thinner one still pounces on a much weaker AI neighbour
+    const full=ratio>(nbN>0?.66:.5);let best=null,bs=P.thr;const nd=n.troops/Math.max(n.tiles,1);
     for(const m of g.nations){
       if(!m||!m.alive||m.id===id||n.ally[m.id]||now<n.truce[m.id]||g.nb[id*K+m.id]<3||(m.human&&now<g.grace))continue;
+      const prey=!m.human&&m.troops<n.troops*.4&&m.tiles<n.tiles*.6;if(!full&&!prey)continue;
       const md=m.troops/Math.max(m.tiles,1);
-      const s=clamp(nd/(md+1),0,2.5)*.6*(.5+P.agg)-n.att[m.id]/50+(now-m.lastHitAny<100?.35:0)+(g.hegemon===m.id?.9:0)
+      const s=(prey?1.3:0)+clamp(nd/(md+1),0,2.5)*.6*(.5+P.agg)-n.att[m.id]/50+(now-m.lastHitAny<100?.35:0)+(g.hegemon===m.id?.9:0)
         +(ai.focus===m.id&&now<ai.focusUntil?1.5:0)+(m.human?g.diff.hate:0)+(m.mon?2:0)+(now<m.collapse?.6:0);
       if(s>bs){bs=s;best=m;}
     }
     if(best){
       const c=nearestCity(g,best.id,n.cx,n.cy);if(U==='blitz')useUlt(g,n);
-      const r=launchAttack(g,id,best.id,.35+.3*P.agg,c?c.x:-1,c?c.y:-1);
+      const r=launchAttack(g,id,best.id,full?.35+.3*P.agg:.45,c?c.x:-1,c?c.y:-1);
       ai.nextWar=now+110+rng()*220;ai.last=best.id;if(typeof r==='object'&&best.human&&now-(ai.saidWar||-999)>600){ai.saidWar=now;say(g,n,'war',best.id);}
     }else ai.nextWar=now+30;
   }
@@ -1282,8 +1284,8 @@ function draw(g,dt,ts){
     else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand
-  if(UI.mode&&UI.hover>=0&&me){
-    const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.hover,rad=0,ok=true;
+  if(UI.mode&&(UI.pend>=0||UI.hover>=0)&&me){
+    const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.pend>=0?UI.pend:UI.hover,rad=0,ok=true;
     if(m[0]==='b'){if(k==='port'||k==='coast')i=snapPort(g,H,i,UI.mob?6:4,k);rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:13}[k]||1.5;ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
     const p=w2s(i%g.W+.5,((i/g.W)|0)+.5);
     c.strokeStyle=ok?'rgba(120,240,160,.95)':'rgba(255,100,90,.95)';c.fillStyle=ok?'rgba(120,240,160,.14)':'rgba(255,100,90,.14)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,rad*z,0,7);c.fill();c.stroke();
@@ -1457,6 +1459,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your best time today is saved; try to beat it.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'2.1',d:'2026-11-17',ar:['الدول الكبيرة صارت تاكل الدول الصغيرة والقبائل اللي جنبها بشكل أسرع','لكل موسم نغمة خاصة تعلن وصوله','إصلاح: على الآيفون شكل المبنى ومداه صار يطلع قبل التأكيد'],en:['Big realms now swallow weaker neighbours and tribes much faster','Each season now has its own arrival tune','Fix: on iPhone the building and its range now show before you confirm']},
  {v:'2.0',d:'2026-11-17',ar:['رجّعنا الهجوم الموجّه: جيشك يتقدّم باتجاه المكان اللي تضغطه','زر «اقتراحاتكم»: اكتب اقتراحك ويوصل لصاحب اللعبة','«الإعدادات» صارت زر في القائمة الرئيسية وداخل اللعبة، وفيها اللغة والواجهة وشريط الموسيقى وشريط المؤثرات','خيار «اهجم عليه من البحر» في بطاقة الدولة','اضغط على هجومك في قائمة الهجمات ويوديك لمكان الدولة اللي تهاجمها','الجوال: شكل المبنى يطلع في مكانه قبل التأكيد، وإذا المكان ما يصلح تطلع الرسالة قبل زر التأكيد','صفحة «كل الرتب» في الحساب، ورتبة «قاهر الممالك» بدل «خالد الذكر»','الصاروخ والقنبلة الذرّية وقنبلة الفناء صارت أغلى','موسيقى الحرب والصفّارة ما عاد تشتغل مع القبائل','الجوال: تنبيه المواسم انتقل لفوق وما عاد يغطي القائمة','نغمة أهدى لذهب سفن التجارة','إصلاح: المدينة اللي تاخذ كل اللي حولها صارت تطيح لك'],en:['Directed attacks are back: your army drives toward the spot you tap','“Your suggestions” button: write an idea and it reaches the game\'s owner','Settings is now a button in the main menu and in-game, holding language, interface, a music slider and an effects slider','“Attack by sea” option on the realm card','Tap one of your attacks in the list to jump to the realm you are attacking','Mobile: the building appears in place before you confirm, and a bad spot is reported before the confirm button','“All ranks” page in Account; the top rank is now “Kingbreaker”','Rockets, atom bombs and the Doomsday bomb cost more','War music and the siren no longer play for tribes','Mobile: season notes moved to the top so they no longer cover the menu','A softer sound for trade-ship gold','Fix: a city whose whole surroundings you hold now falls to you']},
  {v:'1.9',d:'2026-11-17',ar:['شريط لصوت الموسيقى وشريط لصوت المؤثرات','موسيقتين للحرب: وحدة حماسية وأنت تهاجم، ووحدة ثقيلة ومخيفة وأنت تنهجم عليك','سفن التجارة صارت تبحر بعيد عن الساحل'],en:['Separate sliders for music and sound effects','Two war themes: a rousing one when you attack, a heavy menacing one when you are attacked','Trade ships now sail well off the coast']},
  {v:'1.8',d:'2026-11-17',ar:['سلاح جديد: «قنبلة الفناء»، أقوى من الذرّية بمرتين','مبنى جديد: «الدفاع البحري» يضرب سفن العدو من الساحل','موسيقى حرب جديدة تشتغل وقت القتال، وصفّارة إنذار وسهم يدلّك على اللي يهاجمك','حجم خريطة جديد: عملاقة','الفوز صار بالسيطرة على 99% من الأرض في كل أنواع اللعب','المعركة السريعة: تختار حجم الخريطة والصعوبة قبل الدخول','نظام رتب كامل على عدد الانتصارات (22 رتبة لين 500 انتصار)','الجوال: البناء صار بضغطة تورّيك المكان والمدى ثم زر تأكيد','الميناء ما يحتاج دقة: حطّه قريب الساحل ويثبت لحاله','مع كل موسم تطلع لك فايدته ومخاطره','الدول صارت تهاجم القبائل، والقبائل تتحرك من بدري','الجوال: الضغط على قبيلة يهاجمها مباشرة','إصلاح الإنزال البحري عبر البحيرات','سفن التجارة والهجوم أكبر'],en:['New weapon: the Doomsday bomb, twice the reach of the atom bomb','New building: Coastal guns shell enemy ships from the shore','New war music during fights, plus a siren and an arrow pointing at whoever attacks you','New map size: Giant','Victory now needs 99% of the land in every mode','Quick battle: choose map size and difficulty before you enter','Full rank ladder by wins (22 ranks up to 500 wins)','Mobile: building shows the spot and range, then a confirm button','Ports no longer need pixel precision: they snap to the nearest shore','Each season now shows its benefit and its risk','Realms now attack tribes, and tribes move early','Mobile: tapping a tribe attacks it at once','Fixed naval landings across lakes','Bigger trade and attack ships']},
@@ -1465,9 +1468,7 @@ const LOG=[
  {v:'1.5',d:'2026-11-16',ar:['اللعب أونلاين: افتح غرفة وادخّل أخوياك بالكود، لين 16 لاعب'],en:['Online play: open a room and invite friends by code, up to 16 players']},
  {v:'1.4',d:'2026-11-16',ar:['ضمّ القبائل المحاصرة بضغطة','صور لأشكال العالم وشريط لعدد الخصوم من 6 إلى 30','شرح لتحدي اليوم'],en:['Annex encircled tribes with one tap','World-shape pictures and a 6–30 opponents slider','Daily challenge explained']},
  {v:'1.3',d:'2026-11-16',ar:['60 قبيلة صغيرة في كل خريطة بأسماء ما تتكرر','القبائل تغير على بعضها'],en:['60 minor tribes on every map with unique names','Tribes raid each other']},
- {v:'1.2',d:'2026-11-16',ar:['أربع مستويات صعوبة: سهل، متوسط، صعب، مستحيل','عروض التحالف صارت من الجيران بس وبفاصل زمني'],en:['Four difficulty levels','Alliance offers come only from neighbours, with a cooldown']},
- {v:'1.1',d:'2026-11-16',ar:['خرائط أكبر وأربعة عوالم جديدة','هجوم أسرع ومباريات أطول'],en:['Bigger maps and four new worlds','Faster attacks, longer matches']},
- {v:'1.0',d:'2026-11-16',ar:['الإصدار الأول من سِجال'],en:['First release of Sijal']}];
+ {v:'1.2',d:'2026-11-16',ar:['أربع مستويات صعوبة: سهل، متوسط، صعب، مستحيل','عروض التحالف صارت من الجيران بس وبفاصل زمني'],en:['Four difficulty levels','Alliance offers come only from neighbours, with a cooldown']}];
 function t(k,...a){let s=TX[UI.lang][k];if(s==null)s=TX.ar[k];if(s==null)return k;if(typeof s!=='string')return s;a.forEach((v,i)=>{s=s.split('{'+i+'}').join(v);});return s;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function natName(n){return n.minor?tribeName(n.tribe,UI.lang):n.pname?n.pname:n.human||n.nameIdx<0?(UI.prof&&UI.prof.name)||t('defName'):NAT[UI.lang][n.nameIdx][0];}
@@ -1647,7 +1648,11 @@ const SFX={
   alert:()=>{tone(740,.14,'square',.07);tone(554,.22,'square',.07,1,.16);},
   city:()=>[523,659,784].forEach((f,i)=>tone(f,.24,'triangle',.11,1,i*.09)),
   era:()=>[392,523,659,784,1047].forEach((f,i)=>tone(f,.3,'triangle',.1,1,i*.08)),
-  season:()=>tone(880,.6,'sine',.05,1.5),ult:()=>{tone(220,.5,'sawtooth',.1,3);noise(.5,.15,3000,400);},
+  // one call per season: spring rises bright, summer blares, autumn falls warm, winter rings cold and low
+  season0:()=>[523.25,659.25,783.99,1046.5].forEach((f,i)=>{tone(f,.5,'triangle',.08,1,i*.11);tone(f*2,.3,'sine',.02,1,i*.11);}),
+  season1:()=>{[392,392,523.25].forEach((f,i)=>tone(f,i<2?.14:.7,'sawtooth',.07,1,i*.16));tone(196,.9,'sine',.12,1,.32);noise(.4,.08,3000,500);},
+  season2:()=>[783.99,659.25,587.33,493.88,392].forEach((f,i)=>tone(f,.55,'triangle',.07,1,i*.15)),
+  season3:()=>{[1318.5,1174.7,987.77,880].forEach((f,i)=>{tone(f,1.2,'sine',.05,1,i*.22);tone(f*1.5,.9,'sine',.015,1,i*.22);});tone(98,2.2,'sine',.1,.8);noise(1.6,.04,1200,4000);},ult:()=>{tone(220,.5,'sawtooth',.1,3);noise(.5,.15,3000,400);},
   lose1:()=>[330,262,196].forEach((f,i)=>tone(f,.3,'sawtooth',.07,1,i*.13)),win1:()=>[392,523,659].forEach((f,i)=>tone(f,.22,'square',.06,1,i*.08)),
   win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.5,'triangle',.12,1,i*.14)),lose:()=>[392,330,262,196,147].forEach((f,i)=>tone(f,.6,'sawtooth',.07,1,i*.2))};
 function sfx(n){if(UI.prof.sound&&AU.ctx&&SFX[n]){AU.dst=AU.fx;SFX[n]();}}
@@ -1981,7 +1986,7 @@ function handleEvents(){
       case'reject':if(e.b===me){feed(t('m_rej',nmh(A)));sayLine(A,'reject');}break;
       case'say':if(e.to==null||e.to===me)sayLine(A,e.key);break;
       case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');}break;
-      case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season');break;
+      case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season'+e.s);break;
       case'rebel':feed(t('m_rebel',nmh(D)),e.d===me?'bad':'');addFx('ring',e.x,e.y,{r:9,col:'#ff7a4a',dur:1500});break;
       case'plague':feed(t('m_plague',nmh(D)),e.d===me?'bad':'');break;
       case'caravan':feed(t('m_caravan'),'good');sfx('coin');break;
@@ -2042,7 +2047,7 @@ function bindInput(){
     }else{down=null;drag=true;pd=0;}
   };
   cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
-  cv.addEventListener('pointerleave',()=>{UI.hover=-1;const tp=$('#tip');if(tp)tp.hidden=true;});
+  cv.addEventListener('pointerleave',e=>{if(e.pointerType!=='mouse')return;UI.hover=-1;const tp=$('#tip');if(tp)tp.hidden=true;});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});

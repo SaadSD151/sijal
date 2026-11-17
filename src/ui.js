@@ -43,7 +43,11 @@ const SFX={
   alert:()=>{tone(740,.14,'square',.07);tone(554,.22,'square',.07,1,.16);},
   city:()=>[523,659,784].forEach((f,i)=>tone(f,.24,'triangle',.11,1,i*.09)),
   era:()=>[392,523,659,784,1047].forEach((f,i)=>tone(f,.3,'triangle',.1,1,i*.08)),
-  season:()=>tone(880,.6,'sine',.05,1.5),ult:()=>{tone(220,.5,'sawtooth',.1,3);noise(.5,.15,3000,400);},
+  // one call per season: spring rises bright, summer blares, autumn falls warm, winter rings cold and low
+  season0:()=>[523.25,659.25,783.99,1046.5].forEach((f,i)=>{tone(f,.5,'triangle',.08,1,i*.11);tone(f*2,.3,'sine',.02,1,i*.11);}),
+  season1:()=>{[392,392,523.25].forEach((f,i)=>tone(f,i<2?.14:.7,'sawtooth',.07,1,i*.16));tone(196,.9,'sine',.12,1,.32);noise(.4,.08,3000,500);},
+  season2:()=>[783.99,659.25,587.33,493.88,392].forEach((f,i)=>tone(f,.55,'triangle',.07,1,i*.15)),
+  season3:()=>{[1318.5,1174.7,987.77,880].forEach((f,i)=>{tone(f,1.2,'sine',.05,1,i*.22);tone(f*1.5,.9,'sine',.015,1,i*.22);});tone(98,2.2,'sine',.1,.8);noise(1.6,.04,1200,4000);},ult:()=>{tone(220,.5,'sawtooth',.1,3);noise(.5,.15,3000,400);},
   lose1:()=>[330,262,196].forEach((f,i)=>tone(f,.3,'sawtooth',.07,1,i*.13)),win1:()=>[392,523,659].forEach((f,i)=>tone(f,.22,'square',.06,1,i*.08)),
   win:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.5,'triangle',.12,1,i*.14)),lose:()=>[392,330,262,196,147].forEach((f,i)=>tone(f,.6,'sawtooth',.07,1,i*.2))};
 function sfx(n){if(UI.prof.sound&&AU.ctx&&SFX[n]){AU.dst=AU.fx;SFX[n]();}}
@@ -377,7 +381,7 @@ function handleEvents(){
       case'reject':if(e.b===me){feed(t('m_rej',nmh(A)));sayLine(A,'reject');}break;
       case'say':if(e.to==null||e.to===me)sayLine(A,e.key);break;
       case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');}break;
-      case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season');break;
+      case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season'+e.s);break;
       case'rebel':feed(t('m_rebel',nmh(D)),e.d===me?'bad':'');addFx('ring',e.x,e.y,{r:9,col:'#ff7a4a',dur:1500});break;
       case'plague':feed(t('m_plague',nmh(D)),e.d===me?'bad':'');break;
       case'caravan':feed(t('m_caravan'),'good');sfx('coin');break;
@@ -438,7 +442,7 @@ function bindInput(){
     }else{down=null;drag=true;pd=0;}
   };
   cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
-  cv.addEventListener('pointerleave',()=>{UI.hover=-1;const tp=$('#tip');if(tp)tp.hidden=true;});
+  cv.addEventListener('pointerleave',e=>{if(e.pointerType!=='mouse')return;UI.hover=-1;const tp=$('#tip');if(tp)tp.hidden=true;});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});

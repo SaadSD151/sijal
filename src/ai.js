@@ -34,25 +34,27 @@ function aiThink(g,n){
   }
   const nbN=g.nb[id*K];
   // tribes are easy prey: raid a neighbouring one whenever the army allows
-  if(myAtk<3&&ratio>.4&&now>=(ai.nextRaid||0)){ai.nextRaid=now+60+rng()*90;let tb=null,tv=0;
+  if(myAtk<4&&ratio>.25&&now>=(ai.nextRaid||0)){ai.nextRaid=now+40+rng()*60;let tb=null,tv=0;
     for(const m of g.nations)if(m&&m.alive&&m.minor&&g.nb[id*K+m.id]>1){const v=n.troops/(m.troops+1)+rng();if(v>1.5&&v>tv){tv=v;tb=m;}}
     if(tb){const c=tb.cap;launchAttack(g,id,tb.id,.22,c?c.x:-1,c?c.y:-1);myAtk++;}}
   if(nbN>0&&!neut&&ratio>.3&&myAtk<MAX_ATK){
     const c=nearestCity(g,0,n.cx,n.cy),far=c?hyp(c.x-n.cx,c.y-n.cy):99;
     launchAttack(g,id,0,.3+.2*P.agg,far<50?c.x:-1,far<50?c.y:-1);
   }
-  if(myAtk<3&&now>=ai.nextWar&&ratio>(nbN>0?.66:.5)){
-    let best=null,bs=P.thr;const nd=n.troops/Math.max(n.tiles,1);
+  if(myAtk<3&&now>=ai.nextWar&&ratio>.3){
+    // a full army may pick any war; a thinner one still pounces on a much weaker AI neighbour
+    const full=ratio>(nbN>0?.66:.5);let best=null,bs=P.thr;const nd=n.troops/Math.max(n.tiles,1);
     for(const m of g.nations){
       if(!m||!m.alive||m.id===id||n.ally[m.id]||now<n.truce[m.id]||g.nb[id*K+m.id]<3||(m.human&&now<g.grace))continue;
+      const prey=!m.human&&m.troops<n.troops*.4&&m.tiles<n.tiles*.6;if(!full&&!prey)continue;
       const md=m.troops/Math.max(m.tiles,1);
-      const s=clamp(nd/(md+1),0,2.5)*.6*(.5+P.agg)-n.att[m.id]/50+(now-m.lastHitAny<100?.35:0)+(g.hegemon===m.id?.9:0)
+      const s=(prey?1.3:0)+clamp(nd/(md+1),0,2.5)*.6*(.5+P.agg)-n.att[m.id]/50+(now-m.lastHitAny<100?.35:0)+(g.hegemon===m.id?.9:0)
         +(ai.focus===m.id&&now<ai.focusUntil?1.5:0)+(m.human?g.diff.hate:0)+(m.mon?2:0)+(now<m.collapse?.6:0);
       if(s>bs){bs=s;best=m;}
     }
     if(best){
       const c=nearestCity(g,best.id,n.cx,n.cy);if(U==='blitz')useUlt(g,n);
-      const r=launchAttack(g,id,best.id,.35+.3*P.agg,c?c.x:-1,c?c.y:-1);
+      const r=launchAttack(g,id,best.id,full?.35+.3*P.agg:.45,c?c.x:-1,c?c.y:-1);
       ai.nextWar=now+110+rng()*220;ai.last=best.id;if(typeof r==='object'&&best.human&&now-(ai.saidWar||-999)>600){ai.saidWar=now;say(g,n,'war',best.id);}
     }else ai.nextWar=now+30;
   }
