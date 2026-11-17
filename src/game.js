@@ -426,7 +426,7 @@ function callArms(g,a,target){
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
     n.mSpd=(f.spd||1)*(now<n.blitz?.5:1);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1);
-    const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0048*Math.max(x,.22)*(1-x):-(n.troops-n.maxT)*.02;
+    const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0048*x*(1-x):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
     n.troops+=gr;n.gold+=n.income/TPS;}
 }
