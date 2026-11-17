@@ -203,6 +203,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .ca img{width:24px;height:24px}
 .ca:active{transform:scale(.96)}
 .ca.go{background:linear-gradient(#e2685a,#a8322a);border-color:#ffb0a4}
+.ca.sea{background:linear-gradient(#2f7fc4,#164f86);border-color:#8fcaff}
 .ca.ok{background:linear-gradient(#3f9a63,#226b40);border-color:#9fe8b8}
 .ca.warn{border-color:var(--bad)}
 .amt{display:flex;align-items:center;gap:8px}

@@ -215,6 +215,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .ca img{width:24px;height:24px}
 .ca:active{transform:scale(.96)}
 .ca.go{background:linear-gradient(#e2685a,#a8322a);border-color:#ffb0a4}
+.ca.sea{background:linear-gradient(#2f7fc4,#164f86);border-color:#8fcaff}
 .ca.ok{background:linear-gradient(#3f9a63,#226b40);border-color:#9fe8b8}
 .ca.warn{border-color:var(--bad)}
 .amt{display:flex;align-items:center;gap:8px}
@@ -1272,6 +1273,7 @@ function makeGlyphs(){
   d('ally',x=>{x.lineWidth=7;x.beginPath();x.arc(23,32,14,0,7);x.stroke();x.beginPath();x.arc(41,32,14,0,7);x.stroke();});
   d('coin',x=>{x.beginPath();x.arc(32,32,24,0,7);x.fill();x.globalCompositeOperation='destination-out';x.lineWidth=4;x.beginPath();x.arc(32,32,16,0,7);x.stroke();x.fillRect(29,20,6,24);x.globalCompositeOperation='source-over';});
   d('eye',x=>{x.beginPath();x.moveTo(4,32);x.quadraticCurveTo(32,4,60,32);x.quadraticCurveTo(32,60,4,32);x.fill();x.globalCompositeOperation='destination-out';x.beginPath();x.arc(32,32,11,0,7);x.fill();x.globalCompositeOperation='source-over';x.beginPath();x.arc(32,32,6,0,7);x.fill();});
+  d('ship',x=>{x.beginPath();x.moveTo(6,40);x.lineTo(58,40);x.lineTo(48,54);x.lineTo(16,54);x.closePath();x.fill();x.fillRect(30,8,4,32);x.beginPath();x.moveTo(34,10);x.lineTo(52,36);x.lineTo(34,36);x.closePath();x.fill();x.beginPath();x.moveTo(30,14);x.lineTo(14,36);x.lineTo(30,36);x.closePath();x.fill();});
   d('flag',x=>{x.fillRect(12,8,6,50);x.beginPath();x.moveTo(18,10);x.lineTo(54,20);x.lineTo(18,32);x.fill();});
   d('bolt',x=>poly(x,[[37,5],[15,36],[29,36],[25,59],[49,26],[35,26]]));
   d('sword',x=>{x.lineWidth=6;x.beginPath();x.moveTo(12,52);x.lineTo(48,10);x.moveTo(52,52);x.lineTo(16,10);x.stroke();x.lineWidth=5;x.beginPath();x.moveTo(10,38);x.lineTo(24,52);x.moveTo(54,38);x.lineTo(40,52);x.stroke();});
@@ -2096,7 +2098,7 @@ function cardRefresh(){
   S.textContent=t(ally?'st_ally':war?'st_war':'st_peace')+(ally?' · '+t('allyLeft',clock(Math.max(0,me.allyUntil[id]-g.tick))):'');S.className=ally?'good':war?'bad':'';
   if(key===UI.cardKey)return;UI.cardKey=key;let any=false;for(const m of g.nations)if(m&&m.alive&&me.ally[m.id]&&m.id!==id)any=true;
   const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
-  $('#cB').innerHTML=(ally?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'port',t('c_sea'),t('b_sea')))
+  $('#cB').innerHTML=(ally?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'ship',t('c_sea'),t('b_sea'),'sea'))
     +(ally?B('break:'+id,'ally',t('c_break'),t('b_break'),'warn')+B('aidOpen:'+id,'sword',t('c_aid'),t('b_aid'),'ok'):B('ally:'+id,'ally',t('c_ally'),t('b_ally')))
     +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('find:'+id,'eye',t('c_find'),t('b_find'));
 }
