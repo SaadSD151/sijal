@@ -4,7 +4,7 @@ const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=12,ALLY_T=1200,SHIELD_R=15,MAX_ATK=6,WI
 function newGame(o){
   const M=genMap(o),N=M.N;
   const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),structAt:new Int16Array(N),
-    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
+    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
     q:new Int32Array(N),prev:new Int32Array(N),lab:new Int32Array(N),nb:null,diff:DIFF[o.diff==null?1:o.diff],ncity:[],ncDirty:true,used:M.used,grace:[1500,900,450,150][o.diff==null?1:o.diff]};
   for(const c of M.cities)addStruct(g,'city',c.i,0,c.level,c.name);
@@ -71,7 +71,7 @@ function killStruct(g,s){
 }
 function defOf(g,n){
   if(n.defDirty){n.defDirty=false;const a=n.defS=[];
-    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,R_FORT*R_FORT,9);}}
+    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,R_FORT*R_FORT,9);}}
   return n.defS;
 }
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
@@ -185,7 +185,7 @@ function tileCost(g,k,i,A,D){
   return(T_COST[t]+dens*T_DEF[t]*z*D.mDef+garrison(g,i,D)*D.mDef)*g.sCost/A.mAtk;
 }
 // a city is held by a share of its nation's whole army: sieges need real force
-function garrison(g,i,D){const si=g.structAt[i];if(!si||!D)return 0;const s=g.structs[si-1];return s.type==='city'?D.troops*(.07+.02*s.level)*(s.capital?2:1):0;}
+function garrison(g,i,D){const si=g.structAt[i];if(!si||!D)return 0;const s=g.structs[si-1];return s.type==='city'?D.troops*(.07+.02*s.level)*(s.capital?2:1)*(s.ruin>g.tick?.4:1):0;}
 function seedAttack(g,k){
   const own=g.owner,ter=g.M.ter,W=g.W,N=g.N,now=g.tick,seeds=[];let dmin=1e9,ob=-1;
   for(let i=0;i<N;i++){if(own[i]!==k.d||ter[i]<2||!adjOwn(g,i,k.a))continue;seeds.push(i);
@@ -350,14 +350,28 @@ function tickMissiles(g){
     let hit=true;
     for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SHIELD_R*SHIELD_R){
       s.cd=g.tick+60;if(g.rng()<(m.type==='doom'?.35:m.type==='nuke'?.5:.8)){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
-    if(hit){const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+    if(hit){const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+}
+// missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;
+// an atom bomb erases a small city, and the doomsday bomb erases every building it touches
+function hitCity(g,s,o,by){
+  if(o.wipe||(o.lvl>=2&&s.level-o.lvl<1)){destroyCity(g,s,by);return true;}
+  s.level=Math.max(1,s.level-o.lvl);s.ruin=Math.max(s.ruin||0,g.tick+(o.ruin||300));s.grow=0;if(s.owner)g.nations[s.owner].defDirty=true;
+  emit(g,'cityHit',{s,a:by,d:s.owner});return false;
+}
+function destroyCity(g,s,by){
+  if(s.dead)return;const O=s.owner?g.nations[s.owner]:null,cap=s.capital;s.capital=false;killStruct(g,s);g.ruins.push({x:s.x,y:s.y,until:g.tick+1500});
+  emit(g,'cityGone',{s,a:by,d:O?O.id:0});
+  if(O&&O.alive&&cap){let best=null;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===O.id&&(!best||c.level>best.level))best=c;
+    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;collapseNation(g,O,0,s);}}
 }
 function blast(g,cx,cy,R,by,o){
   const W=g.W,H=g.H,now=g.tick,hits=new Map();
   for(let y=Math.max(0,Math.floor(cy-R));y<=Math.min(H-1,Math.ceil(cy+R));y++)for(let x=Math.max(0,Math.floor(cx-R));x<=Math.min(W-1,Math.ceil(cx+R));x++){
     const d=hyp(x-cx,y-cy);if(d>R)continue;const i=y*W+x;if(g.M.ter[i]<2||(o.coast&&g.M.coastD[i]>o.coast))continue;
     const si=g.structAt[i];
-    if(si&&g.structs[si-1].type==='city'){const s=g.structs[si-1];if(d<=R*.8&&s.level>1)s.level=Math.max(1,s.level-o.lvl);continue;}
+    if(si&&g.structs[si-1].type==='city'){const s=g.structs[si-1];if(d<=R*.85){if(!hitCity(g,s,o,by))continue;}else if(!o.wipe)continue;else destroyCity(g,s,by);}
+    else if(si&&o.wipe)killStruct(g,g.structs[si-1]);
     const ow=g.owner[i];if(ow&&g.rng()<1.2-d/R*.6){hits.set(ow,(hits.get(ow)||0)+1);setOwner(g,i,0);}
     if(o.fall&&d<=R*.92){if(g.fall[i]<=now)g.fallList.push(i);g.fall[i]=Math.floor(now+o.fall*(.6+.4*g.rng()));g.dirty.push(i);}
   }
@@ -434,8 +448,8 @@ function structPass(g){
   const ns=g.nations;let ports=0;for(const n of ns)if(n){n._pop=0;n._inc=0;}
   for(const s of g.structs)if(!s.dead&&s.type==='port')ports++;
   for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;}
-    if(s.type==='city'){n._pop+=4000*s.level*(s.capital?1.5:1);n._inc+=1+s.level;
-      if(s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}
+    if(s.type==='city'){const rn=s.ruin>g.tick;n._pop+=4000*s.level*(s.capital?1.5:1)*(rn?.3:1);if(!rn)n._inc+=1+s.level;
+      if(!rn&&s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}
     else if(s.type==='port'){n._inc+=2*(FAC[n.fac].port||1);if(g.tick>=(s.tcd||0)){s.tcd=g.tick+250+((g.rng()*120)|0);launchTrade(g,s);}}}
   for(const n of ns)if(n&&n.alive){const f=FAC[n.fac];
     n.maxT=6000+n.val*120*(1+.12*(n.era-1))+n._pop;if(n.minor)n.maxT*=.5;
@@ -505,7 +519,7 @@ function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
   seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
-    structPass(g);allyPass(g);const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
+    structPass(g);allyPass(g);if(g.ruins.length&&now%100===0)g.ruins=g.ruins.filter(r=>r.until>now);if(now%50===0)for(const n of g.nations)if(n)n.defDirty=true;const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);
     if(now>=g.nextEvent)worldEvent(g);
     checkOver(g);if(g.over)return;
