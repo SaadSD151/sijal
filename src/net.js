@@ -205,7 +205,7 @@ setInterval(regTick,4000);
 // ── newer version on the site? tell open games so players refresh ──
 function checkUpdate(){
   if(UI.updShown||!/^https?:/.test(location.protocol)||document.hidden)return;
-  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.build||j.build===BUILD_ID||UI.updShown)return;UI.updShown=true;
-    const d=document.createElement('div');d.id='upd';d.className='pn';d.innerHTML=`<span>${t(NET.on&&NET.started?'updMp':'updNew')}</span><button class="btn sm ok" data-a="reload">${t('updGo')}</button><button class="btn sm" data-a="updX">${t('updLater')}</button>`;$('#app').appendChild(d);sfx('coin');}).catch(()=>{});
+  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.build||j.build===BUILD_ID||UI.updShown)return;UI.updShown=true;UI.updBuild=j.build;
+    const d=document.createElement('div');d.id='upd';d.className='pn';d.innerHTML=`<span>${t(G&&!G.o.demo&&G.started&&!G.over?'updMp':'updNew')}</span><button class="btn sm ok" data-a="reload">${t('updGo')}</button><button class="btn sm" data-a="updX">${t('updLater')}</button>`;$('#app').appendChild(d);sfx('coin');}).catch(()=>{});
 }
 setInterval(checkUpdate,120000);setTimeout(checkUpdate,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});

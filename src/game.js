@@ -1,10 +1,10 @@
 // ── SIJAL · simulation (pure logic, no DOM) ──
-const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=12,ALLY_T=1200,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
+const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
   const M=genMap(o),N=M.N;
   const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),structAt:new Int16Array(N),
-    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
+    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
     q:new Int32Array(N),prev:new Int32Array(N),lab:new Int32Array(N),nb:null,diff:DIFF[o.diff==null?1:o.diff],ncity:[],ncDirty:true,used:M.used,grace:[1500,900,450,150][o.diff==null?1:o.diff]};
   for(const c of M.cities)addStruct(g,'city',c.i,0,c.level,c.name);
@@ -18,7 +18,7 @@ function addNation(g,p){
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
     att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
-    cnt:{city:0,fort:0,port:0,coast:0,silo:0,shield:0,mon:0},mon:null,
+    cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
     st:{conq:0,lost:0,cities:0,kills:0,peak:0,nukes:0}};
   g.nations.push(n);if(n.human)g.human=id;return n;
@@ -305,6 +305,37 @@ function portPath(g,a,b,open){
     for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(prev[j]<0&&ok(j,x,y)){prev[j]=c;q[qt++]=j;}}}
   return null;
 }
+// ── factories and railways: track to nearby own cities and ports, trains that trade with neighbours at peace ──
+function landPath(g,a,b,max){
+  const W=g.W,H=g.H,ter=g.M.ter,prev=g.prev,q=g.q,dist=g.bfs||(g.bfs=new Int32Array(g.N));prev.fill(-1);let qh=0,qt=0;prev[a]=a;dist[a]=0;q[qt++]=a;
+  while(qh<qt){const c=q[qh++];if(c===b){const p=[c];let k=c;while(prev[k]!==k){k=prev[k];p.push(k);}return p.reverse();}
+    if(dist[c]>=max)continue;const cx=c%W,cy=(c/W)|0;
+    for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]>1&&prev[j]<0){prev[j]=c;dist[j]=dist[c]+1;q[qt++]=j;}}}
+  return null;
+}
+// tracks a factory at tile i would lay: to up to 4 of the owner's cities and ports within 40 tiles
+function railPlan(g,owner,i){
+  const W=g.W,x0=i%W,y0=(i/W)|0,c=[];
+  for(const s of g.structs)if(!s.dead&&s.owner===owner&&(s.type==='city'||s.type==='port')&&s.i!==i){const d=(s.x-x0)**2+(s.y-y0)**2;if(d<=1600)c.push([d,s]);}
+  c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);const out=[];for(const[,s]of c.slice(0,4)){const p=landPath(g,i,s.i,70);if(p)out.push(p);}return out;
+}
+function railBuild(g,f){g.rails=g.rails.filter(r=>r.f!==f||r.trade);for(const p of railPlan(g,f.owner,f.i))g.rails.push({f,a:f.owner,path:p});}
+function launchTrain(g,f){
+  const A=g.nations[f.owner],now=g.tick,c=[];
+  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===f.owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[f.owner]<=300)continue;
+    const d=(s.x-f.x)**2+(s.y-f.y)**2;if(d<=4900)c.push([d,s]);}
+  if(!c.length)return;c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);const pick=c[(g.rng()*Math.min(3,c.length))|0][1],rt=f.rt2||(f.rt2={});
+  let path=rt[pick.i];if(path===undefined){path=rt[pick.i]=landPath(g,f.i,pick.i,110)||0;if(path)g.rails.push({f,a:f.owner,path,trade:1});}
+  if(!path||path.length<4)return;g.trains.push({a:f.owner,lv:f.level,from:f,to:pick,toOwner:pick.owner,path,p:0,dir:1,spd:.6});
+}
+function tickTrains(g){
+  if(g.tick%10===0)g.rails=g.rails.filter(r=>!r.f.dead&&r.f.owner===r.a);
+  for(let j=g.trains.length-1;j>=0;j--){const b=g.trains[j],A=g.nations[b.a];let rm=!A.alive||b.from.dead||b.from.owner!==b.a;
+    if(!rm){b.p+=b.spd*b.dir;
+      if(b.dir>0&&b.p>=b.path.length-1){b.p=b.path.length-1;b.dir=-1;if(b.to.dead||b.to.owner!==b.toOwner)rm=true;else g.nations[b.to.owner].gold+=b.path.length*.5;}
+      else if(b.dir<0&&b.p<=0){const amt=Math.round((50+b.path.length*2)*(1+.25*(A.era-1))*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'train',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
+    if(rm){g.trains[j]=g.trains[g.trains.length-1];g.trains.pop();}}
+}
 function launchTrade(g,s){
   const A=g.nations[s.owner],now=g.tick,c=[];
   for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
@@ -478,10 +509,11 @@ function economy(g){
 function structPass(g){
   const ns=g.nations;let ports=0;for(const n of ns)if(n){n._pop=0;n._inc=0;}
   for(const s of g.structs)if(!s.dead&&s.type==='port')ports++;
-  for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;}
+  for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;if(s.type==='factory')railBuild(g,s);}
     if(s.upAt&&s.upAt<=g.tick){s.upAt=0;s.level=Math.min(5,s.level+1);n.defDirty=true;emit(g,'upDone',{a:n.id,s});}
     if(s.type==='city'){const rn=s.ruin>g.tick;n._pop+=4000*s.level*(s.capital?1.5:1)*(rn?.3:1);if(!rn)n._inc+=1+s.level;
       if(!rn&&!s.upAt&&s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}
+    else if(s.type==='factory'){n._inc+=3*s.level;if(g.tick>=(s.rr||0)){s.rr=g.tick+600;railBuild(g,s);}if(g.tick>=(s.tcd||0)){s.tcd=g.tick+Math.max(110,240-28*(s.level-1))+((g.rng()*100)|0);launchTrain(g,s);}}
     else if(s.type==='port'){n._inc+=2*s.level*(FAC[n.fac].port||1);if(g.tick>=(s.tcd||0)){s.tcd=g.tick+Math.max(120,250-30*(s.level-1))+((g.rng()*120)|0);launchTrade(g,s);}}}
   for(const n of ns)if(n&&n.alive){const f=FAC[n.fac];
     n.maxT=6000+n.val*120*(1+.12*(n.era-1))+n._pop;if(n.minor)n.maxT*=.5;
@@ -549,7 +581,7 @@ function snapshot(g){
 }
 function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
-  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickMissiles(g);tickPending(g);
+  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
     structPass(g);allyPass(g);if(g.ruins.length&&now%100===0)g.ruins=g.ruins.filter(r=>r.until>now);if(now%50===0)for(const n of g.nations)if(n)n.defDirty=true;const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);
