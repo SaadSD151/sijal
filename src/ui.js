@@ -2,7 +2,7 @@
 let G=null,acc=0,lastTs=0;
 // public key for the suggestions inbox (Web3Forms); used when the game is not served from Netlify
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
-const $=s=>document.querySelector(s),BAR=['city','fort','port','factory','coast','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[320,200],[420,264],[540,340],[680,428]],BOTS=[6,10,14,18,23];
+const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[320,200],[420,264],[540,340],[680,428]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
