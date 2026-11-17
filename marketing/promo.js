@@ -24,7 +24,7 @@ const CAPS=[ // [start, end, text] seconds
     const S=__sijal;S.act('setBack');S.UI.prof.sound=false;S.UI.prof.music=false;S.UI.prof.games=9;
     const st=document.createElement('style');st.textContent=`
       #pr{position:fixed;inset:0;pointer-events:none;z-index:50;font-family:'IBM Plex Sans Arabic',sans-serif}
-      #prCap{position:absolute;left:6%;right:6%;top:${V?'29%':'auto'};bottom:${V?'auto':'23%'};text-align:center;opacity:0}
+      #prCap{position:absolute;left:6%;right:6%;top:${V?'17%':'auto'};bottom:${V?'auto':'24%'};text-align:center;opacity:0}
       #prCap span{display:inline-block;background:rgba(7,18,30,.82);border:2px solid #e3b95a;border-radius:14px;padding:${V?'10px 16px':'12px 26px'};color:#fff;font-weight:700;font-size:${V?'25px':'34px'};line-height:1.5;box-shadow:0 10px 30px rgba(0,0,0,.5)}
       #prIn,#prOut{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:${V?'18px':'16px'};text-align:center;opacity:0}
       #prIn{background:radial-gradient(ellipse at center,rgba(5,12,22,.15),rgba(5,12,22,.82))}
@@ -34,10 +34,10 @@ const CAPS=[ // [start, end, text] seconds
       #pr .m{color:#f1e6cc;font-weight:600;font-size:${V?'21px':'26px'}}
       #pr .s{color:#9db0c2;font-size:${V?'17px':'20px'}}
       #pr .l{color:#1c1405;background:linear-gradient(#f4d584,#c9972f);border-radius:999px;padding:${V?'10px 22px':'12px 30px'};font-weight:700;font-size:${V?'21px':'26px'};direction:ltr}
-      #banner,#hint,#tip,#toasts .ts:not(.prop){display:none!important}${V?' #feed{display:none!important}':''}`;
+      #banner,#hint,#tip,#amode,#atk,#toasts .ts:not(.prop){display:none!important}${V?' #feed,#lb{display:none!important}':''}`;
     document.head.appendChild(st);
     const d=document.createElement('div');d.id='pr';d.innerHTML=`<div id="prCap"><span></span></div>
-      <div id="prIn"><img src="${logo}" alt=""><div class="q">تبي لعبة حرب… سعودية ١٠٠٪؟</div></div>
+      <div id="prIn"><img src="${logo}" alt=""><div class="q">تبي لعبة حرب… سعودية مية بالمية؟</div></div>
       <div id="prOut"><img src="${logo}" alt=""><div class="m">صُنعت في المملكة العربية السعودية</div><div class="s">مجانية · جوال وكمبيوتر · بدون تحميل</div><div class="l">saadsd151.github.io/sijal</div><div class="m">العب الحين</div></div>`;
     document.body.appendChild(d);
     for(const e of document.querySelectorAll('#menu > *'))e.style.visibility='hidden';
@@ -53,16 +53,16 @@ const CAPS=[ // [start, end, text] seconds
         let best=-1,bs=-1;for(let k=0;k<4000;k++){const i=(Math.random()*g.N)|0,x=i%g.W,y=(i/g.W)|0;if(g.M.ter[i]!==2||g.owner[i]||g.M.coastD[i]<3||g.M.coastD[i]>9)continue;if(!g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>200))continue;
           let c=0;for(const s of g.structs)if(!s.dead&&s.type==='city'&&(s.x-x)**2+(s.y-y)**2<1600)c++;const sc=c+(Math.abs(x-g.W/2)<g.W*.3?3:0);if(sc>bs){bs=sc;best=i;}}
         S.tap(best,0,0);return{spawn:best};});ev('spawn',t);}
-    if(t>=3.6&&t<9&&f%9===0){await pg.evaluate(()=>{const S=__sijal,g=S.G,me=g.nations[g.human];if(!me||!me.alive)return;me.troops=Math.max(me.troops,me.maxT*.9,40000);S.UI.prof.amode='all';
+    if(t>=3.6&&t<9&&f%9===0){await pg.evaluate(()=>{const S=__sijal,g=S.G,me=g.nations[g.human];if(!me||!me.alive)return;me.troops=Math.max(me.troops,60000);S.UI.prof.amode='all';
         let tt=-1,bd=1e9;for(let i=0;i<g.N;i+=3){if(g.M.ter[i]<2||g.owner[i])continue;const d=(i%g.W-me.cx)**2+(((i/g.W)|0)-me.cy)**2;if(d<bd){bd=d;tt=i;}}S.UI.ratio=.5;if(tt>=0)S.tap(tt,0,0);S.act('closeCard');
-        S.cam.tx=me.cx;S.cam.ty=me.cy;S.cam.tz=Math.max(2.2,Math.min(6,90/Math.sqrt(Math.max(me.tiles,400))*2.2));});}
+        S.cam.tx=me.cx;S.cam.ty=me.cy;S.cam.tz=Math.max(1.8,Math.min(3.2,70/Math.sqrt(Math.max(me.tiles,300))*2.2));});}
     if(f===Math.round(9*FPS)){state.city=await pg.evaluate(()=>{const S=__sijal,g=S.G,me=g.nations[g.human];S.UI.prof.amode='pt';
         const cs=g.structs.filter(s=>!s.dead&&s.type==='city'&&s.owner!==me.id&&s.owner&&!g.nations[s.owner].ally[me.id]).sort((a,b)=>((a.x-me.cx)**2+(a.y-me.cy)**2)-((b.x-me.cx)**2+(b.y-me.cy)**2));
-        const c=cs.find(s=>!g.nations[s.owner].minor)||cs[0];if(!c)return -1;me.troops=Math.max(me.troops,9e5);
+        const K=g.nations.length,c=cs.find(s=>!g.nations[s.owner].minor&&g.nb[me.id*K+s.owner]>3)||cs.find(s=>!g.nations[s.owner].minor)||cs[0];if(!c)return -1;me.troops=Math.max(me.troops,3e5);
         // aim at an enemy tile on the way to the city, so the spearhead drives there
-        S.UI.ratio=.6;S.tap(c.i,0,0);S.act('atk:'+c.owner);S.act('closeCard');S.cam.tx=(c.x+me.cx)/2;S.cam.ty=(c.y+me.cy)/2;S.cam.tz=4.2;return c.i;});}
+        S.UI.ratio=.6;S.tap(c.i,0,0);S.act('atk:'+c.owner);S.act('closeCard');S.cam.tx=c.x;S.cam.ty=c.y;S.cam.tz=3;return c.i;});}
     if(t>9&&t<14&&f%10===0){const r=await pg.evaluate(ci=>{const S=__sijal,g=S.G,me=g.nations[g.human];const si=g.structAt[ci];const s=si?g.structs[si-1]:null;
-        if(s&&s.owner!==me.id&&!g.attacks.some(k=>k.a===me.id&&!k.cancel)){me.troops=Math.max(me.troops,9e5);S.UI.ratio=.6;S.tap(ci,0,0);S.act('atk:'+s.owner);S.act('closeCard');}
+        if(s&&s.owner!==me.id&&!g.attacks.some(k=>k.a===me.id&&!k.cancel)){me.troops=Math.max(me.troops,3e5);S.UI.ratio=.6;S.tap(ci,0,0);S.act('atk:'+s.owner);S.act('closeCard');}
         if(s){S.cam.tx=s.x;S.cam.ty=s.y;}return s&&s.owner===me.id;},state.city);if(r)ev('cityFall',t);}
     if(f===Math.round(14*FPS)){state.w=await pg.evaluate(()=>{const S=__sijal,g=S.G,me=g.nations[g.human];me.era=4;me.gold=2e5;
         const own=[];for(let i=0;i<g.N;i+=2)if(g.owner[i]===me.id)own.push(i);const near=i=>(i%g.W-me.cap.x)**2+(((i/g.W)|0)-me.cap.y)**2;own.sort((a,b)=>near(a)-near(b));
@@ -92,6 +92,7 @@ const CAPS=[ // [start, end, text] seconds
     // ── overlay ──
     const cap=CAPS.find(c=>t>=c[0]&&t<c[1]);
     await pg.evaluate(([t,cap,V])=>{
+      __sijal.UI.threats=[];
       const fade=(a,b,c,d)=>Math.max(0,Math.min(1,(t-a)/(b-a),(d-t)/(d-c)));
       const ci=document.querySelector('#prCap');if(cap){ci.querySelector('span').textContent=cap[2];const o=fade(cap[0],cap[0]+.25,cap[1]-.25,cap[1]);ci.style.opacity=o;ci.style.transform=`translateY(${(1-o)*14}px)`;}else ci.style.opacity=0;
       const pi=document.querySelector('#prIn'),pin=fade(0,.35,2.75,3.05);pi.style.opacity=pin;const im=pi.querySelector('img');const k=Math.min(1,t/.6);im.style.transform=`scale(${1.35-.35*(1-(1-k)**3)})`;
