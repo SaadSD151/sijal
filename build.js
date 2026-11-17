@@ -1,6 +1,6 @@
 // builds single-file versions of the game into dist/
 const fs=require('fs'),path=require('path'),p=f=>fs.readFileSync(path.join(__dirname,'src',f),'utf8');
-const js=['core','map','game','ai','render','i18n','net','ui'].map(f=>p(f+'.js')).join('\n'),css=p('style.css'),body=p('body.html');
+const src=['core','map','game','ai','render','i18n','net','ui'].map(f=>p(f+'.js')).join('\n'),js=`const BUILD_ID='${require('crypto').createHash('sha1').update(src).digest('hex').slice(0,10)}';\n`+src,css=p('style.css'),body=p('body.html');
 const TITLE='<title>سِجال حرب المدن</title>';
 const FONTS='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">';
 const script=m=>`<script>\n${m?`window.SIJAL_MODE='${m}';`:''}(function(){"use strict";\n${js}\n})();\n</script>`;

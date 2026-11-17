@@ -75,6 +75,8 @@ function netHost(tries){
     hostOpen(code,k=>{const pl={name:'?',fac:'hawks',conn:k,in:false};
         k.onData=d=>{if(!d)return;
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
+          if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
+          if(d.t==='ack'){k.ack=d.k;return;}
           if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=16)return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
@@ -92,15 +94,16 @@ function netJoin(code){
         else if(d.t==='start')netStart(d.opt,d.me);
         else if(d.t==='f')applyFrame(d);
         else if(d.t==='full')netFail('full');
+        else if(d.t==='ver')netFail('ver');
         else if(d.t==='pong'){NET.ping=Math.round(performance.now()-d.ts);const e=$('#myPing');if(e)e.outerHTML=pingTag(NET.ping,'myPing');}
         else if(d.t==='desync'&&!NET.warned){NET.warned=true;toast(t('mpDesync'),'bad',6000);}};
       k.onClose=()=>{if(NET.on)netFail('host');};
-      k.send({t:'hi',name:myName(),fac:UI.prof.fac});},e=>{clearTimeout(to);netFail(e);}),e=>{clearTimeout(to);netFail(e);});
+      k.send({t:'hi',name:myName(),fac:UI.prof.fac,v:window.SIJAL_FAKE_VER||BUILD_ID});},e=>{clearTimeout(to);netFail(e);}),e=>{clearTimeout(to);netFail(e);});
 }
 function hostStart(){
   if(!NET.host||NET.started)return;const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
   const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac}))};
-  regUnreg();NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
+  regUnreg();NET.waitAt=0;NET.waitShown=0;NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.ack=0;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
 }
 function netStart(opt,me){
   NET.started=true;NET.q=[];NET.sums={};loading(true);
@@ -110,13 +113,17 @@ function netStart(opt,me){
 function applyFrame(f){
   const g=G;if(!g||!g.o.mp){(NET.pend||(NET.pend=[])).push(f);return;}
   for(const pc of f.c)applyCmd(pc[0],pc[1]);
-  if(f.r&&!g.over){tick(g);if(g.tick%100===0){let v=7;for(const n of g.nations)if(n)v=(v*31+n.tiles*7+Math.floor(n.troops))%1000000007;if(NET.host){NET.sums[g.tick]=v;delete NET.sums[g.tick-1000];}else if(NET.up)NET.up.send({t:'sum',k:g.tick,v});}}
+  if(f.r&&!g.over){tick(g);if(!NET.host&&NET.up&&g.tick%5===0)NET.up.send({t:'ack',k:g.tick});if(g.tick%100===0){let v=7;for(const n of g.nations)if(n)v=(v*31+n.tiles*7+Math.floor(n.troops))%1000000007;for(let i=0;i<g.N;i+=13)v=(v*33+g.owner[i])%1000000007;if(NET.host){NET.sums[g.tick]=v;delete NET.sums[g.tick-1000];}else if(NET.up)NET.up.send({t:'sum',k:g.tick,v});}}
 }
 function frameOut(r){const f={t:'f',c:NET.q,r};NET.q=[];for(const c of NET.conns)if(c.ok)c.send(f);applyFrame(f);}
 function netTick(){
   const g=G;if(!NET.on||!NET.host||!NET.started||!g||!g.o.mp||g.over)return;const now=performance.now(),dt=Math.min(400,now-NET.last);NET.last=now;
   if(!g.started){let all=true;for(const n of g.nations)if(n&&n.human&&!n.spawned)all=false;if((all||now>NET.goAt)&&!NET.q.some(c=>c[1].k==='go'))NET.q.push([g.human,{k:'go'}]);if(NET.q.length)frameOut(0);return;}
   if(UI.paused){if(NET.q.length)frameOut(0);return;}
+  // never run more than ~2 s ahead of the slowest player; after 8 s of waiting, carry on without them
+  let slow=null,lag=0;for(const p of NET.players){const c=p.conn;if(!p.in||!c||!c.ok||!c.pid)continue;const l=g.tick-(c.ack||0);if(l>lag){lag=l;slow=p;}}
+  if(slow&&lag>20){if(!NET.waitAt)NET.waitAt=now;if(now-NET.waitAt<8000){NET.acc=0;if(NET.q.length)frameOut(0);if(!NET.waitShown){NET.waitShown=1;hint(t('mpSlow',slow.name),true);}return;}}
+  else{NET.waitAt=0;if(NET.waitShown){NET.waitShown=0;hint(null);}}
   NET.acc+=dt*UI.speed;let k=0;while(NET.acc>=100&&k<6){frameOut(1);NET.acc-=100;k++;}if(k===6)NET.acc=0;
 }
 // host only: after a match, bring everyone back to the room and reopen the battle settings

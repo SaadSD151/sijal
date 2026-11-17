@@ -305,7 +305,7 @@ function hintStep(){
 }
 function feed(html,cls){const f=$('#feed');if(!f)return;const d=document.createElement('div');d.className='fd '+(cls||'');d.innerHTML=html;f.appendChild(d);while(f.children.length>(UI.mob?3:5))f.firstChild.remove();setTimeout(()=>d.remove(),9000);}
 function banner(s,cls){const b=$('#banner');if(!b)return;b.className='';void b.offsetWidth;b.textContent=s;b.className='show '+(cls||'');}
-function toast(html,cls,ms){const box=$('#toasts');if(!box||(box.lastChild&&box.lastChild.dataset.k===html))return null;const d=document.createElement('div');d.dataset.k=html;d.className='ts pn '+(cls||'');d.innerHTML=html;box.appendChild(d);while(box.children.length>3)box.firstChild.remove();if(ms!==0)setTimeout(()=>d.remove(),ms||2200);return d;}
+function toast(html,cls,ms){let box=$('#toasts');if(!box||UI.screen){box=$('#gToasts');if(!box){box=document.createElement('div');box.id='gToasts';$('#app').appendChild(box);}}if((box.lastChild&&box.lastChild.dataset.k===html))return null;const d=document.createElement('div');d.dataset.k=html;d.className='ts pn '+(cls||'');d.innerHTML=html;box.appendChild(d);while(box.children.length>3)box.firstChild.remove();if(ms!==0)setTimeout(()=>d.remove(),ms||2200);return d;}
 function err(code){sfx('err');toast(t('e_'+code),'bad');}
 function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span class="q">«${L[(Math.random()*L.length)|0]}»</span>`,'say');}
 
