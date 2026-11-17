@@ -341,7 +341,7 @@ function cardRefresh(){
 }
 
 // ── player actions ──
-function setMode(m){UI.mode=m;UI.pend=-1;if(UI.mob)UI.hover=-1;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();if(m)hint(m[0]==='b'?t('pick',t('s_'+m.slice(2))):t('aim'),true);else hint(null);hudUpdate();}
+function setMode(m){UI.mode=m;UI.pend=-1;if(UI.mob)UI.hover=-1;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();if(m)hint(m[0]==='b'?t('pick',t('s_'+m.slice(2))):m[0]==='s'?t('pickSea',natName(G.nations[+m.slice(2)])):t('aim'),true);else hint(null);hudUpdate();}
 function barAct(k){
   const g=G,me=g.nations[g.human];if(UI.phase!=='play'||!me.alive)return;let r=0,m=null;
   if(k==='ult'){const u=FAC[me.fac].ult;if(g.tick<me.ultAt)r='cd';else if(me.gold<ULT[u].cost)r='gold';else if(ULT[u].tg)m='u:'+u;else send({k:'ult'});}
@@ -349,13 +349,13 @@ function barAct(k){
   else{r=canBuild(g,me,k,-1);if(!r)m='b:'+k;}
   if(r)return err(r);if(m)setMode(UI.mode===m?null:m);else sfx('click');
 }
-function placeAt(i){const m=UI.mode;if(!m||i<0)return;const k=m.slice(2);send(m[0]==='b'?{k:'build',s:k,i,R:UI.mob?6:4}:m[0]==='m'?{k:'msl',s:k,i}:{k:'ult',i});setMode(null);}
+function placeAt(i){const m=UI.mode;if(!m||i<0)return;const k=m.slice(2);send(m[0]==='b'?{k:'build',s:k,i,R:UI.mob?6:4}:m[0]==='m'?{k:'msl',s:k,i}:m[0]==='s'?{k:'sea',d:+k,i,at:1,r:UI.ratio}:{k:'ult',i});setMode(null);}
 function onMapTap(i,x,y){
   const g=G;if(!g||g.o.demo||UI.screen)return;const me=g.nations[g.human];
   if(UI.phase==='spawn')return send({k:'spawn',i,fac:UI.prof.fac});
   if(UI.phase!=='play'||!me.alive)return;
   const m=UI.mode;
-  if(m){if(UI.mob){if(m[0]==='b'){const k=m.slice(2);if(k==='port'||k==='coast')i=snapPort(g,me,i,6,k);const r=canBuild(g,me,k,i);if(r)return err(r);}UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
+  if(m){if(UI.mob){if(m[0]==='b'){const k=m.slice(2);if(k==='port'||k==='coast')i=snapPort(g,me,i,6,k);const r=canBuild(g,me,k,i);if(r)return err(r);}UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):m[0]==='s'?t('c_sea'):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
     placeAt(i);return;}
   if(g.M.ter[i]<2)return closeCard();
   const o=g.owner[i];if(o===me.id)return closeCard();if(o&&me.ally[o])return openCard(o);
@@ -387,7 +387,7 @@ function act(a){
     case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
     case'am':p.amode=v;renderAmode();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;
     case'renew':{send({k:'renew',d:+v,y:+w});for(const d of document.querySelectorAll('.ts[data-ally="'+(+v)+'"]'))d.remove();if(+w)feed(t('m_renewSent',nmh(g.nations[+v])),'good');break;}
-    case'sea':{const ti=UI.cardTile;closeCard();send({k:'sea',d:+v,i:ti,r:UI.ratio});break;}
+    case'sea':closeCard();setMode('s:'+v);break;
     case'goatk':{const q=g.attacks.find(q=>q.id===+v),D=q&&q.d?g.nations[q.d]:null;if(D)lookAt(D.cx,D.cy,Math.max(cam.tz,4));else if(q)lookAt(q.ox,q.oy,Math.max(cam.tz,4));break;}
     case'annex':{const n=g.nations[+v];if(n&&n.cap)send({k:'atk',i:n.cap.i,r:UI.ratio});break;}
     case'ally':send({k:'ally',d:+v});break;case'break':send({k:'break',d:+v});break;

@@ -320,6 +320,13 @@ function tickTrades(g){
     if(rm){g.trades[j]=g.trades[g.trades.length-1];g.trades.pop();}}
 }
 // nearest enemy shore reachable by sea from our own coast (used when the tapped spot has no usable beach)
+// nearest shore tile of realm o within R of a tapped spot (land or sea), facing open water
+function shoreNear(g,i,o,R){
+  const W=g.W,x0=i%W,y0=(i/W)|0;let b=-1,bd=1e9;
+  for(let y=Math.max(0,y0-R);y<=Math.min(g.H-1,y0+R);y++)for(let x=Math.max(0,x0-R);x<=Math.min(W-1,x0+R);x++){
+    const j=y*W+x;if(g.owner[j]!==o||g.M.ter[j]<2||g.M.coastD[j]!==1||!portOk(g,j)||g.fall[j]>g.tick)continue;const d=(x-x0)**2+(y-y0)**2;if(d<bd&&d<=R*R){bd=d;b=j;}}
+  return b;
+}
 function seaLanding(g,a,o,lid){
   const W=g.W,H=g.H,N=g.N,ter=g.M.ter,own=g.owner,prev=g.prev,q=g.q,now=g.tick;prev.fill(-1);let qh=0,qt=0;
   for(let i=0;i<N;i++)if(ter[i]<2&&adjOwn(g,i,a)){prev[i]=i;q[qt++]=i;}
