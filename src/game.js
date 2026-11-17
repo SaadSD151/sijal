@@ -1,5 +1,5 @@
 // ── SIJAL · simulation (pure logic, no DOM) ──
-const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,PEACE_T=1800,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
+const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,PEACE_T=300,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
   const M=genMap(o),N=M.N;
@@ -109,7 +109,7 @@ function setOwner(g,i,o){
 function captured(g,s,old,o){
   if(g.annexing&&s.type==='city'){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);s.capital=false;s.grow=0;return;}
   if(s.type!=='city'){
-    if(o&&(s.type==='fort'||s.type==='port'||s.type==='factory')){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);if(s.type==='factory'){s.rr=0;s.rt2=null;s.tcd=g.tick+100;}}else killStruct(g,s);
+    if(o&&s.type!=='mon'){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);if(s.type==='factory'){s.rr=0;s.rt2=null;s.tcd=g.tick+100;}}else killStruct(g,s);
     return;
   }
   touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);s.grow=0;
@@ -142,7 +142,8 @@ function flipAround(g,s,o,R){
 // a realm with no city left falls apart: the conqueror takes the heartland, the rest turns lawless
 function collapseNation(g,O,o,s){
   if(!O.alive)return;emit(g,'collapse',{d:O.id,a:o});
-  const own=g.owner,W=g.W;for(let i=0;i<g.N;i++)if(own[i]===O.id){const dx=i%W-s.x,dy=((i/W)|0)-s.y;setOwner(g,i,dx*dx+dy*dy<=225?o:0);}
+  const own=g.owner,W=g.W,keep=[];for(const t of g.structs)if(!t.dead&&t.owner===O.id&&t.type!=='mon')keep.push(t.x,t.y);
+  for(let i=0;i<g.N;i++)if(own[i]===O.id){const x=i%W,y=(i/W)|0,dx=x-s.x,dy=y-s.y;let mine=dx*dx+dy*dy<=225;for(let k=0;k<keep.length&&!mine;k+=2)mine=(x-keep[k])**2+(y-keep[k+1])**2<=9;setOwner(g,i,mine?o:0);}
   if(O.alive)killNation(g,O,o);
 }
 function killNation(g,O,by){
