@@ -212,10 +212,14 @@ function startMatch(o){
   UI.lastOpt=opt;loading(true);
   setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);},40);
 }
-function toMenu(){UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');}
+function quitXp(){
+  const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
+  const xp=me.st.cities*4+me.st.kills*15;if(xp<=0)return;UI.prof.xp+=xp;UI.prof.games++;saveProf();return xp;
+}
+function toMenu(){const xp=quitXp();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;p.xp+=xp;p.games++;if(o.win)p.wins++;
+  g.xpDone=true;const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;p.xp+=xp;p.games++;if(o.win)p.wins++;
   let best='';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
