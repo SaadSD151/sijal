@@ -1,5 +1,5 @@
 // ── SIJAL · simulation (pure logic, no DOM) ──
-const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=12,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
+const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=12,ALLY_T=1200,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
   const M=genMap(o),N=M.N;
@@ -16,7 +16,7 @@ function emit(g,t,d){d=d||{};d.t=t;d.tick=g.tick;g.ev.push(d);}
 function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
-    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
+    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:250+g.rng()*250,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
@@ -192,27 +192,29 @@ function seedAttack(g,k){
     if(k.tx>=0){const d=hyp(i%W-k.tx,((i/W)|0)-k.ty);if(d<dmin){dmin=d;ob=i;}}}
   if(!seeds.length)return 0;
   if(ob<0)ob=seeds[(g.rng()*seeds.length)|0];k.ox=ob%W;k.oy=(ob/W)|0;
+  if(k.focus){const f=seeds.filter(s=>(s%W-k.ox)**2+(((s/W)|0)-k.oy)**2<=49);seeds.length=0;for(const s of f)seeds.push(s);}
   const kk=k.d?1.1:.2;
   for(const s of seeds){let p=now+tileDelay(g,k,s,-1);if(k.tx>=0)p+=kk*(hyp(s%W-k.tx,((s/W)|0)-k.ty)-dmin);k.heap.push(p,s);}
   return seeds.length;
 }
+function inCor(k,x,y){const dx=k.tx-k.ox,dy=k.ty-k.oy,L=dx*dx+dy*dy;let t=L?((x-k.ox)*dx+(y-k.oy)*dy)/L:0;t=t<0?0:t>1?1:t;const ex=k.ox+dx*t-x,ey=k.oy+dy*t-y;return ex*ex+ey*ey<=64||(x-k.tx)**2+(y-k.ty)**2<=100;}
 function pushNb(g,k,i){
-  const W=g.W,own=g.owner,ter=g.M.ter,x=i%W,h=k.heap,now=g.tick;let n;
-  if(x>0&&own[n=i-1]===k.d&&ter[n]>1)h.push(now+tileDelay(g,k,n,i),n);
-  if(x<W-1&&own[n=i+1]===k.d&&ter[n]>1)h.push(now+tileDelay(g,k,n,i),n);
-  if(i>=W&&own[n=i-W]===k.d&&ter[n]>1)h.push(now+tileDelay(g,k,n,i),n);
-  if(i<g.N-W&&own[n=i+W]===k.d&&ter[n]>1)h.push(now+tileDelay(g,k,n,i),n);
+  const W=g.W,own=g.owner,ter=g.M.ter,x=i%W,h=k.heap,now=g.tick,f=k.focus;let n;
+  if(x>0&&own[n=i-1]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
+  if(x<W-1&&own[n=i+1]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
+  if(i>=W&&own[n=i-W]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
+  if(i<g.N-W&&own[n=i+W]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
 }
 function warMark(g,A,D){const now=g.tick;if(now-D.lastHit[A.id]>300)emit(g,'war',{a:A.id,d:D.id});D.lastHit[A.id]=now;A.lastAtk[D.id]=now;D.att[A.id]=Math.max(-100,D.att[A.id]-35);}
-function launchAttack(g,a,d,ratio,tx,ty){
+function launchAttack(g,a,d,ratio,tx,ty,focus){focus=!!focus;
   const A=g.nations[a];if(!A||!A.alive||a===d)return'no';
   const D=d?g.nations[d]:null,now=g.tick;
   if(D){if(!D.alive)return'no';if(A.ally[d])return'ally';if(now<A.truce[d])return'truce';}
   const com=Math.floor(A.troops*ratio);if(com<100)return'few';
   if(tx==null)tx=ty=-1;
-  let cnt=0,same=null;for(const k of g.attacks)if(k.a===a&&!k.cancel){cnt++;if(k.d===d&&!k.naval&&(tx<0||k.tx<0||hyp(k.tx-tx,k.ty-ty)<10))same=k;}
+  let cnt=0,same=null;for(const k of g.attacks)if(k.a===a&&!k.cancel){cnt++;if(k.d===d&&!k.naval&&!!k.focus===focus&&(tx<0||k.tx<0||hyp(k.tx-tx,k.ty-ty)<10))same=k;}
   let k=same;
-  if(!k){if(cnt>=MAX_ATK)return'max';k={id:++g.aid,a,d,troops:0,heap:new Heap(),tx,ty,ox:0,oy:0,born:now,gain:0,reseed:now};if(!seedAttack(g,k))return'noborder';}
+  if(!k){if(cnt>=MAX_ATK)return'max';k={id:++g.aid,a,d,troops:0,heap:new Heap(),tx,ty,ox:0,oy:0,born:now,gain:0,reseed:now,focus:focus&&tx>=0};if(!seedAttack(g,k))return'noborder';}
   A.troops-=com;let tr=com;
   if(D)for(const e of g.attacks)if(e.a===d&&e.d===a&&e.troops>0){const c=Math.min(e.troops,tr);e.troops-=c;tr-=c;if(tr<=0)break;}
   if(D)warMark(g,A,D);
@@ -239,7 +241,7 @@ function tickAttacks(g){
         if(D&&!D.alive){done=true;break;}
         pushNb(g,k,i);
       }
-      if(!done&&!h.size){if(now-k.reseed>10){k.reseed=now;if(!seedAttack(g,k))done=true;}}
+      if(!done&&!h.size){if(k.focus)done=true;else if(now-k.reseed>10){k.reseed=now;if(!seedAttack(g,k))done=true;}}
     }
     if(done){if(A.alive&&k.troops>0)A.troops+=k.troops;emit(g,'atkEnd',{a:k.a,d:k.d,gain:k.gain,id:k.id});g.attacks[ai]=g.attacks[g.attacks.length-1];g.attacks.pop();}
   }
@@ -389,12 +391,21 @@ function tickPending(g){
 
 // ── diplomacy ──
 function setAlly(g,a,b){
-  const A=g.nations[a],B=g.nations[b];A.ally[b]=B.ally[a]=1;A.allyAt[b]=B.allyAt[a]=g.tick;A.att[b]=Math.max(A.att[b],30);B.att[a]=Math.max(B.att[a],30);
+  const A=g.nations[a],B=g.nations[b];A.ally[b]=B.ally[a]=1;A.allyAt[b]=B.allyAt[a]=g.tick;A.allyUntil[b]=B.allyUntil[a]=g.tick+ALLY_T;A.allyRen[b]=B.allyRen[a]=A.allyWarn[b]=B.allyWarn[a]=0;A.att[b]=Math.max(A.att[b],30);B.att[a]=Math.max(B.att[a],30);
   for(const k of g.attacks)if((k.a===a&&k.d===b)||(k.a===b&&k.d===a))k.cancel=true;emit(g,'ally',{a,b});
 }
 function breakAlly(g,a,b){
   const A=g.nations[a],B=g.nations[b];if(!A.ally[b])return;A.ally[b]=B.ally[a]=0;A.truce[b]=B.truce[a]=g.tick+150;
   B.att[a]=Math.min(B.att[a],-40);for(const n of g.nations)if(n&&n.id!==a&&n.id!==b)n.att[a]=Math.max(-100,n.att[a]-10);emit(g,'betray',{a,b});
+}
+// alliances last two minutes; 20 seconds before the end each side says whether it wants to carry on
+function aiRenew(g,A,B){return A.att[B.id]>0&&g.hegemon!==B.id&&g.rng()<.85?1:0;}
+function allyPass(g){
+  const now=g.tick,ns=g.nations;
+  for(const A of ns){if(!A||!A.alive)continue;for(const B of ns){if(!B||B.id<=A.id||!B.alive||!A.ally[B.id])continue;const a=A.id,b=B.id,u=A.allyUntil[b];
+    if(!A.allyWarn[b]&&u-now<=200){A.allyWarn[b]=B.allyWarn[a]=1;if(!A.human)A.allyRen[b]=aiRenew(g,A,B);if(!B.human)B.allyRen[a]=aiRenew(g,B,A);emit(g,'allyWarn',{a,b});}
+    if(now>=u){if(A.allyRen[b]&&B.allyRen[a]){A.allyUntil[b]=B.allyUntil[a]=u+ALLY_T;A.allyWarn[b]=B.allyWarn[a]=A.allyRen[b]=B.allyRen[a]=0;emit(g,'allyRenew',{a,b});}
+      else{const by=A.allyRen[b]?b:a;A.ally[b]=B.ally[a]=0;A.truce[b]=B.truce[a]=now+150;emit(g,'allyEnd',{a,b,by});}}}}
 }
 function propose(g,a,b){
   const A=g.nations[a],B=g.nations[b];if(!A.alive||!B.alive||A.ally[b])return'no';
@@ -494,7 +505,7 @@ function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
   seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
-    structPass(g);const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
+    structPass(g);allyPass(g);const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);
     if(now>=g.nextEvent)worldEvent(g);
     checkOver(g);if(g.over)return;
