@@ -215,6 +215,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #cAmt .row .btn{min-width:0;flex:1}
 #upd{position:absolute;bottom:max(16px,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px 14px;width:max-content;max-width:calc(100% - 32px);border-color:var(--gold);font-weight:600;text-align:center}
 .mob #upd{bottom:auto;top:max(110px,env(safe-area-inset-top,0px))}
+.diag.good{color:var(--good)}.diag.warn{color:var(--warn)}.diag.bad{color:var(--bad)}
 #gToasts{position:absolute;top:max(16px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;width:max-content;max-width:92%;z-index:20;pointer-events:none}
 #gToasts .ts{pointer-events:auto;text-align:center}
 /* room browser */

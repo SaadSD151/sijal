@@ -1,6 +1,12 @@
 // builds single-file versions of the game into dist/
 const fs=require('fs'),path=require('path'),p=f=>fs.readFileSync(path.join(__dirname,'src',f),'utf8');
-const src=['core','map','game','ai','render','i18n','net','ui'].map(f=>p(f+'.js')).join('\n'),js=`const BUILD_ID='${require('crypto').createHash('sha1').update(src).digest('hex').slice(0,10)}';\n`+src,css=p('style.css'),body=p('body.html');
+// older browsers: expand the inset shorthand, and add right/left fallbacks for inset-inline-* (RTL is the default language)
+const compatCss=css=>{
+  css=css.replace(/(^|[;{\s])inset:([^;}]+)/g,(m,pre,v)=>{const p=v.trim().split(/\s+/),[t,r,b,l]=p.length===1?[p[0],p[0],p[0],p[0]]:p.length===2?[p[0],p[1],p[0],p[1]]:p.length===3?[p[0],p[1],p[2],p[1]]:p;return `${pre}top:${t};right:${r};bottom:${b};left:${l}`;});
+  const fb=[];css.replace(/([^{}]+)\{([^{}]*inset-inline-(?:start|end)[^{}]*)\}/g,(m,sel,body)=>{const d=[];body.replace(/inset-inline-(start|end):([^;}]+)/g,(x,k,v)=>{d.push(`${k==='start'?'right':'left'}:${v.trim()}`);});if(d.length)fb.push(`${sel.trim()}{${d.join(';')}}`);});
+  return css+(fb.length?`\n@supports not (inset-inline-start:0){${fb.join('\n')}}\n`:'');
+};
+const src=['core','map','game','ai','render','i18n','net','ui'].map(f=>p(f+'.js')).join('\n'),js=`const BUILD_ID='${require('crypto').createHash('sha1').update(src).digest('hex').slice(0,10)}';\n`+src,css=compatCss(p('style.css')),body=p('body.html');
 const TITLE='<title>سِجال حرب المدن</title>';
 const FONTS='<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">';
 const script=m=>`<script>\n${m?`window.SIJAL_MODE='${m}';`:''}(function(){"use strict";\n${js}\n})();\n</script>`;
@@ -13,4 +19,5 @@ out('sijal.html',full());try{fs.mkdirSync(path.join(__dirname,'dist','site'));}c
 const META=`<meta name="description" content="${DESC}">\n<link rel="icon" type="image/png" href="icon.png">\n<link rel="apple-touch-icon" href="icon.png">\n<meta property="og:type" content="website">\n<meta property="og:site_name" content="سِجال">\n<meta property="og:title" content="سِجال حرب المدن">\n<meta property="og:description" content="${DESC}">\n<meta property="og:url" content="${SITE}">\n<meta property="og:image" content="${SITE}preview.png">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:image" content="${SITE}preview.png">\n<meta name="theme-color"`;
 out('site/index.html',full().replace('<meta name="theme-color"',META));
 fs.writeFileSync(path.join(__dirname,'dist','site','version.json'),JSON.stringify({build:js.match(/BUILD_ID='([0-9a-f]+)'/)[1]}));
+fs.copyFileSync(path.join(__dirname,'vendor','peerjs-1.5.4-compat.js'),path.join(__dirname,'dist','site','peer.js'));
 for(const f of['icon.png','preview.png'])fs.copyFileSync(path.join(__dirname,'src','assets',f),path.join(__dirname,'dist','site',f));out('sijal-mobile.html',full('mobile'));out('sijal-pc.html',full('pc'));

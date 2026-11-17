@@ -22,8 +22,8 @@
 html,body{height:100%}
 body{margin:0;background:var(--sea);color:var(--parch);font-family:var(--ui);font-size:14px;line-height:1.45;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
 #app{position:relative;height:100%;overflow:hidden}
-#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
-#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 58%,rgba(4,10,18,.5) 100%)}
+#cv{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+#vig{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 58%,rgba(4,10,18,.5) 100%)}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
 button:focus-visible,input:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
 b{font-weight:700}small{color:var(--dim);font-size:.82em}h2,h3,h4,p{margin:0}
@@ -31,7 +31,7 @@ b{font-weight:700}small{color:var(--dim);font-size:.82em}h2,h3,h4,p{margin:0}
 .good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
 
 /* ── in-game HUD ── */
-#hud{position:absolute;inset:0;pointer-events:none;font-variant-numeric:tabular-nums}
+#hud{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;font-variant-numeric:tabular-nums}
 #hud,.screen{touch-action:manipulation}
 #bar,#atk{touch-action:pan-x}
 #hud>*{position:absolute;pointer-events:auto}
@@ -124,7 +124,7 @@ b{font-weight:700}small{color:var(--dim);font-size:.82em}h2,h3,h4,p{margin:0}
 #tip{padding:6px 10px;font-size:12.5px;pointer-events:none!important;border-radius:8px;white-space:nowrap;z-index:6}
 
 /* ── screens ── */
-.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:20px;padding-block:28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-y:auto;background:radial-gradient(ellipse at 50% 28%,rgba(8,19,30,.42),rgba(5,11,19,.9));z-index:8}
+.screen{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;gap:20px;padding-block:28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-y:auto;background:radial-gradient(ellipse at 50% 28%,rgba(8,19,30,.42),rgba(5,11,19,.9));z-index:8}
 .screen>:first-child{margin-top:auto}.screen>:last-child{margin-bottom:auto}
 #pause{background:rgba(5,11,19,.78)}
 .logo{text-align:center}
@@ -173,7 +173,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .rbar{height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden}
 .rbar u{display:block;height:100%;background:var(--gold);width:0}
 .best{color:var(--gold2)}
-#load{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,11,19,.84);font-family:var(--disp);font-size:30px;color:var(--gold2);z-index:9}
+#load{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;background:rgba(5,11,19,.84);font-family:var(--disp);font-size:30px;color:var(--gold2);z-index:9}
 
 @keyframes fdin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes ban{0%{opacity:0;transform:scale(.92)}12%{opacity:1;transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
@@ -227,6 +227,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #cAmt .row .btn{min-width:0;flex:1}
 #upd{position:absolute;bottom:max(16px,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px 14px;width:max-content;max-width:calc(100% - 32px);border-color:var(--gold);font-weight:600;text-align:center}
 .mob #upd{bottom:auto;top:max(110px,env(safe-area-inset-top,0px))}
+.diag.good{color:var(--good)}.diag.warn{color:var(--warn)}.diag.bad{color:var(--bad)}
 #gToasts{position:absolute;top:max(16px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;width:max-content;max-width:92%;z-index:20;pointer-events:none}
 #gToasts .ts{pointer-events:auto;text-align:center}
 /* room browser */
@@ -320,6 +321,19 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
   .mob .hl{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mob .wts{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+@supports not (inset-inline-start:0){#lb{left:var(--g)}
+#mini{left:var(--g)}
+#bHome{left:var(--g)}
+.bb kbd{right:5px}
+#feed{right:var(--g)}
+#atk{right:var(--g)}
+#card{right:var(--g)}
+.mob #amode{left:var(--g)}
+.mob #bHome{left:var(--g)}
+.mob #feed{right:var(--g)}
+.mob #atk{right:var(--g)}
+.mob #card{right:var(--g)}}
 </style>
 </head>
 <body>
@@ -337,7 +351,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='mobile';(function(){"use strict";
-const BUILD_ID='9b69ea8e14';
+const BUILD_ID='329336a692';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1503,7 +1517,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  b_focus:'Show on map',online:'Play online',hostRoom:'Open an online room',join:'Join room',code:'Room code',lobby:'Lobby',lobbyHost:'You are the host. Give the code to your friends and start once they are in. The world uses your custom battle settings.',lobbyWait:'Waiting for the host to start…',startNet:'Start the battle',leave:'Leave',players:'Players ({0}/16)',hostTag:'host',player:'Player',
  netNote:'To join a friend, type the code they gave you. To host, press “Open an online room” and pick the world settings. Devices connect directly through the host, with no paid server. Online play works from the game file or its website.',
  mpSpawn:'Found your capital. The battle starts when everyone has chosen, or after one minute',mpWait:'Waiting for the other players…',mpLeft:'{0} left; the computer now rules their realm',mpDesync:'Warning: a player has drifted out of sync with the host',mpDead:'Your realm has fallen. You are now watching the rest of the war',
- e_room:'No room found with that code',e_full:'That room is full or already playing',e_net:'Could not connect. Online play works from the game file or its website, not from this page',e_host:'Lost connection to the host',e_hostOnly:'Only the host controls the speed',made:'Made in Saudi Arabia with the help of AI',dGo:'Start the challenge',dNone:'You have not won today\'s challenge yet',dWorld:'Today\'s world',
+ e_room:'Could not reach the room. Check the code; if it still fails, try another network (Wi-Fi or mobile data)',e_full:'That room is full or already playing',e_net:'Could not connect. Online play works from the game file or its website, not from this page',e_host:'Lost connection to the host',e_hostOnly:'Only the host controls the speed',made:'Made in Saudi Arabia with the help of AI',dGo:'Start the challenge',dNone:'You have not won today\'s challenge yet',dWorld:'Today\'s world',
  dInfo:[['One world per day','Each day a new map is generated from the date and stays the same all day, however many times you retry. Tomorrow brings a different world.'],['Fixed rules','Medium map, 14 rival realms and 60 tribes, on Hard. You cannot change them, so every attempt faces the same challenge.'],['Goal: the fastest win','Win any way you like: hold 70% of the land or raise the Eternal Monument. Your best time today is saved; try to beat it.'],['Tip','Since the world does not change, learn from each attempt: where to found your capital, which cities to take first, whom to ally with.']],b_annex:'Annex {0}',m_annex:'You annexed {0} without a fight',b_ally:'Propose alliance',b_break:'Break alliance',b_gift:'Gift {0} gold',b_arms:'Call allies against them',b_find:'Show their capital',
  m_warYou:'{0} is attacking you!',m_cityYou:'You took {0} and its province surrendered',m_cityLost:'You lost {0}!',m_join:'{0} joined you',
  m_capMoved:'The capital of {0} fell; rule moves to {1}',m_capYou:'Your capital fell! Rule moves to {0}',m_collapse:'{0} collapsed, toppled by {1}',
@@ -1541,7 +1555,7 @@ Object.assign(TX.ar,{tag:'خذ المدينة يطيح إقليمها',quick:'م
  account:'الحساب',accName:'اسمك في اللعبة',accGames:'معارك',accNote:'اسمك يطلع فوق دولتك وفي غرف الأونلاين. بياناتك محفوظة على هذا الجهاز بس.',news:'آخر التحديثات',newsNew:'وش الجديد؟',ver:'الإصدار',ok:'تمام',
  lobbyHost:'أنت المضيف. عط الكود لأخوياك، ولما يدخلون ابدأ المعركة. إعدادات العالم هي اللي اخترتها في المعركة المخصّصة.',lobbyWait:'ننتظر المضيف يبدأ المعركة…',
  mpSpawn:'اختر حضارتك ومكان عاصمتك. المعركة تبدأ لما الكل يختار أو بعد دقيقة',mpWait:'ننتظر باقي اللاعبين…',mpLeft:'{0} طلع من المعركة والحاسوب مسك دولته',mpDead:'طاحت دولتك. تتفرج الحين على باقي الحرب',
- e_room:'ما لقيت غرفة بهالكود',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
+ e_room:'ما قدرنا نوصل للغرفة. تأكد من الكود، وإذا ما ضبط جرّب شبكة ثانية (واي فاي أو بيانات الجوال)',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
 Object.assign(TX.en,{b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
  mpSpawn:'Choose your civilization and found your capital. The battle starts when everyone has chosen, or after one minute',
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the right button to move the map, right-click opens a realm card.'});
@@ -1556,14 +1570,14 @@ Object.assign(TX.en,{d_fort:'Slows the enemy a lot and multiplies defense by 6. 
  dInfo:[['One world per day','Each day a new map is generated from the date and stays the same all day, however many times you retry. Tomorrow brings a different world.'],['Fixed rules','Medium map, 14 rival realms and 60 tribes, on Hard. You cannot change them, so every attempt faces the same challenge.'],['Goal: the fastest win','Hold 70% of the land as fast as you can. Your best time today is saved; try to beat it.'],['Tip','Since the world does not change, learn from each attempt: where to found your capital, which cities to take first, whom to ally with.']]});
 TX.en.help[4]=['Building','Every building takes 10 seconds to finish. Cities add troops and gold, forts slow the enemy and multiply defense by 6, ports send trade ships that bring gold.'];
 TX.en.help[8]=['The road to victory','Hold 70% of the land in single player, 99% online.'];
-Object.assign(TX.ar,{updNew:'نزل تحديث جديد للعبة! حدّث الصفحة عشان تاخذ آخر نسخة',updMp:'نزل تحديث جديد! حدّث الصفحة بعد ما تخلص المعركة',updGo:'حدّث الحين',updLater:'لاحقاً',mpSlow:'ننتظر جهاز {0} يلحق…',e_ver:'نسختك من اللعبة غير نسخة المضيف. حدّث الصفحة وادخل مرة ثانية',c_atk:'هجوم',c_annex:'ضمّ',c_sea:'بحر',c_ally:'تحالف',c_break:'فسخ',c_aid:'جنود',c_gift:'ذهب',c_arms:'حلفاءك',c_find:'مكانه',c_send:'أرسل',b_aid:'أرسل له جنود مساعدة، ويثق فيك أكثر',b_giftPick:'أهدِه ذهب وتختار المبلغ',m_aidSent:'أرسلت {0} جندي مساعدة لـ{1}',m_aidGot:'{0} أرسل لك {1} جندي مساعدة',beta:'اللعبة تحت التطوير، توقّعوا بعض الأخطاء وساعدونا نحلها عن طريق «اقتراحاتكم»',roomName:'اسم الغرفة',roomOf:'غرفة {0}',pingHost:'سرعة اتصالك بالمضيف',rooms:'الغرف المفتوحة',roomsWait:'ندوّر على الغرف…',roomsNone:'ما فيه غرف عامة الحين. افتح غرفتك وخلها عامة عشان تطلع هنا.',roomType:'نوع الغرفة',pubRoom:'عامة',privRoom:'خاصة',roomPub:'غرفة عامة: تطلع في قائمة الغرف لين تبدأ المعركة',roomPriv:'غرفة خاصة: يدخلها بس اللي معه الكود',rematch:'إعادة المباراة',rematchWait:'بانتظار المضيف يعيد المباراة. بترجع للغرفة لحالك.',m_cityRuin:'صاروخك خلّى {0} حطام',m_cityRuinYou:'{0} صارت حطام! ما تنمو ولا تجيب ذهب لين تتعمّر',m_cityGone:'مسحت {0} من الخريطة',m_cityGoneYou:'انمسحت مدينتك {0}!',d_rocket:'يضرب نقطة ويخلّي المدينة حطام: تنزل مستوى وتوقف عن النمو والذهب 40 ثانية',d_nuke:'يمحو منطقة ويلوّثها، يمسح المدن الصغيرة ويخلّي الكبيرة حطام 90 ثانية',d_doom:'أقوى سلاح: يمسح كل المباني والمدن اللي يطولها بضعف مدى الذرّية',amode:'نوع الهجوم',am_pt:'على نقطة',am_all:'من كل الحدود',allyLeft:'باقي {0}',m_allyWarn:'تحالفك مع {0} ينتهي بعد 20 ثانية. تبي تكمّله؟',m_allyNo:'{0} ما يبي يكمّل التحالف، بينتهي بعد 20 ثانية',renewY:'كمّل التحالف',renewN:'أنهِه',m_allyRenew:'تجدد التحالف مع {0} دقيقتين زيادة',m_allyEnd:'انتهى التحالف مع {0}',m_renewSent:'بلّغت {0} إنك تبي تكمّل التحالف',langName:'اللغة',suggest:'اقتراحاتكم',sgNote:'عندك فكرة للعبة أو لقيت مشكلة؟ اكتبها هنا وتوصل لصاحب اللعبة.',sgText:'اقتراحك',sgPh:'اكتب اقتراحك هنا…',sgSend:'أرسل الاقتراح',sgDone:'وصل اقتراحك، مشكور!',e_sgShort:'اكتب اقتراحك أول',e_sgSite:'الاقتراحات تنرسل من موقع اللعبة بس',e_sgFail:'ما قدرت أرسل الاقتراح، جرّب بعد شوي',e_sgOff:'الاقتراحات متوقفة مؤقتاً',allRanks:'كل الرتب',ranksNote:'الرقم جنب كل رتبة هو عدد الانتصارات اللي تحتاجه عشان توصلها.',b_sea:'اهجم عليه من البحر',settings:'الإعدادات',volM:'صوت الموسيقى',volS:'صوت المؤثرات',s_coast:'دفاع بحري',d_coast:'مدفعية على الساحل تضرب سفن العدو اللي تقرب وتغرّقها قبل توصل',m_sunk:'مدفعيتك غرّقت سفينة للعدو',m_sunkYou:'الدفاع البحري غرّق سفينتك',sizes:['صغيرة','متوسطة','كبيرة','عملاقة'],confirm:'تأكيد',cancel:'إلغاء',s_doom:'قنبلة الفناء',d_doom:'أقوى سلاح في اللعبة: تمسح منطقة بضعف مدى القنبلة الذرّية وتلوّثها مدة أطول',
+Object.assign(TX.ar,{diagOk:'✔ جهازك جاهز للأونلاين',diagWait:'… نفحص اتصال جهازك',diagOld:'✖ متصفح جوالك قديم وما يدعم الأونلاين. حدّث النظام أو المتصفح، أو جرّب متصفح كروم',diagLib:'✖ ما قدرنا نحمّل أداة الأونلاين. تأكد من النت وحدّث الصفحة',diagNet:'⚠ شبكتك تمنع الاتصال المباشر. جرّب الواي فاي بدل بيانات الجوال، أو العكس',e_old:'متصفح جوالك قديم وما يدعم الأونلاين. حدّث النظام أو المتصفح، أو جرّب متصفح كروم',e_lib:'ما قدرنا نحمّل أداة الأونلاين. تأكد من النت وحدّث الصفحة',updNew:'نزل تحديث جديد للعبة! حدّث الصفحة عشان تاخذ آخر نسخة',updMp:'نزل تحديث جديد! حدّث الصفحة بعد ما تخلص المعركة',updGo:'حدّث الحين',updLater:'لاحقاً',mpSlow:'ننتظر جهاز {0} يلحق…',e_ver:'نسختك من اللعبة غير نسخة المضيف. حدّث الصفحة وادخل مرة ثانية',c_atk:'هجوم',c_annex:'ضمّ',c_sea:'بحر',c_ally:'تحالف',c_break:'فسخ',c_aid:'جنود',c_gift:'ذهب',c_arms:'حلفاءك',c_find:'مكانه',c_send:'أرسل',b_aid:'أرسل له جنود مساعدة، ويثق فيك أكثر',b_giftPick:'أهدِه ذهب وتختار المبلغ',m_aidSent:'أرسلت {0} جندي مساعدة لـ{1}',m_aidGot:'{0} أرسل لك {1} جندي مساعدة',beta:'اللعبة تحت التطوير، توقّعوا بعض الأخطاء وساعدونا نحلها عن طريق «اقتراحاتكم»',roomName:'اسم الغرفة',roomOf:'غرفة {0}',pingHost:'سرعة اتصالك بالمضيف',rooms:'الغرف المفتوحة',roomsWait:'ندوّر على الغرف…',roomsNone:'ما فيه غرف عامة الحين. افتح غرفتك وخلها عامة عشان تطلع هنا.',roomType:'نوع الغرفة',pubRoom:'عامة',privRoom:'خاصة',roomPub:'غرفة عامة: تطلع في قائمة الغرف لين تبدأ المعركة',roomPriv:'غرفة خاصة: يدخلها بس اللي معه الكود',rematch:'إعادة المباراة',rematchWait:'بانتظار المضيف يعيد المباراة. بترجع للغرفة لحالك.',m_cityRuin:'صاروخك خلّى {0} حطام',m_cityRuinYou:'{0} صارت حطام! ما تنمو ولا تجيب ذهب لين تتعمّر',m_cityGone:'مسحت {0} من الخريطة',m_cityGoneYou:'انمسحت مدينتك {0}!',d_rocket:'يضرب نقطة ويخلّي المدينة حطام: تنزل مستوى وتوقف عن النمو والذهب 40 ثانية',d_nuke:'يمحو منطقة ويلوّثها، يمسح المدن الصغيرة ويخلّي الكبيرة حطام 90 ثانية',d_doom:'أقوى سلاح: يمسح كل المباني والمدن اللي يطولها بضعف مدى الذرّية',amode:'نوع الهجوم',am_pt:'على نقطة',am_all:'من كل الحدود',allyLeft:'باقي {0}',m_allyWarn:'تحالفك مع {0} ينتهي بعد 20 ثانية. تبي تكمّله؟',m_allyNo:'{0} ما يبي يكمّل التحالف، بينتهي بعد 20 ثانية',renewY:'كمّل التحالف',renewN:'أنهِه',m_allyRenew:'تجدد التحالف مع {0} دقيقتين زيادة',m_allyEnd:'انتهى التحالف مع {0}',m_renewSent:'بلّغت {0} إنك تبي تكمّل التحالف',langName:'اللغة',suggest:'اقتراحاتكم',sgNote:'عندك فكرة للعبة أو لقيت مشكلة؟ اكتبها هنا وتوصل لصاحب اللعبة.',sgText:'اقتراحك',sgPh:'اكتب اقتراحك هنا…',sgSend:'أرسل الاقتراح',sgDone:'وصل اقتراحك، مشكور!',e_sgShort:'اكتب اقتراحك أول',e_sgSite:'الاقتراحات تنرسل من موقع اللعبة بس',e_sgFail:'ما قدرت أرسل الاقتراح، جرّب بعد شوي',e_sgOff:'الاقتراحات متوقفة مؤقتاً',allRanks:'كل الرتب',ranksNote:'الرقم جنب كل رتبة هو عدد الانتصارات اللي تحتاجه عشان توصلها.',b_sea:'اهجم عليه من البحر',settings:'الإعدادات',volM:'صوت الموسيقى',volS:'صوت المؤثرات',s_coast:'دفاع بحري',d_coast:'مدفعية على الساحل تضرب سفن العدو اللي تقرب وتغرّقها قبل توصل',m_sunk:'مدفعيتك غرّقت سفينة للعدو',m_sunkYou:'الدفاع البحري غرّق سفينتك',sizes:['صغيرة','متوسطة','كبيرة','عملاقة'],confirm:'تأكيد',cancel:'إلغاء',s_doom:'قنبلة الفناء',d_doom:'أقوى سلاح في اللعبة: تمسح منطقة بضعف مدى القنبلة الذرّية وتلوّثها مدة أطول',
  ranks:['مستجد','جندي','عريف','رقيب','ملازم','نقيب','رائد','مقدّم','عقيد','عميد','لواء','فريق','قائد جيش','فارس','أمير','وزير حرب','سلطان','ملك','إمبراطور','فاتح','أسطورة','قاهر الممالك'],accNext:'باقي لك {0} انتصار وتوصل رتبة «{1}»',
  seaGood:['الجيوش تكبر أسرع بـ30%، وقت تعبّي جيشك','الهجوم أسرع بـ18%، أحسن وقت للغزو','الذهب يزيد 40%، وقت البناء وتطوير العصر','الدفاع أقوى، وقت تتحصّن وتجمع'],
  seaBad:['انتبه: جيرانك بعد يكبرون مثلك','انتبه: العدو بعد يوصلك أسرع','انتبه: الشتاء جاي، خلّص هجماتك قبله','خطر: الهجوم أبطأ 40% وأغلى 25%، والجيش ينمو أقل 30%، والذهب أقل 10%'],
  w_dom:'{0} سيطرت على العالم كله',d_port:'يطلّع سفينة تتاجر مع موانئ الدول وترجع لك بذهب. حطّه قريب الساحل ويثبت لحاله'});
 TX.ar.help[8]=['طريق النصر','سيطر على 99% من أرض العالم. كل دولة لازم تطيح.'];
 TX.ar.dInfo[2]=['الهدف: أسرع نصر','سيطر على 99% من الأرض بأسرع وقت. ينحفظ أفضل زمن لك اليوم، وحاول تكسره.'];
-Object.assign(TX.en,{updNew:'A new update is out! Refresh the page to get the latest version',updMp:'A new update is out! Refresh after this battle',updGo:'Refresh now',updLater:'Later',mpSlow:'Waiting for {0}\'s device to catch up…',e_ver:'Your game version differs from the host\'s. Refresh the page and join again',c_atk:'Attack',c_annex:'Annex',c_sea:'Sea',c_ally:'Ally',c_break:'Break',c_aid:'Troops',c_gift:'Gold',c_arms:'Allies',c_find:'Locate',c_send:'Send',b_aid:'Send troops to help them; it raises their trust in you',b_giftPick:'Gift gold and choose the amount',m_aidSent:'You sent {0} troops to help {1}',m_aidGot:'{0} sent you {1} troops',beta:'The game is still in development. Expect some bugs, and help us fix them through “Your suggestions”',roomName:'Room name',roomOf:'{0}\'s room',pingHost:'Your connection to the host',rooms:'Open rooms',roomsWait:'Looking for rooms…',roomsNone:'No public rooms right now. Open your own and make it public to list it here.',roomType:'Room type',pubRoom:'Public',privRoom:'Private',roomPub:'Public room: listed in the room browser until the battle starts',roomPriv:'Private room: only people with the code can join',rematch:'Rematch',rematchWait:'Waiting for the host to start a rematch. You will return to the room automatically.',m_cityRuin:'Your missile left {0} in ruins',m_cityRuinYou:'{0} lies in ruins! No growth or gold until it is rebuilt',m_cityGone:'You wiped {0} off the map',m_cityGoneYou:'Your city {0} was wiped out!',d_rocket:'Strikes a point and leaves a city in ruins: it drops a level and stops growing and paying gold for 40 seconds',d_nuke:'Erases and poisons an area; wipes out small cities and ruins large ones for 90 seconds',d_doom:'The strongest weapon: erases every building and city it reaches, with twice the atom bomb\'s radius',amode:'Attack type',am_pt:'At a point',am_all:'Along every border',allyLeft:'{0} left',m_allyWarn:'Your alliance with {0} ends in 20 seconds. Renew it?',m_allyNo:'{0} does not want to renew; the alliance ends in 20 seconds',renewY:'Renew alliance',renewN:'End it',m_allyRenew:'Alliance with {0} renewed for two more minutes',m_allyEnd:'Your alliance with {0} has ended',m_renewSent:'You told {0} you want to renew',langName:'Language',suggest:'Your suggestions',sgNote:'Have an idea for the game, or found a problem? Write it here and it reaches the game\'s owner.',sgText:'Your suggestion',sgPh:'Write your suggestion here…',sgSend:'Send suggestion',sgDone:'Your suggestion was received. Thank you!',e_sgShort:'Write your suggestion first',e_sgSite:'Suggestions can only be sent from the game website',e_sgFail:'Could not send the suggestion, try again shortly',e_sgOff:'Suggestions are paused for now',allRanks:'All ranks',ranksNote:'The number beside each rank is the wins you need to reach it.',b_sea:'Attack by sea',settings:'Settings',volM:'Music volume',volS:'Sound effects volume',s_coast:'Coastal guns',d_coast:'Shore artillery that shells approaching enemy ships and sinks them before they land',m_sunk:'Your guns sank an enemy ship',m_sunkYou:'Coastal guns sank your ship',sizes:['Small','Medium','Large','Giant'],confirm:'Confirm',cancel:'Cancel',s_doom:'Doomsday bomb',d_doom:'The strongest weapon: erases twice the radius of the atom bomb and poisons it for longer',
+Object.assign(TX.en,{diagOk:'✔ Your device is ready for online play',diagWait:'… Checking your connection',diagOld:'✖ Your phone\'s browser is too old for online play. Update the system or browser, or try Chrome',diagLib:'✖ Could not load the online tool. Check your internet and refresh',diagNet:'⚠ Your network blocks direct connections. Try Wi-Fi instead of mobile data, or the reverse',e_old:'Your phone\'s browser is too old for online play. Update the system or browser, or try Chrome',e_lib:'Could not load the online tool. Check your internet and refresh',updNew:'A new update is out! Refresh the page to get the latest version',updMp:'A new update is out! Refresh after this battle',updGo:'Refresh now',updLater:'Later',mpSlow:'Waiting for {0}\'s device to catch up…',e_ver:'Your game version differs from the host\'s. Refresh the page and join again',c_atk:'Attack',c_annex:'Annex',c_sea:'Sea',c_ally:'Ally',c_break:'Break',c_aid:'Troops',c_gift:'Gold',c_arms:'Allies',c_find:'Locate',c_send:'Send',b_aid:'Send troops to help them; it raises their trust in you',b_giftPick:'Gift gold and choose the amount',m_aidSent:'You sent {0} troops to help {1}',m_aidGot:'{0} sent you {1} troops',beta:'The game is still in development. Expect some bugs, and help us fix them through “Your suggestions”',roomName:'Room name',roomOf:'{0}\'s room',pingHost:'Your connection to the host',rooms:'Open rooms',roomsWait:'Looking for rooms…',roomsNone:'No public rooms right now. Open your own and make it public to list it here.',roomType:'Room type',pubRoom:'Public',privRoom:'Private',roomPub:'Public room: listed in the room browser until the battle starts',roomPriv:'Private room: only people with the code can join',rematch:'Rematch',rematchWait:'Waiting for the host to start a rematch. You will return to the room automatically.',m_cityRuin:'Your missile left {0} in ruins',m_cityRuinYou:'{0} lies in ruins! No growth or gold until it is rebuilt',m_cityGone:'You wiped {0} off the map',m_cityGoneYou:'Your city {0} was wiped out!',d_rocket:'Strikes a point and leaves a city in ruins: it drops a level and stops growing and paying gold for 40 seconds',d_nuke:'Erases and poisons an area; wipes out small cities and ruins large ones for 90 seconds',d_doom:'The strongest weapon: erases every building and city it reaches, with twice the atom bomb\'s radius',amode:'Attack type',am_pt:'At a point',am_all:'Along every border',allyLeft:'{0} left',m_allyWarn:'Your alliance with {0} ends in 20 seconds. Renew it?',m_allyNo:'{0} does not want to renew; the alliance ends in 20 seconds',renewY:'Renew alliance',renewN:'End it',m_allyRenew:'Alliance with {0} renewed for two more minutes',m_allyEnd:'Your alliance with {0} has ended',m_renewSent:'You told {0} you want to renew',langName:'Language',suggest:'Your suggestions',sgNote:'Have an idea for the game, or found a problem? Write it here and it reaches the game\'s owner.',sgText:'Your suggestion',sgPh:'Write your suggestion here…',sgSend:'Send suggestion',sgDone:'Your suggestion was received. Thank you!',e_sgShort:'Write your suggestion first',e_sgSite:'Suggestions can only be sent from the game website',e_sgFail:'Could not send the suggestion, try again shortly',e_sgOff:'Suggestions are paused for now',allRanks:'All ranks',ranksNote:'The number beside each rank is the wins you need to reach it.',b_sea:'Attack by sea',settings:'Settings',volM:'Music volume',volS:'Sound effects volume',s_coast:'Coastal guns',d_coast:'Shore artillery that shells approaching enemy ships and sinks them before they land',m_sunk:'Your guns sank an enemy ship',m_sunkYou:'Coastal guns sank your ship',sizes:['Small','Medium','Large','Giant'],confirm:'Confirm',cancel:'Cancel',s_doom:'Doomsday bomb',d_doom:'The strongest weapon: erases twice the radius of the atom bomb and poisons it for longer',
  ranks:['Newcomer','Soldier','Corporal','Sergeant','Lieutenant','Captain','Major','Lt. Colonel','Colonel','Brigadier','Major General','General','Army Chief','Knight','Emir','War Vizier','Sultan','King','Emperor','Conqueror','Legend','Kingbreaker'],accNext:'{0} more wins to reach “{1}”',
  seaGood:['Armies grow 30% faster: fill your ranks','Attacks move 18% faster: the best time to invade','Gold is up 40%: build and advance your age','Defense is stronger: dig in and gather'],
  seaBad:['Careful: your neighbours grow too','Careful: the enemy reaches you faster too','Careful: winter is coming, finish your attacks','Danger: attacks 40% slower and 25% costlier, armies grow 30% less, gold down 10%'],
@@ -1572,7 +1586,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your best time today is saved; try to beat it.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'2.4',d:'2026-11-17',ar:['إصلاح الأونلاين: المضيف ينتظر أي جهاز يتأخر عشان الكل يشوف نفس الحرب بنفس اللحظة','الأونلاين يرفض الدخول إذا نسختك من اللعبة قديمة ويطلب تحدّث الصفحة','إذا نزل تحديث وأنت فاتح اللعبة، تجيك رسالة تحدّث الصفحة','بطاقة الدولة صارت أيقونات، وتختار مبلغ الهدية، وترسل جنود لحليفك','الصواريخ تخلّي المدن حطام، وقنبلة الفناء تمسح المباني'],en:['Online fix: the host waits for any device that falls behind, so everyone sees the same war at the same moment','Online refuses players on an older game version and asks them to refresh','If an update comes out while the game is open, you get a message to refresh','Icon realm card, exact gift amounts, and troop aid to allies','Missiles leave cities in ruins; the Doomsday bomb erases buildings']},
+ {v:'2.4',d:'2026-11-17',ar:['إصلاح الأونلاين: المضيف ينتظر أي جهاز يتأخر عشان الكل يشوف نفس الحرب بنفس اللحظة','الأونلاين يرفض الدخول إذا نسختك من اللعبة قديمة ويطلب تحدّث الصفحة','إذا نزل تحديث وأنت فاتح اللعبة، تجيك رسالة تحدّث الصفحة','الأونلاين صار يشتغل على جوالات ومتصفحات أقدم، وشاشة الأونلاين تفحص جهازك وتقولك وش المشكلة','بطاقة الدولة صارت أيقونات، وتختار مبلغ الهدية، وترسل جنود لحليفك','الصواريخ تخلّي المدن حطام، وقنبلة الفناء تمسح المباني'],en:['Online fix: the host waits for any device that falls behind, so everyone sees the same war at the same moment','Online refuses players on an older game version and asks them to refresh','If an update comes out while the game is open, you get a message to refresh','Online works on older phones and browsers, and the online screen checks your device and explains any problem','Icon realm card, exact gift amounts, and troop aid to allies','Missiles leave cities in ruins; the Doomsday bomb erases buildings']},
  {v:'2.3',d:'2026-11-17',ar:['الأونلاين: قائمة «الغرف المفتوحة» تدخل منها على خويك بضغطة','تختار غرفتك عامة أو خاصة، والغرفة تختفي من القائمة أول ما تبدأ المعركة','زر «إعادة المباراة» بعد نهاية القيم: المضيف يغيّر الإعدادات والكل يبقى في الغرفة','الهجوم على جزيرة فاضية صار يرسل سفنك لها','موقع جديد للعبة: saadsd151.github.io/sijal، والاقتراحات رجعت تشتغل','تختار اسم غرفتك، وسرعة الاتصال (البنق) تطلع جنب كل غرفة','قائمة «نوع الهجوم» وهي مقفلة تقدر تسحبها لأي مكان على الشاشة','بطاقة الدولة صارت أيقونات سهلة، وتختار مبلغ الهدية بالضبط','تقدر ترسل جنود مساعدة لحليفك، ويزيد ثقته فيك','الصواريخ تخلّي المدن حطام، والذرّية تمسح الصغيرة، والفناء تمسح كل المباني','المعركة السريعة: عدد الخصوم يزيد مع حجم الخريطة والصعوبة'],en:['Online: an Open rooms list lets you join a friend in one tap','Rooms can be public or private, and leave the list once the battle starts','Rematch button after a match: the host changes settings and everyone stays in the room','Tapping an empty island now sends your ships there','New home for the game: saadsd151.github.io/sijal, and suggestions work again','Name your room, and see each room\'s ping in the list','Drag the collapsed Attack type list anywhere on the screen','The realm card now uses simple icons, and you pick the exact gift amount','Send troops to help an ally, which raises their trust in you','Missiles leave cities in ruins, atom bombs wipe out small ones, Doomsday erases every building','Quick battle: more rivals on bigger maps and harder difficulties']},
  {v:'2.2',d:'2026-11-17',ar:['التحالف صار يدوم دقيقتين، وقبل ما يخلص بـ20 ثانية تجيك رسالة تكمّله أو لا','نوعين للهجوم من قائمة «نوع الهجوم»: على نقطة أو من كل الحدود، وتقدر تخفي القائمة','الهجوم على نقطة صار مركّز في ممر ضيّق باتجاه المكان اللي تضغطه','أسماء الدول ما عاد تتركّب على بعض، واسم دولتك له الأولوية','البوتات تتحرك وتهاجم من أول المباراة','المعركة السريعة: عدد الخصوم يزيد مع حجم الخريطة والصعوبة','الصواريخ تخلّي المدن حطام، والقنبلة الذرّية تمسح المدن الصغيرة، وقنبلة الفناء تمسح كل المباني'],en:['Alliances now last two minutes; 20 seconds before the end you choose whether to renew','Two attack types in the Attack type list: at a point or along every border, and the list can be hidden','Point attacks now stay in a narrow corridor toward the spot you tap','Realm names no longer overlap, and yours always takes priority','Bots move and attack from the very start','Quick battle: more rivals on bigger maps and harder difficulties','Missiles leave cities in ruins, atom bombs wipe out small cities, and the Doomsday bomb erases every building']},
  {v:'2.1',d:'2026-11-17',ar:['الدول الكبيرة صارت تاكل الدول الصغيرة والقبائل اللي جنبها بشكل أسرع','لكل موسم نغمة خاصة تعلن وصوله','إصلاح: على الآيفون شكل المبنى ومداه صار يطلع قبل التأكيد'],en:['Big realms now swallow weaker neighbours and tribes much faster','Each season now has its own arrival tune','Fix: on iPhone the building and its range now show before you confirm']},
@@ -1640,7 +1654,23 @@ function applyCmd(pid,c){
   }
 }
 // ── transport: PeerJS data channels, or BroadcastChannel between tabs when testing (?bc=1) ──
-function loadPeer(cb,fail){if(BCMODE||window.Peer)return cb();const s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';s.onload=cb;s.onerror=()=>fail('net');document.head.appendChild(s);}
+// the site serves its own PeerJS build converted for older browsers; elsewhere the CDN copy is used
+const PEER_CDN='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',PEER_LOCAL=/^https?:/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)?'peer.js':null;
+const rtcOk=()=>!!(window.RTCPeerConnection&&window.RTCPeerConnection.prototype&&'createDataChannel' in window.RTCPeerConnection.prototype);
+function loadPeer(cb,fail){
+  if(BCMODE||window.Peer)return cb();if(!rtcOk()){NET.diag='old';return fail('old');}
+  const add=(src,next)=>{const s=document.createElement('script');s.src=src;s.onload=()=>window.Peer?cb():next();s.onerror=next;document.head.appendChild(s);};
+  const cdn=()=>add(PEER_CDN,()=>{NET.diag='lib';fail('lib');});
+  if(PEER_LOCAL)add(PEER_LOCAL,cdn);else cdn();
+}
+// what this device can do online, shown on the online screen
+function diagDraw(){
+  const e=$('#diag');if(!e)return;let k,c;
+  if(!rtcOk()){k='diagOld';c='bad';}else if(NET.diag==='lib'){k='diagLib';c='bad';}
+  else if(LOBBY.peer&&LOBBY.peer.open){k='diagOk';c='good';}
+  else if(LOBBY.t0&&Date.now()-LOBBY.t0>10000){k='diagNet';c='warn';}else{k='diagWait';c='';}
+  e.className='keys diag '+c;e.textContent=t(k);
+}
 function wrap(c){const k={c,ok:false,send:d=>{try{c.send(d);}catch(e){}}};c.on('open',()=>{k.ok=true;k.onOpen&&k.onOpen();});c.on('data',d=>k.onData&&k.onData(d));c.on('close',()=>{k.ok=false;k.onClose&&k.onClose();});c.on('error',()=>{});return k;}
 function hostOpen(code,onConn,ready,fail){
   if(BCMODE){const ch=NET.peer=new BroadcastChannel('sijal-'+code),map={};ch.onmessage=e=>{const m=e.data;if(m.to!=='host')return;let k=map[m.from];
@@ -1661,7 +1691,7 @@ function netFail(code){const was=NET.started;netClose();loading(false);if(was)to
 // ── lobby ──
 const myName=()=>(UI.prof.name||t('defName')).slice(0,18),roomName=()=>(UI.prof.room||t('roomOf',myName())).slice(0,24);
 function netHost(tries){
-  if(!BCMODE&&!window.RTCPeerConnection)return err('net');loading(true);
+  if(!BCMODE&&!rtcOk())return err('old');loading(true);
   loadPeer(()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<5;i++)code+=A[(Math.random()*A.length)|0];if(BCMODE&&window.SIJAL_CODE)code=window.SIJAL_CODE;
     hostOpen(code,k=>{const pl={name:'?',fac:'hawks',conn:k,in:false};
         k.onData=d=>{if(!d)return;
@@ -1677,7 +1707,7 @@ function netHost(tries){
 }
 function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code,room:roomName()});});if(UI.screen==='net')renderLobby();}
 function netJoin(code){
-  code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4)return err('room');if(!BCMODE&&!window.RTCPeerConnection)return err('net');loading(true);
+  code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4)return err('room');if(!BCMODE&&!rtcOk())return err('old');loading(true);
   const to=setTimeout(()=>{if(!NET.on)netFail('room');},15000);
   loadPeer(()=>clientOpen(code,k=>{clearTimeout(to);loading(false);Object.assign(NET,{on:true,host:false,started:false,up:k,code,players:[]});
       k.onData=d=>{if(!d)return;
@@ -1724,7 +1754,7 @@ function netRematch(){
 }
 // ── public room list: one browser holds the room book on a fixed PeerJS id; if it leaves, the next one takes over ──
 const REG=window.SIJAL_REG||'sijal-rooms-v1',LOBBY={on:false,peer:null,hold:null,up:null,book:{},list:[],ok:false};
-function regStart(){if(BCMODE||LOBBY.on)return;LOBBY.on=true;loadPeer(()=>{try{LOBBY.peer=new Peer();LOBBY.peer.on('open',regLink);LOBBY.peer.on('error',e=>{if(e.type==='peer-unavailable')regClaim();});}catch(e){LOBBY.on=false;}},()=>{LOBBY.on=false;});}
+function regStart(){if(BCMODE||LOBBY.on)return;LOBBY.on=true;LOBBY.t0=Date.now();loadPeer(()=>{try{LOBBY.peer=new Peer();LOBBY.peer.on('open',regLink);LOBBY.peer.on('error',e=>{if(e.type==='peer-unavailable')regClaim();});}catch(e){LOBBY.on=false;}},()=>{LOBBY.on=false;});}
 function regLink(){
   if(!LOBBY.peer||LOBBY.hold)return;const k=wrap(LOBBY.peer.connect(REG,{reliable:true,serialization:'json'}));
   // a holder that vanished without closing can leave the id taken for a while: give up after 6 s and try to take over
@@ -1742,7 +1772,7 @@ function regRooms(){const now=Date.now(),out=[];for(const c in LOBBY.book){const
 function myRoom(){return NET.on&&NET.host&&!NET.started&&NET.pub?{code:NET.code,name:roomName(),n:NET.players.length,type:UI.prof.type,size:UI.prof.size<0?1:UI.prof.size,diff:UI.prof.diff|0}:null;}
 function regSend(){const r=myRoom();if(LOBBY.hold){if(r)LOBBY.book[r.code]=Object.assign({},r,{at:Date.now()});}else if(LOBBY.up&&r)LOBBY.up.send({t:'reg',room:r});}
 function regUnreg(){if(!NET.code)return;if(LOBBY.hold)delete LOBBY.book[NET.code];else if(LOBBY.up)LOBBY.up.send({t:'unreg',code:NET.code});}
-function regTick(){if(NET.on&&!NET.host&&NET.up&&!NET.started)NET.up.send({t:'ping',ts:performance.now()});if(!LOBBY.on)return;pingRooms();regSend();if(LOBBY.hold){LOBBY.list=regRooms();regDraw();}else if(LOBBY.up)LOBBY.up.send({t:'list'});}
+function regTick(){diagDraw();if(NET.on&&!NET.host&&NET.up&&!NET.started)NET.up.send({t:'ping',ts:performance.now()});if(!LOBBY.on)return;pingRooms();regSend();if(LOBBY.hold){LOBBY.list=regRooms();regDraw();}else if(LOBBY.up)LOBBY.up.send({t:'list'});}
 // connection speed to each listed room: a short PeerJS link per room, one ping, then close
 const PING={};
 function pingTag(ms,id){const c=ms==null?'':ms<80?'good':ms<200?'warn':'bad';return `<span class="ping ${c}"${id?` id="${id}"`:''} title="ping">${ms==null?'…':ms+'ms'}</span>`;}
@@ -1761,8 +1791,8 @@ function renderNet(){
   $('#net').innerHTML=`<h2>${t('online')}</h2><p class="keys">${t('netNote')}</p>
   <div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('code')}</h3><input id="inCode" maxlength="5" value="${esc(UI.joinCode||'')}" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;text-align:center" dir="ltr"></label></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn" data-a="hostSetup">${t('hostRoom')}</button><button class="btn big" data-a="join">${t('join')}</button></div>
-  <h3>${t('rooms')}</h3><div id="rooms" class="rooms"></div>`;
-  regStart();regDraw();
+  <p id="diag" class="keys diag"></p><h3>${t('rooms')}</h3><div id="rooms" class="rooms"></div>`;
+  regStart();regDraw();diagDraw();
 }
 function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';

@@ -49,7 +49,23 @@ function applyCmd(pid,c){
   }
 }
 // ── transport: PeerJS data channels, or BroadcastChannel between tabs when testing (?bc=1) ──
-function loadPeer(cb,fail){if(BCMODE||window.Peer)return cb();const s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';s.onload=cb;s.onerror=()=>fail('net');document.head.appendChild(s);}
+// the site serves its own PeerJS build converted for older browsers; elsewhere the CDN copy is used
+const PEER_CDN='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js',PEER_LOCAL=/^https?:/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)?'peer.js':null;
+const rtcOk=()=>!!(window.RTCPeerConnection&&window.RTCPeerConnection.prototype&&'createDataChannel' in window.RTCPeerConnection.prototype);
+function loadPeer(cb,fail){
+  if(BCMODE||window.Peer)return cb();if(!rtcOk()){NET.diag='old';return fail('old');}
+  const add=(src,next)=>{const s=document.createElement('script');s.src=src;s.onload=()=>window.Peer?cb():next();s.onerror=next;document.head.appendChild(s);};
+  const cdn=()=>add(PEER_CDN,()=>{NET.diag='lib';fail('lib');});
+  if(PEER_LOCAL)add(PEER_LOCAL,cdn);else cdn();
+}
+// what this device can do online, shown on the online screen
+function diagDraw(){
+  const e=$('#diag');if(!e)return;let k,c;
+  if(!rtcOk()){k='diagOld';c='bad';}else if(NET.diag==='lib'){k='diagLib';c='bad';}
+  else if(LOBBY.peer&&LOBBY.peer.open){k='diagOk';c='good';}
+  else if(LOBBY.t0&&Date.now()-LOBBY.t0>10000){k='diagNet';c='warn';}else{k='diagWait';c='';}
+  e.className='keys diag '+c;e.textContent=t(k);
+}
 function wrap(c){const k={c,ok:false,send:d=>{try{c.send(d);}catch(e){}}};c.on('open',()=>{k.ok=true;k.onOpen&&k.onOpen();});c.on('data',d=>k.onData&&k.onData(d));c.on('close',()=>{k.ok=false;k.onClose&&k.onClose();});c.on('error',()=>{});return k;}
 function hostOpen(code,onConn,ready,fail){
   if(BCMODE){const ch=NET.peer=new BroadcastChannel('sijal-'+code),map={};ch.onmessage=e=>{const m=e.data;if(m.to!=='host')return;let k=map[m.from];
@@ -70,7 +86,7 @@ function netFail(code){const was=NET.started;netClose();loading(false);if(was)to
 // ── lobby ──
 const myName=()=>(UI.prof.name||t('defName')).slice(0,18),roomName=()=>(UI.prof.room||t('roomOf',myName())).slice(0,24);
 function netHost(tries){
-  if(!BCMODE&&!window.RTCPeerConnection)return err('net');loading(true);
+  if(!BCMODE&&!rtcOk())return err('old');loading(true);
   loadPeer(()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<5;i++)code+=A[(Math.random()*A.length)|0];if(BCMODE&&window.SIJAL_CODE)code=window.SIJAL_CODE;
     hostOpen(code,k=>{const pl={name:'?',fac:'hawks',conn:k,in:false};
         k.onData=d=>{if(!d)return;
@@ -86,7 +102,7 @@ function netHost(tries){
 }
 function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code,room:roomName()});});if(UI.screen==='net')renderLobby();}
 function netJoin(code){
-  code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4)return err('room');if(!BCMODE&&!window.RTCPeerConnection)return err('net');loading(true);
+  code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4)return err('room');if(!BCMODE&&!rtcOk())return err('old');loading(true);
   const to=setTimeout(()=>{if(!NET.on)netFail('room');},15000);
   loadPeer(()=>clientOpen(code,k=>{clearTimeout(to);loading(false);Object.assign(NET,{on:true,host:false,started:false,up:k,code,players:[]});
       k.onData=d=>{if(!d)return;
@@ -133,7 +149,7 @@ function netRematch(){
 }
 // ── public room list: one browser holds the room book on a fixed PeerJS id; if it leaves, the next one takes over ──
 const REG=window.SIJAL_REG||'sijal-rooms-v1',LOBBY={on:false,peer:null,hold:null,up:null,book:{},list:[],ok:false};
-function regStart(){if(BCMODE||LOBBY.on)return;LOBBY.on=true;loadPeer(()=>{try{LOBBY.peer=new Peer();LOBBY.peer.on('open',regLink);LOBBY.peer.on('error',e=>{if(e.type==='peer-unavailable')regClaim();});}catch(e){LOBBY.on=false;}},()=>{LOBBY.on=false;});}
+function regStart(){if(BCMODE||LOBBY.on)return;LOBBY.on=true;LOBBY.t0=Date.now();loadPeer(()=>{try{LOBBY.peer=new Peer();LOBBY.peer.on('open',regLink);LOBBY.peer.on('error',e=>{if(e.type==='peer-unavailable')regClaim();});}catch(e){LOBBY.on=false;}},()=>{LOBBY.on=false;});}
 function regLink(){
   if(!LOBBY.peer||LOBBY.hold)return;const k=wrap(LOBBY.peer.connect(REG,{reliable:true,serialization:'json'}));
   // a holder that vanished without closing can leave the id taken for a while: give up after 6 s and try to take over
@@ -151,7 +167,7 @@ function regRooms(){const now=Date.now(),out=[];for(const c in LOBBY.book){const
 function myRoom(){return NET.on&&NET.host&&!NET.started&&NET.pub?{code:NET.code,name:roomName(),n:NET.players.length,type:UI.prof.type,size:UI.prof.size<0?1:UI.prof.size,diff:UI.prof.diff|0}:null;}
 function regSend(){const r=myRoom();if(LOBBY.hold){if(r)LOBBY.book[r.code]=Object.assign({},r,{at:Date.now()});}else if(LOBBY.up&&r)LOBBY.up.send({t:'reg',room:r});}
 function regUnreg(){if(!NET.code)return;if(LOBBY.hold)delete LOBBY.book[NET.code];else if(LOBBY.up)LOBBY.up.send({t:'unreg',code:NET.code});}
-function regTick(){if(NET.on&&!NET.host&&NET.up&&!NET.started)NET.up.send({t:'ping',ts:performance.now()});if(!LOBBY.on)return;pingRooms();regSend();if(LOBBY.hold){LOBBY.list=regRooms();regDraw();}else if(LOBBY.up)LOBBY.up.send({t:'list'});}
+function regTick(){diagDraw();if(NET.on&&!NET.host&&NET.up&&!NET.started)NET.up.send({t:'ping',ts:performance.now()});if(!LOBBY.on)return;pingRooms();regSend();if(LOBBY.hold){LOBBY.list=regRooms();regDraw();}else if(LOBBY.up)LOBBY.up.send({t:'list'});}
 // connection speed to each listed room: a short PeerJS link per room, one ping, then close
 const PING={};
 function pingTag(ms,id){const c=ms==null?'':ms<80?'good':ms<200?'warn':'bad';return `<span class="ping ${c}"${id?` id="${id}"`:''} title="ping">${ms==null?'…':ms+'ms'}</span>`;}
@@ -170,8 +186,8 @@ function renderNet(){
   $('#net').innerHTML=`<h2>${t('online')}</h2><p class="keys">${t('netNote')}</p>
   <div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('code')}</h3><input id="inCode" maxlength="5" value="${esc(UI.joinCode||'')}" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;text-align:center" dir="ltr"></label></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn" data-a="hostSetup">${t('hostRoom')}</button><button class="btn big" data-a="join">${t('join')}</button></div>
-  <h3>${t('rooms')}</h3><div id="rooms" class="rooms"></div>`;
-  regStart();regDraw();
+  <p id="diag" class="keys diag"></p><h3>${t('rooms')}</h3><div id="rooms" class="rooms"></div>`;
+  regStart();regDraw();diagDraw();
 }
 function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
