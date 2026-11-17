@@ -320,11 +320,11 @@ function tickTrades(g){
     if(rm){g.trades[j]=g.trades[g.trades.length-1];g.trades.pop();}}
 }
 // nearest enemy shore reachable by sea from our own coast (used when the tapped spot has no usable beach)
-function seaLanding(g,a,o){
+function seaLanding(g,a,o,lid){
   const W=g.W,H=g.H,N=g.N,ter=g.M.ter,own=g.owner,prev=g.prev,q=g.q,now=g.tick;prev.fill(-1);let qh=0,qt=0;
   for(let i=0;i<N;i++)if(ter[i]<2&&adjOwn(g,i,a)){prev[i]=i;q[qt++]=i;}
   while(qh<qt){const c=q[qh++],cx=c%W,cy=(c/W)|0;
-    for(let d=0;d<4;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]>1&&own[j]===o&&g.fall[j]<=now)return j;}
+    for(let d=0;d<4;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]>1&&own[j]===o&&g.fall[j]<=now&&(lid==null||g.M.lid[j]===lid))return j;}
     for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]<2&&prev[j]<0){prev[j]=c;q[qt++]=j;}}}
   return -1;
 }

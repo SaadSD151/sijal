@@ -23,6 +23,10 @@ function applyCmd(pid,c){
   switch(c.k){
     case'atk':{const i=c.i;if(!(i>=0&&i<g.N)||g.M.ter[i]<2)return;const tx=i%W,ty=(i/W)|0,o=g.owner[i],ratio=clamp(+c.r||.4,.05,1);if(o===pid)return;
       if(o&&canAnnex(g,pid,o)){const T=g.nations[o],nm=nmh(T),pn=natName(T);annex(g,pid,o);if(mine){feed(t('m_annex',nm),'good');sfx('city');banner(t('m_annex',pn));}return;}
+      // the tapped spot is on a landmass we do not stand on: go by sea, landing on that landmass
+      const lid=g.M.lid[i];let onIt=false;for(let j=0;j<g.N;j++)if(g.owner[j]===pid&&g.M.lid[j]===lid){onIt=true;break;}
+      if(!onIt){let cc=g.M.coastD[i]===1&&portOk(g,i)?i:nearCoast(g,i,25);if(cc<0)cc=seaLanding(g,pid,o,lid);r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';
+        if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}
       const before=n.troops;let boat=false;r=c.m==='all'?launchAttack(g,pid,o,ratio,-1,-1):launchAttack(g,pid,o,ratio,tx,ty,true);
       if(r==='noborder'){const cc=g.M.coastD[i]===1&&portOk(g,i)?i:nearCoast(g,i,8);r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';if(r==='nopath'){const sl=seaLanding(g,pid,o);if(sl>=0)r=launchBoat(g,pid,sl,ratio);}boat=typeof r==='object';}
       if(!mine)return;if(typeof r==='object')sfx(boat?'boat':'attack');if(r==='clash'){feed(t('m_clash'),'good');sfx('attack');}
@@ -58,7 +62,7 @@ function clientOpen(code,onOpen,fail){
     p.on('error',e=>fail(e.type==='peer-unavailable'?'room':'net'));}catch(e){fail('net');}
 }
 function netClose(){
-  try{if(NET.up&&NET.up.bye)NET.up.bye();if(NET.peer)(NET.peer.destroy||NET.peer.close).call(NET.peer);}catch(e){}
+  regUnreg();try{if(NET.up&&NET.up.bye)NET.up.bye();if(NET.peer)(NET.peer.destroy||NET.peer.close).call(NET.peer);}catch(e){}
   Object.assign(NET,{on:false,host:false,started:false,conns:[],players:[],q:[],code:'',peer:null,up:null,sums:{},warned:false});
 }
 function netFail(code){const was=NET.started;netClose();loading(false);if(was)toMenu();else{renderNet();show('net');}err(code);}
@@ -69,11 +73,11 @@ function netHost(tries){
   loadPeer(()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<5;i++)code+=A[(Math.random()*A.length)|0];if(BCMODE&&window.SIJAL_CODE)code=window.SIJAL_CODE;
     hostOpen(code,k=>{const pl={name:'?',fac:'hawks',conn:k,in:false};
         k.onData=d=>{if(!d)return;
-          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=16)return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();}
+          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=16)return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
-        k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();}};},
-      ()=>{loading(false);Object.assign(NET,{on:true,host:true,started:false,code,players:[{name:myName(),fac:UI.prof.fac,conn:null,in:true}],conns:[],q:[]});renderLobby();show('net');},
+        k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
+      ()=>{loading(false);Object.assign(NET,{on:true,host:true,started:false,pub:UI.prof.pub!==false,code,players:[{name:myName(),fac:UI.prof.fac,conn:null,in:true}],conns:[],q:[]});renderLobby();show('net');regStart();regSend();},
       e=>{if(e==='retry'&&(tries|0)<4){try{NET.peer.destroy();}catch(_){}return netHost((tries|0)+1);}netFail('net');});},netFail);
 }
 function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code});});if(UI.screen==='net')renderLobby();}
@@ -82,7 +86,7 @@ function netJoin(code){
   const to=setTimeout(()=>{if(!NET.on)netFail('room');},15000);
   loadPeer(()=>clientOpen(code,k=>{clearTimeout(to);loading(false);Object.assign(NET,{on:true,host:false,started:false,up:k,code,players:[]});
       k.onData=d=>{if(!d)return;
-        if(d.t==='lobby'){NET.players=d.players;NET.you=d.you;renderLobby();show('net');}
+        if(d.t==='lobby'){NET.started=false;NET.players=d.players;NET.you=d.you;renderLobby();show('net');}
         else if(d.t==='start')netStart(d.opt,d.me);
         else if(d.t==='f')applyFrame(d);
         else if(d.t==='full')netFail('full');
@@ -93,7 +97,7 @@ function netJoin(code){
 function hostStart(){
   if(!NET.host||NET.started)return;const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
   const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac}))};
-  NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
+  regUnreg();NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
 }
 function netStart(opt,me){
   NET.started=true;NET.q=[];NET.sums={};loading(true);
@@ -112,16 +116,47 @@ function netTick(){
   if(UI.paused){if(NET.q.length)frameOut(0);return;}
   NET.acc+=dt*UI.speed;let k=0;while(NET.acc>=100&&k<6){frameOut(1);NET.acc-=100;k++;}if(k===6)NET.acc=0;
 }
+// host only: after a match, bring everyone back to the room and reopen the battle settings
+function netRematch(){
+  if(!NET.on||!NET.host)return;NET.started=false;NET.q=[];NET.players=NET.players.filter(p=>p.in);NET.conns=NET.conns.filter(k=>k.ok);
+  G.over=G.over||{w:0,why:'dead'};UI.phase='';lobbyOut();regSend();renderSetup();show('setup');
+}
+// ── public room list: one browser holds the room book on a fixed PeerJS id; if it leaves, the next one takes over ──
+const REG='sijal-rooms-v1',LOBBY={on:false,peer:null,hold:null,up:null,book:{},list:[],ok:false};
+function regStart(){if(BCMODE||LOBBY.on)return;LOBBY.on=true;loadPeer(()=>{try{LOBBY.peer=new Peer();LOBBY.peer.on('open',regLink);LOBBY.peer.on('error',e=>{if(e.type==='peer-unavailable')regClaim();});}catch(e){LOBBY.on=false;}},()=>{LOBBY.on=false;});}
+function regLink(){
+  if(!LOBBY.peer||LOBBY.hold)return;const k=wrap(LOBBY.peer.connect(REG,{reliable:true,serialization:'json'}));
+  k.onOpen=()=>{LOBBY.up=k;LOBBY.ok=true;regSend();k.send({t:'list'});};k.onData=d=>{if(d&&d.t==='rooms'){LOBBY.list=d.rooms||[];regDraw();}};
+  k.onClose=()=>{if(LOBBY.up===k){LOBBY.up=null;LOBBY.ok=false;setTimeout(()=>{if(!LOBBY.hold)regLink();},400+Math.random()*1600);}};
+}
+function regClaim(){
+  if(LOBBY.hold)return;let h;try{h=new Peer(REG);}catch(e){return;}
+  h.on('open',()=>{LOBBY.hold=h;LOBBY.ok=true;regSend();regDraw();});
+  h.on('connection',c=>{const k=wrap(c);k.onData=d=>{if(!d)return;if(d.t==='reg'&&d.room&&typeof d.room.code==='string')LOBBY.book[d.room.code.slice(0,8)]=Object.assign({},d.room,{at:Date.now()});else if(d.t==='unreg')delete LOBBY.book[d.code];else if(d.t==='list')k.send({t:'rooms',rooms:regRooms()});};});
+  h.on('error',e=>{if(e.type==='unavailable-id'){try{h.destroy();}catch(_){}setTimeout(regLink,300+Math.random()*900);}});
+}
+function regRooms(){const now=Date.now(),out=[];for(const c in LOBBY.book){const r=LOBBY.book[c];if(now-r.at>25000)delete LOBBY.book[c];else out.push(r);}return out.slice(0,40);}
+function myRoom(){return NET.on&&NET.host&&!NET.started&&NET.pub?{code:NET.code,name:myName(),n:NET.players.length,type:UI.prof.type,size:UI.prof.size<0?1:UI.prof.size,diff:UI.prof.diff|0}:null;}
+function regSend(){const r=myRoom();if(LOBBY.hold){if(r)LOBBY.book[r.code]=Object.assign({},r,{at:Date.now()});}else if(LOBBY.up&&r)LOBBY.up.send({t:'reg',room:r});}
+function regUnreg(){if(!NET.code)return;if(LOBBY.hold)delete LOBBY.book[NET.code];else if(LOBBY.up)LOBBY.up.send({t:'unreg',code:NET.code});}
+function regTick(){if(!LOBBY.on)return;regSend();if(LOBBY.hold){LOBBY.list=regRooms();regDraw();}else if(LOBBY.up)LOBBY.up.send({t:'list'});}
+function regDraw(){
+  const e=$('#rooms');if(!e||NET.on)return;const L=LOBBY.list.filter(r=>r.code!==NET.code);
+  e.innerHTML=!LOBBY.ok?`<p class="keys">${t('roomsWait')}</p>`:!L.length?`<p class="keys">${t('roomsNone')}</p>`:L.map(r=>`<div class="room"><div><b>${esc(r.name)}</b><small>${esc(t('types')[r.type]||'')} · ${esc(t('sizes')[r.size]||'')} · ${esc(t('diffs')[r.diff]||'')}</small></div><span>${r.n|0}/16</span><button class="btn sm ok" data-a="joinR:${esc(r.code)}">${t('join')}</button></div>`).join('');
+}
 function renderNet(){
   $('#net').innerHTML=`<h2>${t('online')}</h2><p class="keys">${t('netNote')}</p>
   <div class="opts"><label class="fld"><h3>${t('realm')}</h3><input id="inName" maxlength="18" value="${esc(UI.prof.name)}" placeholder="${t('defName')}" autocomplete="off"></label>
   <label class="fld"><h3>${t('code')}</h3><input id="inCode" maxlength="5" value="${esc(UI.joinCode||'')}" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;text-align:center" dir="ltr"></label></div>
-  <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn" data-a="custom">${t('hostRoom')}</button><button class="btn big" data-a="join">${t('join')}</button></div>`;
+  <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn" data-a="custom">${t('hostRoom')}</button><button class="btn big" data-a="join">${t('join')}</button></div>
+  <h3>${t('rooms')}</h3><div id="rooms" class="rooms"></div>`;
+  regStart();regDraw();
 }
 function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
   $('#net').innerHTML=`<h2>${t('lobby')}</h2><div class="code" dir="ltr">${NET.code}</div>${link?`<p class="keys" style="user-select:text;-webkit-user-select:text" dir="ltr">${esc(link)}</p>`:''}
-  <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p><h3>${t('players',NET.players.length)}</h3>
+  <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)}</h3>
   <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
   <div class="row"><button class="btn" data-a="leave">${t('leave')}</button>${NET.host?`<button class="btn big" data-a="netStart">${t('startNet')}</button>`:''}</div>`;
 }
+setInterval(regTick,4000);

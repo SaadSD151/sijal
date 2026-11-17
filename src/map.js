@@ -41,6 +41,9 @@ function genMap(o){
   for(let i=0;i<N;i++)if(land[i]){wd[i]=0;q[qt++]=i;}
   while(qh<qt){const c=q[qh++],d=wd[c]+1,x=c%W;if(d>6)continue;
     if(x>0&&wd[c-1]>d){wd[c-1]=d;q[qt++]=c-1;}if(x<W-1&&wd[c+1]>d){wd[c+1]=d;q[qt++]=c+1;}if(c>=W&&wd[c-W]>d){wd[c-W]=d;q[qt++]=c-W;}if(c<N-W&&wd[c+W]>d){wd[c+W]=d;q[qt++]=c+W;}}
+  const lid=new Int32Array(N);let nl=0;
+  for(let s=0;s<N;s++){if(!land[s]||lid[s])continue;nl++;let qh=0,qt=0;q[qt++]=s;lid[s]=nl;
+    while(qh<qt){const c=q[qh++],x=c%W;for(const n of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(n>=0&&land[n]&&!lid[n]){lid[n]=nl;q[qt++]=n;}}}
   // rivers: steepest descent from the highlands to the sea
   const riv=new Uint8Array(N),rivers=[],want=Math.round(landN/2000)+2;
   for(let t=0;t<want*10&&rivers.length<want;t++){
@@ -62,5 +65,5 @@ function genMap(o){
     let nm;do{nm=(rng()*288)|0;}while(used.has(nm));used.add(nm);
     cities.push({x,y,i,level:1+(rng()<.35?1:0),name:nm});
   }
-  return{W,H,N,seed:o.seed,type:T,ter,elev,val,moist,coastD:cd,wd,big,riv,rivers,land:landN,cities,used,hHill,hMnt,hmax};
+  return{W,H,N,seed:o.seed,type:T,ter,elev,val,moist,coastD:cd,wd,lid,big,riv,rivers,land:landN,cities,used,hHill,hMnt,hmax};
 }

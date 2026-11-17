@@ -1,5 +1,7 @@
 // ── SIJAL · interface, input, audio, game loop ──
 let G=null,acc=0,lastTs=0;
+// public key for the suggestions inbox (Web3Forms); used when the game is not served from Netlify
+const SUGGEST_KEY='';
 const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[320,200],[420,264],[540,340],[680,428]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
@@ -111,7 +113,8 @@ function renderSetup(){
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
   <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="30" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
   <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div></div>
-  <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn" data-a="hostRoom">${t('hostRoom')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`;
+  <div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>
+  ${NET.on&&NET.host?`<div class="row"><button class="btn" data-a="lobbyBack">${t('lobby')} (${NET.players.length})</button><button class="btn big" data-a="netStart">${t('startNet')}</button></div>`:`<div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn" data-a="hostRoom">${t('hostRoom')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`}`;
 }
 function renderHelp(){
   $('#help').innerHTML=`<h2>${t('how')}</h2><div class="hl">${t('help').map(h=>`<div><b>${h[0]}</b><p>${h[1]}</p></div>`).join('')}</div><p class="keys">${t('keys')}</p><div class="row"><button class="btn big" data-a="helpBack">${t('back')}</button></div>`;
@@ -151,6 +154,8 @@ function renderSuggest(done){
 }
 function sendSuggest(){
   const el=$('#sgMsg'),msg=(el&&el.value||'').trim(),p=UI.prof;if(msg.length<3)return err('sgShort');if(!/^https?:/.test(location.protocol))return err('sgSite');
+  if(!/netlify\.app$/.test(location.hostname)){if(!SUGGEST_KEY)return err('sgOff');loading(true);
+    return fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal suggestion',from_name:p.name||t('defName'),rank:t('ranks')[rankOf(p)]+' ('+p.wins+')',message:msg})}).then(r=>r.json()).then(j=>{loading(false);if(j&&j.success)renderSuggest(true);else err('sgFail');}).catch(()=>{loading(false);err('sgFail');});}
   const body=new URLSearchParams({'form-name':'suggestions',name:p.name||t('defName'),rank:t('ranks')[rankOf(p)]+' ('+p.wins+')',message:msg,'bot-field':''}).toString();loading(true);
   fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body}).then(r=>{loading(false);if(r.ok)renderSuggest(true);else err('sgFail');}).catch(()=>{loading(false);err('sgFail');});
 }
@@ -200,7 +205,7 @@ function showEnd(){
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
   $('#end').innerHTML=`<div class="endbox pn ${o.win?'won':'lost'}"><h1>${t(o.win?'win':'lose')}</h1><p>${why}</p>${best}<div class="stats">${st.map(s=>`<div><small>${s[0]}</small><b>${s[1]}</b></div>`).join('')}</div>
   <h3>${t('replay')}</h3><canvas id="rep" width="${g.W*2}" height="${g.H*2}"></canvas><div class="rbar"><u id="repP"></u></div>
-  <div class="row"><button class="btn" data-a="toMenu">${t('menu')}</button><button class="btn big" data-a="again">${t('again')}</button></div></div>`;
+  ${NET.on?(NET.host?`<div class="row"><button class="btn" data-a="toMenu">${t('leave')}</button><button class="btn big" data-a="rematch">${t('rematch')}</button></div>`:`<p class="keys">${t('rematchWait')}</p><div class="row"><button class="btn" data-a="toMenu">${t('leave')}</button></div>`):`<div class="row"><button class="btn" data-a="toMenu">${t('menu')}</button><button class="btn big" data-a="again">${t('again')}</button></div>`}</div>`;
   const dv=g.N>250000?4:g.N>120000?3:2,w2=(g.W/dv)|0,h2=(g.H/dv)|0,c2=mk(w2,h2),x2=c2.getContext('2d'),im=x2.createImageData(w2,h2);UI.rep={c:$('#rep'),c2,x2,im,d:new Uint32Array(im.data.buffer),f:0};
   show('end');
 }
@@ -333,7 +338,7 @@ function act(a){
   const g=G,p=UI.prof,[k,v,w]=a.split(':'),me=g&&g.human?g.nations[g.human]:null;auInit();
   switch(k){
     case'quick':renderQuick();show('help');break;case'go':startMatch({});break;case'goQ':startMatch({quick:true});break;case'cfm':placeAt(UI.pend);break;case'cfx':setMode(null);break;case'again':if(NET.on)return toMenu();startMatch({same:true});break;
-    case'online':renderNet();show('net');break;case'hostRoom':netHost();break;case'join':netJoin(($('#inCode')||{}).value);break;case'netStart':hostStart();break;case'leave':netClose();renderMenu();show('menu');break;case'daily':renderDaily();show('help');break;case'dailyGo':startMatch({daily:true});break;
+    case'online':renderNet();show('net');break;case'joinR':netJoin(v);break;case'rematch':netRematch();break;case'lobbyBack':renderLobby();show('net');break;case'pub':p.pub=v==='1';if(NET.on&&NET.host){NET.pub=p.pub;if(NET.pub)regSend();else regUnreg();}renderSetup();break;case'hostRoom':netHost();break;case'join':netJoin(($('#inCode')||{}).value);break;case'netStart':hostStart();break;case'leave':netClose();renderMenu();show('menu');break;case'daily':renderDaily();show('help');break;case'dailyGo':startMatch({daily:true});break;
     case'custom':renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'toMenu':toMenu();break;
     case'how':UI.helpBack=UI.screen;renderHelp();show('help');break;case'helpBack':show(UI.helpBack==='pause'?'pause':'menu');break;
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
