@@ -1,13 +1,15 @@
 // ── SIJAL · interface, input, audio, game loop ──
 let G=null,acc=0,lastTs=0;
 // public key for the suggestions inbox (Web3Forms); used when the game is not served from Netlify
+// online leaderboard (Firebase Realtime Database + anonymous sign-in); empty = turned off
+const LB_DB='',LB_KEY='';
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
 const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[320,200],[420,264],[540,340],[680,428]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
   let p={};try{p=JSON.parse(localStorage.getItem('sijal.v1')||'{}')||{};}catch(e){}
-  UI.prof=Object.assign({xp:0,games:0,wins:0,lang:'ar',sound:true,music:true,ui:0,fac:'hawks',name:'',type:'continents',size:-1,bots:-1,diff:1,daily:{}},p);
+  UI.prof=Object.assign({xp:0,games:0,wins:0,ms:0,fb:{},lang:'ar',sound:true,music:true,ui:0,fac:'hawks',name:'',type:'continents',size:-1,bots:-1,diff:1,daily:{}},p);
   UI.lang=UI.prof.lang==='en'?'en':'ar';
 }
 function saveProf(){try{localStorage.setItem('sijal.v1',JSON.stringify(UI.prof));}catch(e){}}
@@ -94,7 +96,7 @@ function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t(
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="suggest">${t('suggest')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="suggest">${t('suggest')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="lb">${t('lb')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
   <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
@@ -143,6 +145,34 @@ function renderSettings(){
   <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
+// ── play time and the online leaderboard ──
+const hrs=ms=>(ms/3.6e6).toFixed(ms<3.6e7?1:0);
+function lbAuth(){
+  const f=UI.prof.fb||(UI.prof.fb={});if(f.tok&&f.exp>Date.now()+6e4)return Promise.resolve(f);
+  const done=j=>{if(!j||!(j.idToken||j.id_token))throw 0;f.tok=j.idToken||j.id_token;f.rt=j.refreshToken||j.refresh_token||f.rt;f.uid=j.localId||j.user_id||f.uid;f.exp=Date.now()+(+(j.expiresIn||j.expires_in)||3600)*1000;saveProf();return f;};
+  if(f.rt)return fetch('https://securetoken.googleapis.com/v1/token?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(f.rt)}).then(r=>r.json()).then(done).catch(()=>{f.rt='';return lbAuth();});
+  return fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:'{"returnSecureToken":true}'}).then(r=>r.json()).then(done);
+}
+function lbPush(){
+  const p=UI.prof;if(!LB_DB||!LB_KEY||!/^https?:/.test(location.protocol)||(!p.games&&!p.ms))return Promise.resolve();
+  return lbAuth().then(f=>fetch(LB_DB+'/lb/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:(p.name||t('defName')).slice(0,18),w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,t:{'.sv':'timestamp'}})})).then(()=>{UI.lbPushed=Date.now();}).catch(()=>{});
+}
+function renderLB(){
+  const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
+  const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  if(!LB_DB||!LB_KEY){$('#help').innerHTML=head+`<p class="keys">${t('lbOff')}</p>`+back;return;}
+  const rows=UI.lbRows;
+  $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
+    `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
+    rows.map((r,i)=>`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${esc(r.n||'')}</span><span>${t('ranks')[rankOf({wins:r.w})]}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
+    `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
+}
+function openLB(){
+  UI.lbRows=null;renderLB();show('help');if(!LB_DB||!LB_KEY)return;const s=UI.lbSort||'w';
+  lbPush().then(()=>fetch(LB_DB+'/lb.json?orderBy=%22'+s+'%22&limitToLast=100')).then(r=>{if(!r.ok)throw 0;return r.json();}).then(j=>{
+    const a=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).filter(r=>r&&typeof r.n==='string');a.sort((x,y)=>(y[s]||0)-(x[s]||0)||(y[s==='w'?'h':'w']||0)-(x[s==='w'?'h':'w']||0));
+    if((UI.lbSort||'w')===s){UI.lbRows=a;if($('#help .lbh'))renderLB();}}).catch(()=>{UI.lbRows='err';if($('#help .lbh'))renderLB();});
+}
 function renderRanks(){
   const p=UI.prof,rk=rankOf(p),R=t('ranks');
   $('#help').innerHTML=`<h2>${t('allRanks')}</h2><div class="rks">${R.map((n,i)=>`<div class="${i===rk?'cur':i<rk?'done':''}"><b>${n}</b><span>${i===0?'0':i===21?'501+':((i-1)*25+1)+' – '+i*25}</span></div>`).join('')}</div><p class="keys">${t('ranksNote')}</p><div class="row"><button class="btn big" data-a="account">${t('back')}</button></div>`;
@@ -182,7 +212,7 @@ function renderAmode(){
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
   $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label></div>
-  <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(4,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
+  <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
   <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p><p class="keys">${t('accNote')}</p><div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 function renderNews(latest){
@@ -216,10 +246,10 @@ function quitXp(){
   const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
   const xp=me.st.cities*4+me.st.kills*15;if(xp<=0)return;UI.prof.xp+=xp;UI.prof.games++;saveProf();return xp;
 }
-function toMenu(){const xp=quitXp();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
+function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;p.xp+=xp;p.games++;if(o.win)p.wins++;
+  g.xpDone=true;const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;p.xp+=xp;p.games++;if(o.win)p.wins++;saveProf();lbPush();
   let best='';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
@@ -405,7 +435,7 @@ function act(a){
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=v==null?(p.ui+1)%3:+v;applyMode();resize();renderSettings();break;
-    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'lb':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio,m:UI.prof.amode||'pt'});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
@@ -551,7 +581,7 @@ function bindInput(){
 
 // ── main loop ──
 function frame(ts){
-  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(!g||!R.land)return;
+  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;p.ms=(p.ms||0)+dt;if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
   if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=fitZoom(g)*1.5;if(g.over||g.tick>7000){startDemo();return;}}
   else if(!UI.screen){const K=UI.keys,s=dt*.55/cam.z;if(K.a||K.arrowleft)cam.tx-=s;if(K.d||K.arrowright)cam.tx+=s;if(K.w||K.arrowup)cam.ty-=s;if(K.s||K.arrowdown)cam.ty+=s;}
   if(g.started&&!g.over&&!g.o.mp&&(g.o.demo||(!UI.paused&&!UI.screen))){acc+=dt*(g.o.demo?2:UI.speed);let n=0;while(acc>=100&&n<10){tick(g);acc-=100;n++;}if(n===10)acc=0;}
