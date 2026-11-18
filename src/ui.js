@@ -153,10 +153,46 @@ function lbAuth(){
   if(f.rt)return fetch('https://securetoken.googleapis.com/v1/token?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(f.rt)}).then(r=>r.json()).then(done).catch(()=>{f.rt='';return lbAuth();});
   return fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:'{"returnSecureToken":true}'}).then(r=>r.json()).then(done);
 }
-function lbPush(){
-  const p=UI.prof;if(!LB_DB||!LB_KEY||!/^https?:/.test(location.protocol)||(!p.games&&!p.ms))return Promise.resolve();
-  return lbAuth().then(f=>fetch(LB_DB+'/lb/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:(p.name||t('defName')).slice(0,18),w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,t:{'.sv':'timestamp'}})})).then(()=>{UI.lbPushed=Date.now();}).catch(()=>{});
+// progress lives in the cloud under the player's id: each device sends only what it added since the last sync (server-side increments),
+// so playing on a phone and a PC never overwrites one with the other
+const SK={wins:'w',games:'g',xp:'xp',ms:'ms'};
+function addStat(k,v){const p=UI.prof;p[k]=(p[k]||0)+v;const d=p.pend||(p.pend={});d[k]=(d[k]||0)+v;}
+const cloudOn=()=>!!(LB_DB&&LB_KEY&&/^https?:/.test(location.protocol));
+function cloudSync(){
+  const p=UI.prof;if(!cloudOn())return Promise.resolve();if(UI.syncing)return UI.syncing;
+  if(!p.cloudInit){p.cloudInit=1;p.pend={wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)};saveProf();}
+  if(!p.games&&!p.ms&&!(p.fb&&p.fb.user))return Promise.resolve();
+  const sent=Object.assign({},p.pend||{});let uid;
+  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}
+    return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw 0;return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok);}).then(r=>r.json()).then(u=>{
+      if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}saveProf();
+      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,t:{'.sv':'timestamp'}})});});})
+    .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
 }
+const lbPush=cloudSync;
+// real accounts: a username and password (Firebase email/password under the hood) carry the same progress to every device
+const accMail=u=>u.toLowerCase()+'@players.sijal.game';
+function accErr(j){const m=(j&&j.error&&j.error.message)||'';return /EMAIL_EXISTS/.test(m)?'taken':/WEAK_PASSWORD/.test(m)?'weak':/TOO_MANY/.test(m)?'many':/OPERATION_NOT_ALLOWED|ADMIN_ONLY/.test(m)?'off':/INVALID|NOT_FOUND|PASSWORD/.test(m)?'bad':'net';}
+function accForm(){const u=($('#inUser')||{}).value||'',pw=($('#inPass')||{}).value||'';if(!/^[A-Za-z0-9_]{3,16}$/.test(u.trim()))return null;if(pw.length<6)return'pw';return{u:u.trim(),pw};}
+function accDone(code){UI.accMsg=code;loading(false);renderAccount();}
+function accRegister(){
+  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('weak');if(!cloudOn())return accDone('net');loading(true);const p=UI.prof;
+  // turning the current guest id into a named account keeps every win already played on this device
+  cloudSync().then(()=>lbAuth()).then(f=>fetch('https://identitytoolkit.googleapis.com/v1/accounts:update?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:f.tok,email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json()).then(j=>{
+    if(!j.idToken)return accDone(accErr(j));Object.assign(f,{tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u});saveProf();return cloudSync().then(()=>accDone('made'));})).catch(()=>accDone('net'));
+}
+function accLogin(){
+  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);const p=UI.prof,old=p.fb||{};
+  fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json()).then(j=>{
+    if(!j.idToken)return accDone(accErr(j));if(j.localId===old.uid){old.user=F.u;saveProf();return accDone('in');}
+    // a guest's progress on this device moves into the account; the guest's own entries are removed so nobody shows up twice
+    const guest=!old.user&&old.uid?Object.assign({},{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}):null,gTok=old.tok,gUid=old.uid;
+    const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
+    return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
+      p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;
+      for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>accDone('in'));});}).catch(()=>accDone('net'));
+}
+function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
 function renderLB(){
   const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
   const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
@@ -209,11 +245,17 @@ function renderAmode(){
   e.innerHTML=`<button class="amh" data-a="amT" aria-expanded="${!p.amHide}">${t('amode')} ${p.amHide?'▸':'▾'}</button>`+(p.amHide?'':`<button class="chip${m==='pt'?' on':''}" data-a="am:pt">${t('am_pt')}</button><button class="chip${m==='all'?' on':''}" data-a="am:all">${t('am_all')}</button>`);
   placeAmode();
 }
+function accPanel(){
+  const p=UI.prof,f=p.fb||{},m=UI.accMsg?`<p class="${/made|in|out/.test(UI.accMsg)?'good':'bad'}">${t('acm_'+UI.accMsg)}</p>`:'';
+  if(!cloudOn())return`<p class="keys">${t('accNote')}</p>`;
+  if(f.user)return`<div class="accb"><p>${t('ac_signed',`<b dir="ltr">${esc(f.user)}</b>`)}</p><p class="keys">${t('ac_signedNote')}</p>${m}<button class="btn sm" data-a="accOut">${t('ac_out')}</button></div>`;
+  return`<div class="accb"><h3>${t('ac_title')}</h3><p class="keys">${t('ac_note')}</p><div class="accf"><input id="inUser" dir="ltr" maxlength="16" placeholder="${t('ac_user')}" autocomplete="username" autocapitalize="none" spellcheck="false"><input id="inPass" dir="ltr" type="password" maxlength="64" placeholder="${t('ac_pass')}" autocomplete="current-password"></div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div></div>`;
+}
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
   $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label></div>
   <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
-  <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p><p class="keys">${t('accNote')}</p><div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 function renderNews(latest){
   const L=(latest?LOG.slice(0,1):LOG.slice(0,10));
@@ -244,12 +286,12 @@ function startMatch(o){
 }
 function quitXp(){
   const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
-  const xp=me.st.cities*4+me.st.kills*15;if(xp<=0)return;UI.prof.xp+=xp;UI.prof.games++;saveProf();return xp;
+  const xp=me.st.cities*4+me.st.kills*15;if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();return xp;
 }
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;p.xp+=xp;p.games++;if(o.win)p.wins++;saveProf();lbPush();
+  g.xpDone=true;const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();lbPush();
   let best='';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
@@ -435,7 +477,7 @@ function act(a){
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=v==null?(p.ui+1)%3:+v;applyMode();resize();renderSettings();break;
-    case'fac':p.fac=v;renderFac();break;case'account':renderAccount();show('help');break;case'lb':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'account':UI.accMsg='';renderAccount();show('help');break;case'accReg':accRegister();break;case'accIn':accLogin();break;case'accOut':accLogout();break;case'lb':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio,m:UI.prof.amode||'pt'});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
@@ -581,7 +623,7 @@ function bindInput(){
 
 // ── main loop ──
 function frame(ts){
-  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;p.ms=(p.ms||0)+dt;if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
+  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
   if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=fitZoom(g)*1.5;if(g.over||g.tick>7000){startDemo();return;}}
   else if(!UI.screen){const K=UI.keys,s=dt*.55/cam.z;if(K.a||K.arrowleft)cam.tx-=s;if(K.d||K.arrowright)cam.tx+=s;if(K.w||K.arrowup)cam.ty-=s;if(K.s||K.arrowdown)cam.ty+=s;}
   if(g.started&&!g.over&&!g.o.mp&&(g.o.demo||(!UI.paused&&!UI.screen))){acc+=dt*(g.o.demo?2:UI.speed);let n=0;while(acc>=100&&n<10){tick(g);acc-=100;n++;}if(n===10)acc=0;}

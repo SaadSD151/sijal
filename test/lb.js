@@ -1,14 +1,14 @@
 // leaderboard against a fake Firebase: play time counts, results upload, list sorts by wins or hours, own row highlighted
 const {chromium,devices}=require('playwright'),http=require('http'),fs=require('fs'),path=require('path');
-(async()=>{const html=fs.readFileSync(path.resolve(__dirname,'../dist/site/index.html'),'utf8').replace("const LB_DB='',LB_KEY='';","const LB_DB='https://fake-db.test',LB_KEY='k';");
+(async()=>{const html=fs.readFileSync(path.resolve(__dirname,'../dist/site/index.html'),'utf8').replace(/const LB_DB='[^']*',LB_KEY='[^']*';/,"const LB_DB='https://fake-db.test',LB_KEY='k';");if(!html.includes('fake-db.test'))throw new Error('config swap failed');
   const srv=http.createServer((q,r)=>{r.setHeader('content-type','text/html; charset=utf-8');r.end(html);}).listen(8781);
-  const DB={a1:{n:'سعود',w:40,h:3.6e6*2,g:50},a2:{n:'Ali',w:5,h:3.6e6*30,g:9}};let uid=0;
+  const DB={__u:{},a1:{n:'سعود',w:40,h:3.6e6*2,g:50},a2:{n:'Ali',w:5,h:3.6e6*30,g:9}};let uid=0;
   const b=await chromium.launch();const out=[];
   for(const [name,opts] of [['pc',{viewport:{width:1300,height:760}}],['phone',{...devices['iPhone 13']}]]){
     const ctx=await b.newContext(opts),p=await ctx.newPage(),errs=[];p.on('pageerror',e=>errs.push(e.message));
     await ctx.route('https://identitytoolkit.googleapis.com/**',rt=>rt.fulfill({contentType:'application/json',body:JSON.stringify({idToken:'tok',refreshToken:'rt',localId:'me'+(++uid),expiresIn:'3600'})}));
-    await ctx.route('https://fake-db.test/**',rt=>{const u=new URL(rt.request().url());if(rt.request().method()==='PUT'){const id=u.pathname.split('/')[2].replace('.json','');const v=JSON.parse(rt.request().postData());v.t=Date.now();DB[id]=v;return rt.fulfill({contentType:'application/json',body:JSON.stringify(v)});}
-      return rt.fulfill({contentType:'application/json',body:JSON.stringify(DB)});});
+    await ctx.route('https://fake-db.test/**',rt=>{const u=new URL(rt.request().url());if(rt.request().method()!=='GET'){const id=u.pathname.split('/')[2].replace('.json','');let v=rt.request().postData()?JSON.parse(rt.request().postData()):{};if(u.pathname.startsWith('/users')){const o=DB.__u[id]||(DB.__u[id]={});for(const k in v)o[k]=v[k]&&v[k]['.sv']&&v[k]['.sv'].increment!=null?(o[k]||0)+v[k]['.sv'].increment:v[k];return rt.fulfill({contentType:'application/json',body:JSON.stringify(o)});}}if(u.pathname.startsWith('/users'))return rt.fulfill({contentType:'application/json',body:JSON.stringify(DB.__u[u.pathname.split('/')[2].replace('.json','')]||null)});if(rt.request().method()==='PUT'){const id=u.pathname.split('/')[2].replace('.json','');const v=JSON.parse(rt.request().postData());v.t=Date.now();DB[id]=v;return rt.fulfill({contentType:'application/json',body:JSON.stringify(v)});}
+      const L=Object.assign({},DB);delete L.__u;return rt.fulfill({contentType:'application/json',body:JSON.stringify(L)});});
     await p.goto('http://localhost:8781/');await p.waitForTimeout(700);
     await p.evaluate(()=>{__sijal.act('setBack');__sijal.UI.prof.name='أنا';__sijal.act('quick');__sijal.act('go');});await p.waitForTimeout(1500);
     await p.evaluate(()=>{const S=__sijal,g=S.G,W=g.W;let sp=-1;for(let i=0;i<g.N&&sp<0;i++){const x=i%W,y=(i/W)|0;if(g.M.ter[i]===2&&g.M.coastD[i]>2&&!g.owner[i]&&g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>200))sp=i;}S.tap(sp,0,0);S.run(20);});
