@@ -124,6 +124,11 @@ b{font-weight:700}small{color:var(--dim);font-size:.82em}h2,h3,h4,p{margin:0}
 .btn.big{background:linear-gradient(#f4d584,#c9972f);color:#1c1405;border-color:#ffe9a8;font-size:18px;font-weight:700;box-shadow:0 6px 22px rgba(227,185,90,.3)}
 .btn.sm{min-width:0;padding:7px 12px;font-size:13px}
 .mb{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#app:not(.mob) .mb{width:400px;max-width:92vw}
+.mb .m2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.mb .m3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mb .m3 .btn,.mob .mb .m4 .btn{font-size:14px;padding:9px 6px;min-width:0;opacity:.92}
+.mb .m2 .btn{min-width:0}
 .mf{display:flex;flex-direction:column;align-items:center;gap:10px}
 .rk{color:var(--dim)}.rk b{color:var(--gold2)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}

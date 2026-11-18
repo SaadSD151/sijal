@@ -128,6 +128,11 @@ b{font-weight:700}small{color:var(--dim);font-size:.82em}h2,h3,h4,p{margin:0}
 .btn.big{background:linear-gradient(#f4d584,#c9972f);color:#1c1405;border-color:#ffe9a8;font-size:18px;font-weight:700;box-shadow:0 6px 22px rgba(227,185,90,.3)}
 .btn.sm{min-width:0;padding:7px 12px;font-size:13px}
 .mb{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#app:not(.mob) .mb{width:400px;max-width:92vw}
+.mb .m2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.mb .m3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mb .m3 .btn,.mob .mb .m4 .btn{font-size:14px;padding:9px 6px;min-width:0;opacity:.92}
+.mb .m2 .btn{min-width:0}
 .mf{display:flex;flex-direction:column;align-items:center;gap:10px}
 .rk{color:var(--dim)}.rk b{color:var(--gold2)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
@@ -356,7 +361,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='77759fee22';
+const BUILD_ID='449390a2bb';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2032,7 +2037,7 @@ function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t(
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="suggest">${t('suggest')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="lb">${t('lb')}</button><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="lb">${t('lb')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
   <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
