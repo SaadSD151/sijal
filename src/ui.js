@@ -577,6 +577,8 @@ function hoverAt(x,y){
 function bindInput(){
   const P=new Map(),xy=e=>{const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};let down=null,drag=false,pd=0,pc=null,lp=0;
   cv.addEventListener('pointerdown',e=>{
+    // a first finger means no other finger is on the glass: forget any touch whose lift the browser never reported (otherwise one finger pinches)
+    if(e.isPrimary&&P.size){P.clear();down=null;drag=false;pd=0;}
     auInit();try{cv.setPointerCapture(e.pointerId);}catch(_){}const p=xy(e);P.set(e.pointerId,p);
     if(P.size===1){down={x:p.x,y:p.y,b:e.button,touch:e.pointerType!=='mouse'};drag=false;clearTimeout(lp);
       if(down.touch)lp=setTimeout(()=>{if(down&&!drag&&G&&!G.o.demo){const i=tileAt(down.x,down.y),o=i>=0?G.owner[i]:0;if(o&&o!==G.human){openCard(o);down=null;}}},520);}
@@ -604,7 +606,9 @@ function bindInput(){
       UI.aim=null;down=null;drag=false;
     }else{down=null;drag=true;pd=0;}
   };
-  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('lostpointercapture',e=>{if(P.has(e.pointerId))up({pointerId:e.pointerId,type:'pointercancel',clientX:e.clientX,clientY:e.clientY});});
+  addEventListener('pointerup',e=>{if(P.has(e.pointerId))up(e);});addEventListener('pointercancel',e=>{if(P.has(e.pointerId))up(e);});
+  const reset=()=>{P.clear();down=null;drag=false;pd=0;clearTimeout(lp);};addEventListener('blur',reset);document.addEventListener('visibilitychange',reset);
   cv.addEventListener('pointerleave',e=>{if(e.pointerType!=='mouse')return;UI.hover=-1;const tp=$('#tip');if(tp)tp.hidden=true;});
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
