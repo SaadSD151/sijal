@@ -217,7 +217,7 @@ function renderAccount(){
 }
 function renderNews(latest){
   const L=(latest?LOG.slice(0,1):LOG.slice(0,10));
-  $('#help').innerHTML=`<h2>${t(latest?'newsNew':'news')}</h2><div class="nl">${L.map(e=>`<div><b>${t('ver')} ${e.v}</b><small>${e.d}</small><ul>${(e[UI.lang]||e.ar).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`;
+  $('#help').innerHTML=`<h2>${t(latest?'newsNew':'news')}</h2><div class="nl">${L.map(e=>`<div><b>${t('ver')} ${e.v}</b><small dir="ltr">${e.d}</small><ul>${(e[UI.lang]||e.ar).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`;
 }
 function renderFac(){
   const e=$('#fpick'),p=UI.prof;if(!e)return;e.hidden=UI.phase!=='spawn';if(e.hidden)return;
