@@ -6,7 +6,8 @@ const {chromium,devices}=require('playwright'),http=require('http'),fs=require('
   const sv=(old,v)=>v&&typeof v==='object'&&v['.sv']?(v['.sv']==='timestamp'?Date.now():(old||0)+v['.sv'].increment):v;
   const route=async ctx=>{
     await ctx.route('https://identitytoolkit.googleapis.com/**',rt=>{const u=rt.request().url(),b=JSON.parse(rt.request().postData()||'{}');let j;
-      if(u.includes('signUp')){const uid='anon'+(++n);j={idToken:tok(uid),refreshToken:'r'+uid,localId:uid,expiresIn:'3600'};}
+      if(u.includes('signUp')&&b.email){if(ACC[b.email])j={error:{message:'EMAIL_EXISTS'}};else{const uid='acc'+(++n);ACC[b.email]={pw:b.password,uid};j={idToken:tok(uid),refreshToken:'r'+uid,localId:uid,expiresIn:'3600'};}}
+      else if(u.includes('signUp')){const uid='anon'+(++n);j={idToken:tok(uid),refreshToken:'r'+uid,localId:uid,expiresIn:'3600'};}
       else if(u.includes('accounts:update')){const uid=TOK[b.idToken];if(ACC[b.email])j={error:{message:'EMAIL_EXISTS'}};else{ACC[b.email]={pw:b.password,uid};j={idToken:tok(uid),refreshToken:'r'+uid,localId:uid,expiresIn:'3600'};}}
       else if(u.includes('signInWithPassword')){const a=ACC[b.email];j=a&&a.pw===b.password?{idToken:tok(a.uid),refreshToken:'r'+a.uid,localId:a.uid,expiresIn:'3600'}:{error:{message:'INVALID_LOGIN_CREDENTIALS'}};}
       rt.fulfill({status:j.error?400:200,contentType:'application/json',body:JSON.stringify(j)});});

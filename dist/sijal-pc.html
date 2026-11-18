@@ -376,7 +376,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='pc';(function(){"use strict";
-const BUILD_ID='53c139e30f';
+const BUILD_ID='7fbaacbcd9';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2133,22 +2133,24 @@ const accMail=u=>u.toLowerCase()+'@players.sijal.game';
 function accErr(j){const m=(j&&j.error&&j.error.message)||'';return /EMAIL_EXISTS/.test(m)?'taken':/WEAK_PASSWORD/.test(m)?'weak':/TOO_MANY/.test(m)?'many':/OPERATION_NOT_ALLOWED|ADMIN_ONLY/.test(m)?'off':/INVALID|NOT_FOUND|PASSWORD/.test(m)?'bad':'net';}
 function accForm(){const u=($('#inUser')||{}).value||'',pw=($('#inPass')||{}).value||'';if(!/^[A-Za-z0-9_]{3,16}$/.test(u.trim()))return null;if(pw.length<6)return'pw';return{u:u.trim(),pw};}
 function accDone(code){UI.accMsg=code;loading(false);renderAccount();}
+const AUTH='https://identitytoolkit.googleapis.com/v1/accounts:';
+function accReq(kind,F){return fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json());}
+// entering an account: a guest's progress on this device moves into it, and the guest's own entries are removed so nobody shows up twice
+function accEnter(j,F,okMsg){
+  const p=UI.prof,old=p.fb||{};if(j.localId===old.uid){old.user=F.u;saveProf();return accDone(okMsg);}
+  const guest=!old.user&&old.uid?{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}:null,gTok=old.tok,gUid=old.uid;
+  const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
+  return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
+    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;
+    for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
+}
 function accRegister(){
-  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('weak');if(!cloudOn())return accDone('net');loading(true);const p=UI.prof;
-  // turning the current guest id into a named account keeps every win already played on this device
-  cloudSync().then(()=>lbAuth()).then(f=>fetch('https://identitytoolkit.googleapis.com/v1/accounts:update?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:f.tok,email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json()).then(j=>{
-    if(!j.idToken)return accDone(accErr(j));Object.assign(f,{tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u});saveProf();return cloudSync().then(()=>accDone('made'));})).catch(()=>accDone('net'));
+  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('weak');if(!cloudOn())return accDone('net');loading(true);
+  lbAuth().catch(()=>{}).then(()=>cloudSync()).then(()=>accReq('signUp',F)).then(j=>j.idToken?accEnter(j,F,'made'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
 function accLogin(){
-  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);const p=UI.prof,old=p.fb||{};
-  fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json()).then(j=>{
-    if(!j.idToken)return accDone(accErr(j));if(j.localId===old.uid){old.user=F.u;saveProf();return accDone('in');}
-    // a guest's progress on this device moves into the account; the guest's own entries are removed so nobody shows up twice
-    const guest=!old.user&&old.uid?Object.assign({},{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}):null,gTok=old.tok,gUid=old.uid;
-    const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
-    return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
-      p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;
-      for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>accDone('in'));});}).catch(()=>accDone('net'));
+  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);
+  accReq('signInWithPassword',F).then(j=>j.idToken?accEnter(j,F,'in'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
 function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
 function renderLB(){
