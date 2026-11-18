@@ -14,7 +14,7 @@ const {chromium,devices}=require('playwright'),http=require('http'),fs=require('
     await p.evaluate(()=>{const S=__sijal,g=S.G,W=g.W;let sp=-1;for(let i=0;i<g.N&&sp<0;i++){const x=i%W,y=(i/W)|0;if(g.M.ter[i]===2&&g.M.coastD[i]>2&&!g.owner[i]&&g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>200))sp=i;}S.tap(sp,0,0);S.run(20);});
     await p.waitForTimeout(3000);const ms=await p.evaluate(()=>__sijal.UI.prof.ms);
     await p.evaluate(()=>{__sijal.UI.prof.wins=7;__sijal.act('menu');});await p.waitForTimeout(300);
-    const menuBtn=await p.evaluate(()=>!!document.querySelector('[data-a="lb"]'));await p.evaluate(()=>__sijal.act('lb'));await p.waitForTimeout(900);
+    const menuBtn=await p.evaluate(()=>!!document.querySelector('[data-a="board"]'));await p.evaluate(()=>__sijal.act('board'));await p.waitForTimeout(900);
     const byW=await p.evaluate(()=>[...document.querySelectorAll('.lbt>div:not(.lh)')].map(d=>d.textContent));await p.screenshot({path:process.argv[2]+'/lb-'+name+'.png'});
     await p.evaluate(()=>__sijal.act('lbS:h'));await p.waitForTimeout(900);const byH=await p.evaluate(()=>[...document.querySelectorAll('.lbt>div:not(.lh)')].map(d=>d.querySelector('span:nth-child(2)').textContent));
     const meRow=await p.evaluate(()=>(document.querySelector('.lbt .me')||{}).textContent);

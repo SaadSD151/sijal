@@ -31,7 +31,7 @@ const {chromium,devices}=require('playwright'),http=require('http'),fs=require('
   console.log('pc: wrong pw ->',await act(pc,'accIn','saad','nope123'));
   console.log('pc: sign in ->',await act(pc,'accIn','saad','secret1'),JSON.stringify(await S(pc)));
   console.log('second device making same name ->',await act(await dev({viewport:{width:900,height:700}},{}),'accReg','saad','other12'));
-  await win(phone);await win(pc);await phone.evaluate(()=>__sijal.act('lb'));await phone.waitForTimeout(1500);await pc.evaluate(()=>__sijal.act('lb'));await pc.waitForTimeout(1500);await phone.evaluate(()=>__sijal.act('lb'));await phone.waitForTimeout(1500);
+  await win(phone);await win(pc);await phone.evaluate(()=>__sijal.act('board'));await phone.waitForTimeout(1500);await pc.evaluate(()=>__sijal.act('board'));await pc.waitForTimeout(1500);await phone.evaluate(()=>__sijal.act('board'));await phone.waitForTimeout(1500);
   console.log('after a win on each: phone',JSON.stringify(await S(phone)),'pc',JSON.stringify(await S(pc)));
   console.log('leaderboard rows:',JSON.stringify(Object.values(DB.lb).map(r=>r.n+':'+r.w)));
   console.log('pc sign out ->',await act(pc,'accOut'),JSON.stringify(await S(pc)),'| cloud still',JSON.stringify(Object.values(DB.users).map(u=>u.w)));
