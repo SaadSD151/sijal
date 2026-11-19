@@ -18,7 +18,7 @@ function addNation(g,p){
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
     att:new Float32Array(192),ally:new Uint8Array(192),allyAt:new Int32Array(192),allyUntil:new Int32Array(192),allyRen:new Uint8Array(192),allyWarn:new Uint8Array(192),truce:new Int32Array(192),lastHit:new Int32Array(192).fill(-9999),lastAtk:new Int32Array(192).fill(-9999),pg:new Float32Array(192),emb:new Uint8Array(192),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(192).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
-    cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},mon:null,
+    cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},bc:{},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
     st:{conq:0,lost:0,cities:0,kills:0,peak:0,nukes:0}};
   g.nations.push(n);if(n.human)g.human=id;return n;
@@ -77,7 +77,8 @@ function defOf(g,n){
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
 function nearestCity(g,owner,x,y){let b=null,bd=1e9;for(const s of g.structs)if(!s.dead&&s.type==='city'&&s.owner===owner){const d=(s.x-x)**2+(s.y-y)**2;if(d<bd){bd=d;b=s;}}return b;}
 function portOk(g,i){const W=g.W,b=g.M.big,x=i%W;return(x>0&&b[i-1])||(x<W-1&&b[i+1])||(i>=W&&b[i-W])||(i<g.N-W&&b[i+W])?true:false;}
-function buildCost(g,n,type){const s=ST[type];let c=s.cost;for(let k=0;k<n.cnt[type];k++)c*=s.mul;if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
+// price rises with how many of that kind you have built yourself (captured ones do not count): ×mul for the first 8, then +15% of that each
+function buildCost(g,n,type){const s=ST[type],b=n.bc[type]|0;let c=s.cost;for(let k=0;k<Math.min(b,8);k++)c*=s.mul;if(b>8)c*=1+.15*(b-8);if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
 function canBuild(g,n,type,i){
   const s=ST[type];if(n.era<s.era)return'era';if(n.gold<buildCost(g,n,type))return'gold';if(type==='mon'&&n.mon)return'busy';
   if(i==null||i<0)return 0;
@@ -88,7 +89,7 @@ function canBuild(g,n,type,i){
   return 0;
 }
 function build(g,n,type,i){
-  const r=canBuild(g,n,type,i);if(r)return r;n.gold-=buildCost(g,n,type);
+  const r=canBuild(g,n,type,i);if(r)return r;n.gold-=buildCost(g,n,type);n.bc[type]=(n.bc[type]|0)+1;
   const s=addStruct(g,type,i,n.id,1,type==='city'?newCityName(g):-1);s.build=g.tick+60;
   if(type==='mon'){n.mon=s;s.cd=g.tick+MON_TIME;emit(g,'monBuilt',{a:n.id,s});for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!m.human)m.att[n.id]=-100;}
   emit(g,'built',{a:n.id,s});return 0;
