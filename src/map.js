@@ -13,7 +13,7 @@ function genMap(o){
     if(T==='highlands')e=Math.abs(e)*1.25+fbm(u*6+3,v*6+9,4)*.25;else if(T==='flat')e*=.3;
     elev[i]=T==='flat'||T==='highlands'?e:e-(1-smooth(0,.09,ed))*1.5;moist[i]=fb2(u*3+40,v*3+17,4);
   }
-  const ratio={continents:.47,pangaea:.52,islands:.34,inner:.46,twin:.46,shores:.46,crescent:.4,straits:.5,lakes:.7,flat:1,highlands:1}[T]||.45;
+  const ratio={continents:.54,pangaea:.6,islands:.42,inner:.53,twin:.53,shores:.53,crescent:.47,straits:.56,lakes:.75,flat:1,highlands:1}[T]||.45;
   const srt=Float32Array.from(elev).sort(),L0=Math.min(N-1,Math.floor(N*(1-ratio))),sea=srt[L0]-(ratio>=1?1e-6:0),LN=N-L0;
   // no-sea worlds: flat ground has no hills at all; highlands are half hills, a fifth peaks
   const HQ=T==='flat'?[2,2]:T==='highlands'?[.55,.88]:[.74,.9],hHill=srt[Math.min(N-1,L0+Math.floor(LN*HQ[0]))]-sea+(T==='flat'?1e9:0),hMnt=srt[Math.min(N-1,L0+Math.floor(LN*HQ[1]))]-sea+(T==='flat'?1e9:0),hmax=srt[N-1]-sea;
