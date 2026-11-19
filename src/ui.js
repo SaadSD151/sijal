@@ -148,7 +148,7 @@ function renderSettings(){
   <div><h3>${t('volM')}</h3><div class="rng"><input type="range" id="volM" min="0" max="100" step="5" value="${vm}" aria-label="${t('volM')}"><b id="volMv">${vm}</b></div></div>
   <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div>
   <div><h3>${t('langName')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${UI.lang==='ar'?' on':''}" data-a="lang:ar">العربية</button><button class="chip${UI.lang==='en'?' on':''}" data-a="lang:en">English</button></div></div>
-  <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><p class="keys" style="text-align:start">${t('gfxNote')}</p></div>
+  <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><div class="gfxd">${t('gfxD')[gfxLv()]}</div></div>
   <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
@@ -626,8 +626,8 @@ function handleEvents(){
       case'emb':if(e.d===me&&e.a!==me)feed(t(e.v?'m_embOn':'m_embOff',nmh(A)),e.v?'bad':'good');else if(!e.d&&e.a!==me&&e.v&&g.nations[me]&&g.nb&&g.nb[me*g.nations.length+e.a]>0)feed(t('m_embAll',nmh(A)),'bad');break;
       case'peaceProp':{if(e.b!==me)break;const d=toast(`<span>${t('m_peaceProp',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
       case'peace':if(e.a===me||e.b===me){feed(t('m_peace',nmh(N[e.a===me?e.b:e.a])),'good');sfx('city');UI.cardKey='';}break;
-      case'peaceRej':if(e.b===me){feed(t(e.why==='weak'?'m_peaceWeak':e.why==='trust'?'m_peaceTrust':'m_peaceNo',nmh(A)),'bad');}break;
-      case'reject':if(e.b===me){feed(t('m_rej',nmh(A)));sayLine(A,'reject');}break;
+      case'peaceRej':if(e.b===me){const L=TX[UI.lang]['pr_'+e.why];feed(L?t('m_peaceRejX',nmh(A),L[(Math.random()*L.length)|0]):t('m_peaceNo',nmh(A)),'bad');}break;
+      case'reject':if(e.b===me){const L=TX[UI.lang]['ar_'+(e.why||'trust')];feed(L?t('m_rejX',nmh(A),L[(Math.random()*L.length)|0]):t('m_rej',nmh(A)),'bad');}break;
       case'say':if(e.to==null||e.to===me)sayLine(A,e.key);break;
       case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');}break;
       case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season'+e.s);break;

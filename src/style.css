@@ -253,6 +253,8 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #radial .rb.red{background:#c0392b;border-color:#ff8a7a}#radial .rb.sea{background:#2e7fd0;border-color:#9fd2ff}#radial .rb.ok{background:#2f8f55;border-color:#9fe3b6}
 #radial .rb.off{opacity:.38;filter:grayscale(1);cursor:default}
 #radial .rb:not(.off):active{transform:scale(.92)}
+.gfxd{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line2);text-align:start;font-size:13px}
+.gfxd span{color:var(--dim)}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button:active{transform:scale(.92)}

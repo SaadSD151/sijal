@@ -123,14 +123,14 @@ function makeGlyphs(){
 function addFx(type,x,y,o){R.fx.push(Object.assign({type,x,y,t:0,dur:900},o));}
 const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.PI*t)*Math.hypot(m.tx-m.sx,m.ty-m.sy)*.28);
 // where to write the troops of each front I am in: on the shared border, at the border tile nearest its middle
-// (or nearest the target of a focused push); after that it follows the front from where it was, eased on screen so it does not jump
+// near where that push is actually taking land (or its focus target); it stays put while the push is within 60 tiles of it, eased on screen so it does not jump
 function frontSpots(g,me,ts){
   R.front=R.front||{};if(ts-(R.frontT||0)<450)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,ter=g.M.ter,N=g.N,by={};
   for(const k of g.attacks){if(k.a!==me&&k.d!==me)continue;const o=k.a===me?k.d:k.a;(by[o]||(by[o]=[])).push(k);}
   const os=Object.keys(by);if(!os.length){R.front={};return;}const S={};for(const o of os)S[o]={x:0,y:0,n:0};
   const nbOf=(i,x,y,f)=>{if(x>0)f(i-1);if(x<W-1)f(i+1);if(y>0)f(i-W);if(y<H-1)f(i+W);};
   for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let hit=null;nbOf(i,x,y,j=>{const o=own[j];if(ter[j]>=2&&o!==me&&S[o]&&hit!==o){hit=o;const A=S[o];A.x+=x;A.y+=y;A.n++;}});}
-  const best={};for(const o of os){const A=S[o];if(!A.n)continue;for(const k of by[o]){const P=R.front[k.id],foc=k.focus&&k.tx>=0,fx=foc?k.tx:P?P.x:A.x/A.n,fy=foc?k.ty:P?P.y:A.y/A.n;best[k.id]={k,fx,fy,o:+o,d:1e18,x:fx,y:fy};}}
+  const best={};for(const o of os){const A=S[o];if(!A.n)continue;for(const k of by[o]){const P=R.front[k.id],foc=k.focus&&k.tx>=0,ex=k.fx!=null?k.fx:A.x/A.n,ey=k.fx!=null?k.fy:A.y/A.n,stay=P&&(P.x-ex)**2+(P.y-ey)**2<3600,fx=foc?k.tx:stay?P.x:ex,fy=foc?k.ty:stay?P.y:ey;best[k.id]={k,fx,fy,o:+o,d:1e18,x:fx,y:fy};}}
   for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let adj=-1;nbOf(i,x,y,j=>{if(ter[j]>=2&&own[j]!==me&&S[own[j]])adj=own[j];});if(adj<0)continue;
     for(const id in best){const B=best[id];if(B.o!==adj)continue;const d=(x-B.fx)**2+(y-B.fy)**2;if(d<B.d){B.d=d;B.x=x;B.y=y;}}}
   const out={};for(const id in best){const B=best[id],P=R.front[id];out[id]={x:B.x,y:B.y,sx:P&&P.sx!=null?P.sx:B.x,sy:P&&P.sy!=null?P.sy:B.y};}R.front=out;
