@@ -1,5 +1,5 @@
 // ── SIJAL · simulation (pure logic, no DOM) ──
-const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,PEACE_T=300,SHIELD_R=15,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
+const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SHIELD_R=19,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
   const M=genMap(o),N=M.N;
@@ -53,7 +53,7 @@ function pickSpawn(g,md){
 }
 function spawn(g,n,i){
   const W=g.W,x=i%W,y=(i/W)|0;n.spawned=true;
-  for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=g.H||dx*dx+dy*dy>14)continue;const j=Y*W+X;if(g.M.ter[j]>1&&!g.owner[j]&&!g.structAt[j])setOwner(g,j,n.id);}
+  for(let dy=-7;dy<=7;dy++)for(let dx=-7;dx<=7;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=g.H||dx*dx+dy*dy>50)continue;const j=Y*W+X;if(g.M.ter[j]>1&&!g.owner[j]&&!g.structAt[j])setOwner(g,j,n.id);}
   setOwner(g,i,n.id);n.cap=addStruct(g,'city',i,n.id,2,newCityName(g));n.cap.capital=true;n.cx=x;n.cy=y;
 }
 function startGame(g){g.started=true;structPass(g);statsPass(g);}
@@ -83,7 +83,7 @@ function canBuild(g,n,type,i){
   if(i==null||i<0)return 0;
   if(g.owner[i]!==n.id)return'own';if(g.structAt[i]||g.fall[i]>g.tick)return'busy';
   const x=i%g.W,y=(i/g.W)|0;
-  for(const t of g.structs)if(!t.dead){const d=(t.x-x)**2+(t.y-y)**2;if(d<9)return'near';if(type==='city'&&t.type==='city'&&d<CITY_MIN*CITY_MIN)return'cnear';}
+  for(const t of g.structs)if(!t.dead){const d=(t.x-x)**2+(t.y-y)**2;if(d<16)return'near';if(type==='city'&&t.type==='city'&&d<CITY_MIN*CITY_MIN)return'cnear';}
   if((type==='port'||type==='coast')&&!portOk(g,i))return'coast';
   return 0;
 }
@@ -288,7 +288,7 @@ function landing(g,b){
 }
 function tickBoats(g){
   // coastal batteries shell hostile ships in range once a second
-  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=(13+2*(s.level-1))**2,bc=0;
+  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=(COAST_R+2*(s.level-1))**2,bc=0;
     for(const b of g.boats){if(b.a===s.owner||O.ally[b.a]||b.sunk)continue;const c=b.path[Math.min(b.path.length-1,Math.floor(b.p))],d=(c%W-s.x)**2+(((c/W)|0)-s.y)**2;if(d<bd){bd=d;best=b;bc=c;}}
     if(best){best.troops-=Math.max(800,best.troops*.15)*(1+.35*(s.level-1));emit(g,'shot',{x:s.x,y:s.y,tx:bc%W,ty:(bc/W)|0});if(best.troops<300){best.sunk=true;emit(g,'sunk',{a:s.owner,d:best.a,x:bc%W,y:(bc/W)|0});}}}}
   for(let j=g.boats.length-1;j>=0;j--){const b=g.boats[j];let rm=!g.nations[b.a].alive||b.sunk;

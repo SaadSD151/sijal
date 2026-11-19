@@ -457,7 +457,7 @@ function effText(s,lv){
     case'city':return t('ef_city',fmt(4000*lv*(s.capital?1.5:1)),1+lv);
     case'fort':return t('ef_fort',5+lv-1,fmt(60000*lv),R_FORT+lv-1);
     case'port':return t('ef_port',2*lv,35*(lv-1));
-    case'coast':return t('ef_coast',13+2*(lv-1),35*(lv-1));
+    case'coast':return t('ef_coast',COAST_R+2*(lv-1),35*(lv-1));
     case'silo':return t('ef_silo',15*(lv-1));
     case'factory':return t('ef_factory',3*lv,35*(lv-1));
     case'shield':return t('ef_shield',Math.round(SH_P.rocket[lv]*100),Math.round(SH_P.nuke[lv]*100),Math.round(SH_P.doom[lv]*100),SH_R(lv));

@@ -213,7 +213,7 @@ function draw(g,dt,ts){
   const SP=[];
   // protected area of my forts, shield domes and coastal guns (and every dome while aiming a missile): filled only over the owner's land, outlined along its edge
   {const aimM=UI.mode&&UI.mode[0]==='m',RC=R.rng||(R.rng={});for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'&&s.type!=='coast'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
-    const rr=s.type==='fort'?R_FORT+s.level-1:s.type==='coast'?13+2*(s.level-1):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
+    const rr=s.type==='fort'?R_FORT+s.level-1:s.type==='coast'?COAST_R+2*(s.level-1):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
     const key=s.i+':'+s.type,col=!mine?[255,90,70]:s.type==='shield'?[120,190,255]:s.type==='coast'?[90,220,200]:[255,233,168];let E=RC[key];
     if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&own[Y*W+X]===o;
       for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge?205:(s.type==='shield'?48:38);}
@@ -306,13 +306,13 @@ function draw(g,dt,ts){
   // placement preview: range circle plus a ghost of the building where it will actually stand
   if(UI.mode&&(UI.pend>=0||UI.hover>=0)&&me){
     const m=UI.mode,k=m.slice(2),H=g.nations[me];let i=UI.pend>=0?UI.pend:UI.hover,rad=0,ok=true;
-    if(m[0]==='b'){if(k==='port'||k==='coast')i=snapPort(g,H,i,UI.mob?6:4,k);rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:13}[k]||1.5;
+    if(m[0]==='b'){if(k==='port'||k==='coast')i=snapPort(g,H,i,UI.mob?6:4,k);rad={city:R_CITY,fort:R_FORT,shield:SHIELD_R,coast:COAST_R}[k]||2;
       if(k==='factory'){if(!UI.railPrev||UI.railPrev.i!==i||g.tick-UI.railPrev.t>50){const tp=[];for(const s of trainTargets(g,me,i%g.W,(i/g.W)|0)){const p=landPath(g,i,s.i,110);if(p)tp.push(p);}UI.railPrev={i,t:g.tick,paths:railPlan(g,me,i),trade:tp};}
         const dr=(L,col)=>{c.strokeStyle=col;for(const P of L){c.beginPath();P.forEach((t,k)=>{const q=w2s(t%g.W+.5,((t/g.W)|0)+.5);k?c.lineTo(q.x,q.y):c.moveTo(q.x,q.y);});c.stroke();}};
         c.lineWidth=2.5;c.setLineDash([3,6]);dr(UI.railPrev.trade,'rgba(120,230,160,.9)');c.setLineDash([7,6]);dr(UI.railPrev.paths,'rgba(255,233,168,.95)');c.setLineDash([]);}ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else if(m[0]==='s'){const sh=shoreNear(g,i,+k,10);ok=sh>=0;if(sh>=0)i=sh;rad=2.5;}else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
     const p=w2s(i%g.W+.5,((i/g.W)|0)+.5);
     c.strokeStyle=ok?'rgba(120,240,160,.95)':'rgba(255,100,90,.95)';c.fillStyle=ok?'rgba(120,240,160,.14)':'rgba(255,100,90,.14)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,rad*z,0,7);c.fill();c.stroke();
-    if(m[0]==='b'){const r=clamp(z*1.45,8,12)+2,q=r*1.45;c.globalAlpha=.6+.3*Math.sin(ts/160);c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=ok?H.css:'#a33';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.drawImage(R.glyph[k],p.x-q/2,p.y-q/2,q,q);c.globalAlpha=1;}
+    if(m[0]==='b'){const r=k==='city'?clamp(z*3,9,21)+.8:clamp(z*3,9,21)+1,q=r*1.5;c.globalAlpha=.6+.3*Math.sin(ts/160);c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=ok?H.css:'#a33';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.drawImage(R.glyph[k],p.x-q/2,p.y-q/2,q,q);c.globalAlpha=1;}
     else{c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.moveTo(p.x-9,p.y);c.lineTo(p.x+9,p.y);c.moveTo(p.x,p.y-9);c.lineTo(p.x,p.y+9);c.stroke();}
   }
   // who is attacking you: a ring on their capital, or an arrow at the screen edge pointing to it
