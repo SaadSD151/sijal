@@ -420,7 +420,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='bce1576b65';
+const BUILD_ID='d6a97a5b1d';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2288,11 +2288,12 @@ function lbAuth(){
 // so playing on a phone and a PC never overwrites one with the other
 const SK={wins:'w',games:'g',xp:'xp',ms:'ms'};
 function addStat(k,v){const p=UI.prof;p[k]=(p[k]||0)+v;const d=p.pend||(p.pend={});d[k]=(d[k]||0)+v;}
-const cloudOn=()=>!!(LB_DB&&LB_KEY&&/^https?:/.test(location.protocol));
+// never from automated test browsers or the local test mode, so tests cannot leave rows on the real leaderboard
+const cloudOn=()=>!!(LB_DB&&LB_KEY&&/^https?:/.test(location.protocol)&&!navigator.webdriver&&!/[?&]bc=1/.test(location.search));
 function cloudSync(){
   const p=UI.prof;if(!cloudOn())return Promise.resolve();if(UI.syncing)return UI.syncing;
   if(!p.cloudInit){p.cloudInit=1;p.pend={wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)};saveProf();}
-  if(!p.games&&!p.ms&&!(p.fb&&p.fb.user))return Promise.resolve();
+  if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{});let uid;
   return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}
     const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,t:{'.sv':'timestamp'}})});
@@ -2331,7 +2332,7 @@ function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.c
 function renderLB(){
   const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
   const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
-  if(!LB_DB||!LB_KEY){$('#help').innerHTML=head+`<p class="keys">${t('lbOff')}</p>`+back;return;}
+  if(!cloudOn()){$('#help').innerHTML=head+`<p class="keys">${t('lbOff')}</p>`+back;return;}
   const rows=UI.lbRows;
   $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
     `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
@@ -2339,9 +2340,9 @@ function renderLB(){
     `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
 }
 function openLB(){
-  UI.lbRows=null;renderLB();show('help');if(!LB_DB||!LB_KEY)return;const s=UI.lbSort||'w';
+  UI.lbRows=null;renderLB();show('help');if(!cloudOn())return;const s=UI.lbSort||'w';
   lbPush().then(()=>fetch(LB_DB+'/lb.json?orderBy=%22'+s+'%22&limitToLast=100')).then(r=>{if(!r.ok)throw 0;return r.json();}).then(j=>{
-    const a=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).filter(r=>r&&typeof r.n==='string');a.sort((x,y)=>(y[s]||0)-(x[s]||0)||(y[s==='w'?'h':'w']||0)-(x[s==='w'?'h':'w']||0));
+    const a=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).filter(r=>r&&typeof r.n==='string'&&(r.g|0)>0);a.sort((x,y)=>(y[s]||0)-(x[s]||0)||(y[s==='w'?'h':'w']||0)-(x[s==='w'?'h':'w']||0));
     if((UI.lbSort||'w')===s){UI.lbRows=a;if($('#help .lbh'))renderLB();}}).catch(()=>{UI.lbRows='err';if($('#help .lbh'))renderLB();});
 }
 function renderRanks(){

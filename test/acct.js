@@ -18,7 +18,7 @@ const {chromium,devices}=require('playwright'),http=require('http'),fs=require('
       if(m==='PATCH'){const o=DB[col][id]||(DB[col][id]={});for(const k in b)o[k]=sv(o[k],b[k]);}else if(m==='PUT'){const o={};for(const k in b)o[k]=sv(0,b[k]);DB[col][id]=o;}else if(m==='DELETE')delete DB[col][id];
       rt.fulfill({contentType:'application/json',body:JSON.stringify(DB[col][id]||null)});});};
   const b=await chromium.launch(),errs=[];
-  const dev=async(opts,prof)=>{const c=await b.newContext(opts);await route(c);const p=await c.newPage();p.on('pageerror',e=>errs.push(e.message));await p.goto('http://localhost:8782/');
+  const dev=async(opts,prof)=>{const c=await b.newContext(opts);await route(c);await c.addInitScript(()=>Object.defineProperty(navigator,'webdriver',{get:()=>false}));const p=await c.newPage();p.on('pageerror',e=>errs.push(e.message));await p.goto('http://localhost:8782/');
     await p.evaluate(x=>localStorage.setItem('sijal.v1',JSON.stringify(Object.assign({seen:'2.8'},x))),prof);await p.reload();await p.waitForTimeout(3500);return p;};
   const S=p=>p.evaluate(()=>{const q=__sijal.UI.prof;return{w:q.wins,g:q.games,user:(q.fb||{}).user||'',name:q.name};});
   const act=async(p,a,u,pw)=>{await p.evaluate(()=>__sijal.act('account'));await p.waitForTimeout(200);if(u!=null){await p.fill('#inUser',u);await p.fill('#inPass',pw);}await p.evaluate(a=>__sijal.act(a),a);await p.waitForTimeout(1500);return p.evaluate(()=>(document.querySelector('#help .accb .good,#help .accb .bad')||{}).textContent||'');};
