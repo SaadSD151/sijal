@@ -244,6 +244,14 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .ping.good{color:var(--good)}.ping.warn{color:var(--warn)}.ping.bad{color:var(--bad)}
 .room span{color:var(--gold2);font-variant-numeric:tabular-nums}
 /* rank ladder */
+.emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
+.emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
+.emg button:active{transform:scale(.92)}
+.auf{display:flex;flex-direction:column;gap:8px;padding:6px 0}
+.aul{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+.aul select{background:rgba(0,0,0,.3);color:inherit;border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit}
+.ts.au{padding:6px 8px;font-size:13px;gap:6px}
+.ts.au .btn.sm{padding:4px 10px;min-width:0}
 .accb{width:min(420px,100%);background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
 .accb h3{margin:0}.accb p{margin:0}
 .accf{display:flex;flex-direction:column;gap:8px;width:100%}
@@ -366,7 +374,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='0b13fba8a9';
+const BUILD_ID='9578b7f973';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -387,6 +395,8 @@ const PERS={war:{agg:.9,trust:.3,tre:.4,thr:.9},conq:{agg:.75,trust:.45,tre:.3,t
 const PKEYS=Object.keys(PERS);
 const DIFF=[{grow:.5,gold:.6,hate:-1},{grow:.75,gold:.8,hate:-.3},{grow:1,gold:1,hate:.2},{grow:1.35,gold:1.35,hate:.7}];
 const SEAS=[{spd:1,cost:1,grow:1.3,gold:1},{spd:.82,cost:1,grow:1,gold:1},{spd:1,cost:1,grow:1,gold:1.4},{spd:1.4,cost:1.25,grow:.7,gold:.9}];
+// emoji a realm can show over its land
+const EMO=['😀','😊','😂','😍','😎','🤔','🙄','😢','😭','😱','😡','🤬','😈','🤡','💀','👍','👎','👏','🙏','💪','🤝','🕊️','🏳️','⚔️','🔥','💣','☢️','⚠️','🎯','👑','💰','❤️','💔','🆘','⏳','👀'];
 const PAL=[[231,76,60],[52,152,219],[46,204,113],[241,196,15],[155,89,182],[230,126,34],[26,188,156],[236,112,160],[127,140,255],[149,165,60],[211,84,0],[94,214,214],[190,144,212],[255,165,120],[100,180,100],[170,120,80],[220,220,110],[90,120,200],[200,90,130],[60,160,140],[240,150,200],[140,200,240],[180,60,60],[120,120,160]];
 const DX8=[1,-1,0,0,1,1,-1,-1],DY8=[0,0,1,-1,1,-1,1,-1];
 
@@ -522,7 +532,7 @@ function emit(g,t,d){d=d||{};d.t=t;d.tick=g.tick;g.ev.push(d);}
 function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
-    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),pg:new Float32Array(128),pAsk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
+    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),pg:new Float32Array(128),emb:new Uint8Array(128),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
@@ -610,7 +620,7 @@ function setOwner(g,i,o){
   if(o){const P=g.nations[o];P.tiles++;P.val+=v;}
   g.dirty.push(i);
   const si=g.structAt[i];if(si)captured(g,g.structs[si-1],old,o);
-  if(old){const O=g.nations[old];if(O.alive&&O.tiles<=0)killNation(g,O,o);}
+  if(old){const O=g.nations[old];if(O.alive&&O.tiles<=0)killNation(g,O,o,i%g.W,(i/g.W)|0);}
 }
 function captured(g,s,old,o){
   if(g.annexing&&s.type==='city'){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);s.capital=false;s.grow=0;return;}
@@ -650,14 +660,16 @@ function collapseNation(g,O,o,s){
   if(!O.alive)return;emit(g,'collapse',{d:O.id,a:o});
   const own=g.owner,W=g.W,keep=[];for(const t of g.structs)if(!t.dead&&t.owner===O.id&&t.type!=='mon')keep.push(t.x,t.y);
   for(let i=0;i<g.N;i++)if(own[i]===O.id){const x=i%W,y=(i/W)|0,dx=x-s.x,dy=y-s.y;let mine=dx*dx+dy*dy<=225;for(let k=0;k<keep.length&&!mine;k+=2)mine=(x-keep[k])**2+(y-keep[k+1])**2<=9;setOwner(g,i,mine?o:0);}
-  if(O.alive)killNation(g,O,o);
+  if(O.alive)killNation(g,O,o,s.x,s.y);
 }
-function killNation(g,O,by){
-  if(!O.alive)return;O.alive=false;O.troops=0;
-  const B=g.nations[by];if(B){B.gold+=O.gold*.5;B.st.kills++;}O.gold=0;
+function killNation(g,O,by,x,y){
+  if(!O.alive)return;O.alive=false;
+  // the victor takes in what is left of the fallen army, its marching columns included
+  let left=O.troops;for(const k of g.attacks)if(k.a===O.id){left+=k.troops;k.troops=0;}const B=g.nations[by],tr=B&&B.alive?Math.floor(left*.6):0;O.troops=0;
+  if(B){B.gold+=O.gold*.5;B.st.kills++;B.troops+=tr;}O.gold=0;if(x==null&&B&&B.cap){x=B.cap.x;y=B.cap.y;}
   for(const s of g.structs)if(!s.dead&&s.owner===O.id)killStruct(g,s);
   for(const n of g.nations)if(n){n.ally[O.id]=0;O.ally[n.id]=0;}
-  emit(g,'dead',{d:O.id,a:by});
+  emit(g,'dead',{d:O.id,a:by,tr,x:x|0,y:y|0});
 }
 
 // annexation: a realm whose every land border is yours, and whose army is smaller, can be absorbed without a fight
@@ -741,7 +753,7 @@ function tickAttacks(g){
         if(g.fall[i]>now){h.push(g.fall[i]+1,i);continue;}
         if(!adjOwn(g,i,k.a))continue;
         const c=tileCost(g,k,i,A,D);if(k.troops<c){done=true;break;}
-        k.troops-=c;k.gain++;A.st.conq++;
+        k.troops-=c;k.gain++;A.st.conq++;{const x=i%g.W,y=(i/g.W)|0;if(k.fx==null){k.fx=x;k.fy=y;}else{k.fx+=(x-k.fx)*.08;k.fy+=(y-k.fy)*.08;}}
         if(D){D.troops-=Math.min(D.troops,D.troops/Math.max(D.tiles,25)+garrison(g,i,D)*.5);D.st.lost++;D.lastHitAny=now;D.lastHit[k.a]=now;A.lastAtk[k.d]=now;}
         if(g.structAt[i]){const fs=g.structs[g.structAt[i]-1];if(fs.type==='fort'&&k.troops>=700000*fs.level)killStruct(g,fs);}
         setOwner(g,i,k.a);
@@ -830,7 +842,7 @@ function railBuild(g,f){g.rails=g.rails.filter(r=>r.f!==f||r.trade);for(const p 
 // the up-to-3 nearest cities of neighbours at peace that trains from (x,y) can reach
 function trainTargets(g,owner,x,y){
   const A=g.nations[owner],now=g.tick,c=[];
-  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[owner]<=300)continue;
+  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===owner||!tradeOk(g,owner,s.owner))continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[owner]<=300)continue;
     const d=(s.x-x)**2+(s.y-y)**2;if(d<=4900)c.push([d,s]);}
   c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);return c.slice(0,3).map(e=>e[1]);
 }
@@ -848,9 +860,15 @@ function tickTrains(g){
       else if(b.dir<0&&b.p<=0){const amt=Math.round((50+b.path.length*2)*(1+.25*(A.era-1))*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'train',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trains[j]=g.trains[g.trains.length-1];g.trains.pop();}}
 }
+// trade embargo: a realm can stop trading with one neighbour or with everyone; either side refusing stops ships and trains
+function tradeOk(g,a,b){const A=g.nations[a],B=g.nations[b];return!A.embAll&&!B.embAll&&!A.emb[b]&&!B.emb[a];}
+function setEmb(g,a,d,v){const A=g.nations[a];if(!A)return;v=v?1:0;if(d){if(g.nations[d])A.emb[d]=v;}else{A.embAll=v;if(!v)A.emb.fill(0);}
+  for(const L of[g.trades,g.trains])for(let j=L.length-1;j>=0;j--){const b=L[j],o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)){L[j]=L[L.length-1];L.pop();}}emit(g,'emb',{a,d,v});}
+// emoji over a realm for everyone to see (optionally aimed at one realm), at most one every 3 seconds
+function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
 function launchTrade(g,s){
   const A=g.nations[s.owner],now=g.tick,c=[];
-  for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
+  for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&tradeOk(g,s.owner,p.owner)&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
   if(!c.length)return;const d=c[(g.rng()*c.length)|0],rt=s.rt||(s.rt={});let path=rt[d.i];
   if(path===undefined)path=rt[d.i]=portPath(g,s,d,true)||portPath(g,s,d,false);if(!path||path.length<4)return;
   g.trades.push({a:s.owner,lv:s.level,from:s,to:d,path,p:0,dir:1,spd:.45*(FAC[A.fac].boat||1)});
@@ -1127,7 +1145,8 @@ function tick(g){
 }
 
 // ── SIJAL · AI leaders: expansion, war, building, diplomacy ──
-function say(g,n,key,to){emit(g,'say',{a:n.id,key,to});}
+const SAY_EMO={war:11,betray:13,peace:22,ally:21,reject:7,arms:24};
+function say(g,n,key,to){emit(g,'say',{a:n.id,key,to});const e=SAY_EMO[key];if(e)setEmo(g,n.id,e,to);}
 function commonEnemy(g,a,b){const now=g.tick;for(const e of g.nations)if(e&&e.alive&&e!==a&&e!==b&&now-a.lastHit[e.id]<600&&(now-b.lastHit[e.id]<600||now-b.lastAtk[e.id]<600))return true;return false;}
 function aiAccepts(g,B,A){
   const P=PERS[B.pers];let allies=0;for(const n of g.nations)if(n&&n.alive&&B.ally[n.id])allies++;
@@ -1298,7 +1317,7 @@ function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;r
 const w2s=(x,y)=>({x:(x-cam.x)*cam.z+view.w/2,y:(y-cam.y)*cam.z+view.h/2});
 const s2w=(x,y)=>({x:(x-view.w/2)/cam.z+cam.x,y:(y-view.h/2)/cam.z+cam.y});
 function resize(){
-  const r=cv.getBoundingClientRect();view.w=Math.max(50,r.width);view.h=Math.max(50,r.height);view.dpr=Math.min(window.devicePixelRatio||1,2);
+  const r=cv.getBoundingClientRect();view.w=Math.max(50,r.width);view.h=Math.max(50,r.height);view.dpr=Math.min(window.devicePixelRatio||1,[1,1.5,2][R.q==null?2:R.q]);
   cv.width=Math.round(view.w*view.dpr);cv.height=Math.round(view.h*view.dpr);
 }
 function fitZoom(g){return Math.min(view.w/g.W,view.h/g.H);}
@@ -1420,12 +1439,12 @@ function draw(g,dt,ts){
   const c=ctx,dpr=view.dpr,cw=view.w,ch=view.h,me=g.human;
   refreshOwn(g);camStep(g);const z=cam.z;
   R.winter+=((g.season===3?1:0)-R.winter)*.025;R.autumn+=((g.season===2?1:0)-R.autumn)*.025;
-  let shx=0,shy=0;if(R.shake>.3){shx=(Math.random()-.5)*R.shake;shy=(Math.random()-.5)*R.shake;R.shake*=.9;}
+  let shx=0,shy=0;if(R.q===0)R.shake=0;if(R.shake>.3){shx=(Math.random()-.5)*R.shake;shy=(Math.random()-.5)*R.shake;R.shake*=.9;}
   c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#092440';c.fillRect(0,0,cw,ch);
   c.setTransform(dpr*z,0,0,dpr*z,dpr*(cw/2-cam.x*z+shx),dpr*(ch/2-cam.y*z+shy));
   c.imageSmoothingEnabled=true;c.drawImage(R.land,0,0,g.W,g.H);
-  if(R.winter>.01){c.globalAlpha=R.winter;c.drawImage(R.snow,0,0,g.W,g.H);c.globalAlpha=1;}
-  if(R.autumn>.01){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
+  if(R.winter>.01&&R.q!==0){c.globalAlpha=R.winter;c.drawImage(R.snow,0,0,g.W,g.H);c.globalAlpha=1;}
+  if(R.autumn>.01&&R.q!==0){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
   c.drawImage(R.own,0,0,g.W,g.H);c.drawImage(R.water,0,0,g.W,g.H);
   c.setTransform(dpr,0,0,dpr,0,0);c.lineCap=c.lineJoin='round';c.textAlign='center';c.textBaseline='middle';
   // offensives that involve the player: where they start and where they are headed
@@ -1442,10 +1461,17 @@ function draw(g,dt,ts){
   if(g.rails.length){const tw=Math.max(.9,z*.2);
     for(const r of g.rails){const P=r.path;if(P.length<2)continue;c.beginPath();for(let k=0;k<P.length;k++){const p=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5);k?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y);}
       c.strokeStyle='rgba(30,22,18,.38)';c.lineWidth=tw+1.2;c.stroke();c.strokeStyle='rgba(138,122,102,.5)';c.lineWidth=tw;c.stroke();
-      if(z>=4){c.strokeStyle='rgba(30,22,18,.4)';c.lineWidth=.8;for(let k=1;k<P.length-1;k+=2){const a=w2s(P[k-1]%g.W+.5,((P[k-1]/g.W)|0)+.5),b=w2s(P[k+1]%g.W+.5,((P[k+1]/g.W)|0)+.5),m=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5),an=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2,l=tw*1.1;c.beginPath();c.moveTo(m.x-Math.cos(an)*l,m.y-Math.sin(an)*l);c.lineTo(m.x+Math.cos(an)*l,m.y+Math.sin(an)*l);c.stroke();}}}
+      if(z>=4&&R.q===2){c.strokeStyle='rgba(30,22,18,.4)';c.lineWidth=.8;for(let k=1;k<P.length-1;k+=2){const a=w2s(P[k-1]%g.W+.5,((P[k-1]/g.W)|0)+.5),b=w2s(P[k+1]%g.W+.5,((P[k+1]/g.W)|0)+.5),m=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5),an=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2,l=tw*1.1;c.beginPath();c.moveTo(m.x-Math.cos(an)*l,m.y-Math.sin(an)*l);c.lineTo(m.x+Math.cos(an)*l,m.y+Math.sin(an)*l);c.stroke();}}}
     for(const tr of g.trains){const W=g.W,P=tr.path,i0=Math.floor(tr.p),n=g.nations[tr.a],s=clamp(z*.7,3,7);
       for(let w=0;w<3;w++){const pp=Math.max(0,Math.min(P.length-1,tr.p-w*tr.dir*1.1)),k0=Math.floor(pp),k1=Math.min(k0+1,P.length-1),f=pp-k0,p=w2s(lerp(P[k0]%W,P[k1]%W,f)+.5,lerp((P[k0]/W)|0,(P[k1]/W)|0,f)+.5);
         if(p.x<-20||p.y<-20||p.x>cw+20||p.y>ch+20)continue;c.fillStyle=w?n.css:'#2a2522';c.strokeStyle='rgba(6,12,20,.9)';c.lineWidth=1;c.beginPath();c.rect(p.x-s*.7,p.y-s*.5,s*1.4,s);c.fill();c.stroke();if(!w){c.fillStyle='#ffe9a8';c.beginPath();c.arc(p.x,p.y,s*.22,0,7);c.fill();}}}}
+  // where my ships will land (and where enemy ships are headed into my land)
+  if(me)for(const b of g.boats){if(b.a!==me&&g.owner[b.ti]!==me)continue;const W=g.W,q=w2s(b.ti%W+.5,((b.ti/W)|0)+.5);if(q.x<-30||q.y<-30||q.x>cw+30||q.y>ch+30)continue;
+    const r=Math.max(9,z*2.4)+Math.sin(ts/220)*2;c.strokeStyle=b.a===me?'rgba(255,233,168,.95)':'rgba(255,90,70,.95)';c.lineWidth=2.5;c.setLineDash([5,4]);c.lineDashOffset=-ts/60;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.setLineDash([]);
+    c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.stroke();}
+  // troops pushing on each front that involves me
+  if(me){c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.fx==null||k.troops<1)continue;const q=w2s(k.fx+.5,k.fy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
+    c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,fmt(k.troops),q.x,q.y,k.a===me?'#8fd3ff':'#ff9a8a');}}
   // trade ships: small, white-sailed, shuttling between ports
   for(const b of g.trades){
     const W=g.W,i0=Math.floor(b.p),i1=Math.min(i0+1,b.path.length-1),f=b.p-i0,a=b.path[i0],d=b.path[i1],p=w2s(lerp(a%W,d%W,f)+.5,lerp((a/W)|0,(d/W)|0,f)+.5);
@@ -1462,6 +1488,10 @@ function draw(g,dt,ts){
     if(z>=3.5){c.font=`700 11px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.85)';txt(c,fmt(b.troops),p.x,p.y-s-7,'#fff');}
   }
   const SP=[];
+  // protected area of my forts and shield domes (and every dome while I am aiming a missile)
+  {const aimM=UI.mode&&UI.mode[0]==='m';for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
+    const r=(s.type==='fort'?R_FORT+s.level-1:SH_R(s.level))*z,p=w2s(s.x+.5,s.y+.5);if(p.x+r<0||p.y+r<0||p.x-r>cw||p.y-r>ch||r<6)continue;
+    const col=!mine?'255,90,70':s.type==='shield'?'120,190,255':'255,233,168';c.fillStyle=`rgba(${col},${s.type==='shield'?.12:.09})`;c.strokeStyle=`rgba(${col},.45)`;c.lineWidth=1.5;c.beginPath();c.arc(p.x,p.y,r,0,7);c.fill();c.stroke();}}
   // structures
   for(const s of g.structs){
     if(s.dead)continue;const city=s.type==='city';
@@ -1507,6 +1537,7 @@ function draw(g,dt,ts){
     c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';txt(c,nm,p.x,y,'#fff');
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
+    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.font=`${q}px sans-serif`;c.globalAlpha=age>.85?(1-age)/.15:1;c.fillText(EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5));c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
   }
   R.lb=LB;
   // missiles and pending strikes
@@ -1531,6 +1562,9 @@ function draw(g,dt,ts){
       c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();c.strokeStyle=`rgba(255,235,200,${.8*(1-f.t)})`;c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,rr*1.08,0,7);c.stroke();
     }else if(f.type==='ring'){c.strokeStyle=f.col||'#ffe9a8';c.globalAlpha=1-f.t;c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,(f.r||8)*z*e+4,0,7);c.stroke();c.globalAlpha=1;}
     else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
+    else if(f.type==='sword'){const pop=f.t<.15?f.t/.15:1,q=46*(f.t<.15?.4+pop*.75:1.15-.15*Math.min(1,(f.t-.15)*3)),a=f.t>.75?(1-f.t)/.25:1;c.globalAlpha=a;
+      c.save();c.translate(p.x,p.y-30-e*24);c.rotate(f.t<.15?(1-pop)*.8:0);c.shadowColor='rgba(255,210,120,.9)';c.shadowBlur=R.q?14:0;c.drawImage(R.glyph.sword,-q/2,-q/2,q,q);c.restore();
+      c.font=`800 22px ${FONT}`;c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-30-e*24+q*.75,'#ffe9a8');c.globalAlpha=1;}
     else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand
@@ -1696,7 +1730,7 @@ Object.assign(TX.en,{d_fort:'Slows the enemy a lot and multiplies defense by 6. 
  dInfo:[['One world per day','Each day a new map is generated from the date and stays the same all day, however many times you retry. Tomorrow brings a different world.'],['Fixed rules','Medium map, 14 rival realms and 60 tribes, on Hard. You cannot change them, so every attempt faces the same challenge.'],['Goal: the fastest win','Hold 70% of the land as fast as you can. Your best time today is saved; try to beat it.'],['Tip','Since the world does not change, learn from each attempt: where to found your capital, which cities to take first, whom to ally with.']]});
 TX.en.help[4]=['Building','Every building takes 10 seconds to finish. Cities add troops and gold, forts slow the enemy and multiply defense by 6, ports send trade ships that bring gold.'];
 TX.en.help[8]=['The road to victory','Hold 70% of the land in single player, 99% online.'];
-Object.assign(TX.ar,{ac_title:'حسابك على كل أجهزتك',ac_note:'سوّ حساب باسم مستخدم وكلمة مرور، وادخل فيه من الجوال أو الكمبيوتر وتكمّل بنفس انتصاراتك ورتبتك',ac_user:'اسم المستخدم (إنجليزي أو أرقام)',ac_pass:'كلمة المرور (6 أحرف أو أكثر)',ac_reg:'سوّ حساب',ac_in:'سجّل دخول',ac_out:'سجّل خروج',ac_signed:'أنت داخل بحساب {0}',ac_signedNote:'تقدر تدخل بنفس الحساب من أي جهاز ثاني، وتقدمك ينحفظ أونلاين',acm_made:'تم! حسابك جاهز وانتصاراتك محفوظة فيه',acm_in:'دخلت حسابك، وتقدمك صار هنا',acm_out:'طلعت من حسابك، وتقدمك محفوظ فيه أونلاين',acm_user:'اسم المستخدم لازم يكون من 3 لين 16 حرف إنجليزي أو رقم أو _',acm_bad:'اسم المستخدم أو كلمة المرور غلط',acm_taken:'اسم المستخدم مأخوذ، جرّب غيره',acm_weak:'كلمة المرور لازم تكون 6 أحرف أو أكثر',acm_many:'محاولات كثيرة، انتظر شوي وجرّب',acm_off:'تسجيل الحسابات مو مفعّل للحين',acm_net:'ما قدرنا نتصل، تأكد من النت وجرّب',lb:'المتصدرين',lbByW:'حسب الانتصارات',lbByH:'حسب ساعات اللعب',lbName:'اللاعب',lbHrs:'ساعات',lbLoad:'جاري التحميل…',lbErr:'ما قدرنا نجيب القائمة، تأكد من النت وجرّب مرة ثانية',lbNone:'ما فيه أحد بالقائمة للحين، العب وكن أول واحد',lbOff:'لوحة المتصدرين بتتفعّل قريب',lbYou:'أنت: {0} انتصار · {1} ساعة لعب',c_peace:'سلام',b_peace:'اعرض عليه السلام (30 ثانية ما أحد يهاجم الثاني)',st_truce:'بينكم سلام',m_peaceProp:'{0} يطلب منك السلام',m_peace:'صار بينك وبين {0} سلام لمدة 30 ثانية',m_peaceWeak:'{0} رفض السلام: يشوف جيشه أقوى منك',m_peaceTrust:'{0} رفض السلام: ما يثق فيك. جرّب تهديه ذهب أو قوّ جيشك',m_peaceNo:'{0} رفض السلام',e_pcd:'انتظر شوي قبل ما تعرض السلام مرة ثانية',say_peace:['خلنا نوقف الحرب.','الحرب طوّلت، وش رايك بالسلام؟'],s_factory:'مصنع',d_factory:'يمد سكك حديد لمدنك وموانئك القريبة، ويطلّع قطارات تتاجر مع مدن جيرانك اللي بينك وبينهم سلام',ef_factory:'دخل +{0}/ث · ذهب القطارات +{1}٪',quitXp:'انسحبت من المعركة: +{0} خبرة (بدون نصر)',lvl:'المستوى {0} من 5',upTo:'طوّر للمستوى {0}',upMax:'وصل أقصى مستوى',upBusy:'يتطوّر… باقي {0} ث',upNeed:'يحتاج {0}',e_lvmax:'وصل أقصى مستوى',e_upbusy:'المبنى مشغول، اصبر شوي',m_upDone:'{0} صار المستوى {1}',
+Object.assign(TX.ar,{selfSub:'دولتك',gold:'الذهب',c_emo:'إيموجي',b_emoSelf:'حط إيموجي فوق دولتك يشوفه الكل',b_emoTo:'أرسل له إيموجي يطلع فوق دولتك',c_tradeOff:'وقّف التجارة',c_tradeOn:'شغّل التجارة',b_tradeOff:'وقّف التجارة مع كل الدول',b_tradeOn:'رجّع التجارة مع كل الدول',b_tradeOff1:'وقّف التجارة مع هالدولة',b_tradeOn1:'رجّع التجارة مع هالدولة',tradeOn:'التجارة شغّالة',tradeOff:'التجارة موقّفة مع الكل',c_auto:'تطوير تلقائي',b_auto:'طوّر مبانيك تلقائياً لما يكون عندك ذهب زايد',auOn:'شغّال',auOff:'موقّف',auKeep:'لا تنزّل ذهبي تحت',auMax:'أقصى سعر للتطوير الواحد',auRate:'كم مبنى كل دقيقتين',auPer:'{0} مباني',auNoMax:'بدون حد',auAsk:'اسألني قبل',auNoAsk:'طوّر بدون ما تسأل',auNote:'يختار أرخص تطوير متاح، وما يصرف من الذهب اللي تحت الحد',auQ:'نطوّر {0} للمستوى {1} بـ {2}؟',auDone:'تطوّر {0} للمستوى {1} تلقائياً',m_emo:'{0} أرسل لك {1}',m_embOn:'{0} وقّف التجارة معك',m_embOff:'{0} رجّع التجارة معك',m_embAll:'{0} وقّف التجارة مع كل الدول',e_emoCd:'استنى شوي قبل الإيموجي الجاي',gfx:'الجرافيكس',gfxs:['منخفض','متوسط','عالي'],gfxNote:'المنخفض أخف على الأجهزة الضعيفة، والعالي أوضح وفيه مؤثرات أكثر',maxP:'عدد اللاعبين',e_full:'الغرفة ممتلئة',ac_title:'حسابك على كل أجهزتك',ac_note:'سوّ حساب باسم مستخدم وكلمة مرور، وادخل فيه من الجوال أو الكمبيوتر وتكمّل بنفس انتصاراتك ورتبتك',ac_user:'اسم المستخدم (إنجليزي أو أرقام)',ac_pass:'كلمة المرور (6 أحرف أو أكثر)',ac_reg:'سوّ حساب',ac_in:'سجّل دخول',ac_out:'سجّل خروج',ac_signed:'أنت داخل بحساب {0}',ac_signedNote:'تقدر تدخل بنفس الحساب من أي جهاز ثاني، وتقدمك ينحفظ أونلاين',acm_made:'تم! حسابك جاهز وانتصاراتك محفوظة فيه',acm_in:'دخلت حسابك، وتقدمك صار هنا',acm_out:'طلعت من حسابك، وتقدمك محفوظ فيه أونلاين',acm_user:'اسم المستخدم لازم يكون من 3 لين 16 حرف إنجليزي أو رقم أو _',acm_bad:'اسم المستخدم أو كلمة المرور غلط',acm_taken:'اسم المستخدم مأخوذ، جرّب غيره',acm_weak:'كلمة المرور لازم تكون 6 أحرف أو أكثر',acm_many:'محاولات كثيرة، انتظر شوي وجرّب',acm_off:'تسجيل الحسابات مو مفعّل للحين',acm_net:'ما قدرنا نتصل، تأكد من النت وجرّب',lb:'المتصدرين',lbByW:'حسب الانتصارات',lbByH:'حسب ساعات اللعب',lbName:'اللاعب',lbHrs:'ساعات',lbLoad:'جاري التحميل…',lbErr:'ما قدرنا نجيب القائمة، تأكد من النت وجرّب مرة ثانية',lbNone:'ما فيه أحد بالقائمة للحين، العب وكن أول واحد',lbOff:'لوحة المتصدرين بتتفعّل قريب',lbYou:'أنت: {0} انتصار · {1} ساعة لعب',c_peace:'سلام',b_peace:'اعرض عليه السلام (30 ثانية ما أحد يهاجم الثاني)',st_truce:'بينكم سلام',m_peaceProp:'{0} يطلب منك السلام',m_peace:'صار بينك وبين {0} سلام لمدة 30 ثانية',m_peaceWeak:'{0} رفض السلام: يشوف جيشه أقوى منك',m_peaceTrust:'{0} رفض السلام: ما يثق فيك. جرّب تهديه ذهب أو قوّ جيشك',m_peaceNo:'{0} رفض السلام',e_pcd:'انتظر شوي قبل ما تعرض السلام مرة ثانية',say_peace:['خلنا نوقف الحرب.','الحرب طوّلت، وش رايك بالسلام؟'],s_factory:'مصنع',d_factory:'يمد سكك حديد لمدنك وموانئك القريبة، ويطلّع قطارات تتاجر مع مدن جيرانك اللي بينك وبينهم سلام',ef_factory:'دخل +{0}/ث · ذهب القطارات +{1}٪',quitXp:'انسحبت من المعركة: +{0} خبرة (بدون نصر)',lvl:'المستوى {0} من 5',upTo:'طوّر للمستوى {0}',upMax:'وصل أقصى مستوى',upBusy:'يتطوّر… باقي {0} ث',upNeed:'يحتاج {0}',e_lvmax:'وصل أقصى مستوى',e_upbusy:'المبنى مشغول، اصبر شوي',m_upDone:'{0} صار المستوى {1}',
  ef_city:'جيش +{0} · ذهب +{1}/ث · دفاع وحامية أقوى',ef_fort:'دفاع ×{0} · يصمد لين {1} جندي · مدى {2}',ef_port:'دخل +{0}/ث · ذهب التجارة +{1}٪',ef_coast:'مدى {0} · ضرر على السفن +{1}٪',ef_silo:'تجهيز الصواريخ أسرع {0}٪',ef_shield:'يصد: الصاروخ {0}٪ · الذرّية {1}٪ · الفناء {2}٪ · مدى {3}',pickSea:'اختر مكان الإنزال على ساحل {0}',e_noshore:'اختر مكان على ساحلهم أو البحر اللي جنبه',e_nopath:'ما فيه بحر يوصلك لهالساحل من سواحلك',diagOk:'✔ جهازك جاهز للأونلاين',diagWait:'… نفحص اتصال جهازك',diagOld:'✖ متصفح جوالك قديم وما يدعم الأونلاين. حدّث النظام أو المتصفح، أو جرّب متصفح كروم',diagLib:'✖ ما قدرنا نحمّل أداة الأونلاين. تأكد من النت وحدّث الصفحة',diagNet:'⚠ شبكتك تمنع الاتصال المباشر. جرّب الواي فاي بدل بيانات الجوال، أو العكس',e_old:'متصفح جوالك قديم وما يدعم الأونلاين. حدّث النظام أو المتصفح، أو جرّب متصفح كروم',e_lib:'ما قدرنا نحمّل أداة الأونلاين. تأكد من النت وحدّث الصفحة',updNew:'نزل تحديث جديد للعبة! حدّث الصفحة عشان تاخذ آخر نسخة',updMp:'نزل تحديث جديد! حدّث الصفحة بعد ما تخلص المعركة',updGo:'حدّث الحين',updLater:'لاحقاً',mpSlow:'ننتظر جهاز {0} يلحق…',e_ver:'نسختك من اللعبة غير نسخة المضيف. حدّث الصفحة وادخل مرة ثانية',c_atk:'هجوم',c_annex:'ضمّ',c_sea:'بحر',c_ally:'تحالف',c_break:'فسخ',c_aid:'جنود',c_gift:'ذهب',c_arms:'حلفاءك',c_find:'مكانه',c_send:'أرسل',b_aid:'أرسل له جنود مساعدة، ويثق فيك أكثر',b_giftPick:'أهدِه ذهب وتختار المبلغ',m_aidSent:'أرسلت {0} جندي مساعدة لـ{1}',m_aidGot:'{0} أرسل لك {1} جندي مساعدة',beta:'اللعبة تحت التطوير، توقّعوا بعض الأخطاء وساعدونا نحلها عن طريق «اقتراحاتكم»',roomName:'اسم الغرفة',roomOf:'غرفة {0}',pingHost:'سرعة اتصالك بالمضيف',rooms:'الغرف المفتوحة',roomsWait:'ندوّر على الغرف…',roomsNone:'ما فيه غرف عامة الحين. افتح غرفتك وخلها عامة عشان تطلع هنا.',roomType:'نوع الغرفة',pubRoom:'عامة',privRoom:'خاصة',roomPub:'غرفة عامة: تطلع في قائمة الغرف لين تبدأ المعركة',roomPriv:'غرفة خاصة: يدخلها بس اللي معه الكود',rematch:'إعادة المباراة',rematchWait:'بانتظار المضيف يعيد المباراة. بترجع للغرفة لحالك.',m_cityRuin:'صاروخك خلّى {0} حطام',m_cityRuinYou:'{0} صارت حطام! ما تنمو ولا تجيب ذهب لين تتعمّر',m_cityGone:'مسحت {0} من الخريطة',m_cityGoneYou:'انمسحت مدينتك {0}!',d_rocket:'يضرب نقطة ويخلّي المدينة حطام: تنزل مستوى وتوقف عن النمو والذهب 40 ثانية',d_nuke:'يمحو منطقة ويلوّثها، يمسح المدن الصغيرة ويخلّي الكبيرة حطام 90 ثانية',d_doom:'أقوى سلاح: يمسح كل المباني والمدن اللي يطولها بضعف مدى الذرّية',amode:'نوع الهجوم',am_pt:'على نقطة',am_all:'من كل الحدود',allyLeft:'باقي {0}',m_allyWarn:'تحالفك مع {0} ينتهي بعد 20 ثانية. تبي تكمّله؟',m_allyNo:'{0} ما يبي يكمّل التحالف، بينتهي بعد 20 ثانية',renewY:'كمّل التحالف',renewN:'أنهِه',m_allyRenew:'تجدد التحالف مع {0} دقيقتين زيادة',m_allyEnd:'انتهى التحالف مع {0}',m_renewSent:'بلّغت {0} إنك تبي تكمّل التحالف',langName:'اللغة',suggest:'اقتراحاتكم',sgNote:'عندك فكرة للعبة أو لقيت مشكلة؟ اكتبها هنا وتوصل لصاحب اللعبة.',sgText:'اقتراحك',sgPh:'اكتب اقتراحك هنا…',sgSend:'أرسل الاقتراح',sgDone:'وصل اقتراحك، مشكور!',e_sgShort:'اكتب اقتراحك أول',e_sgSite:'الاقتراحات تنرسل من موقع اللعبة بس',e_sgFail:'ما قدرت أرسل الاقتراح، جرّب بعد شوي',e_sgOff:'الاقتراحات متوقفة مؤقتاً',allRanks:'كل الرتب',ranksNote:'الرقم جنب كل رتبة هو عدد الانتصارات اللي تحتاجه عشان توصلها.',b_sea:'اهجم عليه من البحر',settings:'الإعدادات',volM:'صوت الموسيقى',volS:'صوت المؤثرات',s_coast:'دفاع بحري',d_coast:'مدفعية على الساحل تضرب سفن العدو اللي تقرب وتغرّقها قبل توصل',m_sunk:'مدفعيتك غرّقت سفينة للعدو',m_sunkYou:'الدفاع البحري غرّق سفينتك',sizes:['صغيرة','متوسطة','كبيرة','عملاقة'],confirm:'تأكيد',cancel:'إلغاء',s_doom:'قنبلة الفناء',d_doom:'أقوى سلاح في اللعبة: تمسح منطقة بضعف مدى القنبلة الذرّية وتلوّثها مدة أطول',
  ranks:['مستجد','جندي','عريف','رقيب','ملازم','نقيب','رائد','مقدّم','عقيد','عميد','لواء','فريق','قائد جيش','فارس','أمير','وزير حرب','سلطان','ملك','إمبراطور','فاتح','أسطورة','قاهر الممالك'],accNext:'باقي لك {0} انتصار وتوصل رتبة «{1}»',
  seaGood:['الجيوش تكبر أسرع بـ30%، وقت تعبّي جيشك','الهجوم أسرع بـ18%، أحسن وقت للغزو','الذهب يزيد 40%، وقت البناء وتطوير العصر','الدفاع أقوى، وقت تتحصّن وتجمع'],
@@ -1704,7 +1738,7 @@ Object.assign(TX.ar,{ac_title:'حسابك على كل أجهزتك',ac_note:'س�
  w_dom:'{0} سيطرت على العالم كله',d_port:'يطلّع سفينة تتاجر مع موانئ الدول وترجع لك بذهب. حطّه قريب الساحل ويثبت لحاله'});
 TX.ar.help[8]=['طريق النصر','سيطر على 99% من أرض العالم. كل دولة لازم تطيح.'];
 TX.ar.dInfo[2]=['الهدف: أسرع نصر','سيطر على 99% من الأرض بأسرع وقت. ينحفظ أفضل زمن لك اليوم، وحاول تكسره.'];
-Object.assign(TX.en,{ac_title:'One account on all your devices',ac_note:'Create an account with a username and password, then sign in on your phone or PC and keep the same wins and rank',ac_user:'Username (letters, numbers)',ac_pass:'Password (6+ characters)',ac_reg:'Create account',ac_in:'Sign in',ac_out:'Sign out',ac_signed:'Signed in as {0}',ac_signedNote:'Sign in with the same account on any other device; your progress is saved online',acm_made:'Done! Your account is ready and your wins are saved in it',acm_in:'Signed in, your progress is here',acm_out:'Signed out, your progress is saved online',acm_user:'Usernames are 3 to 16 English letters, numbers or _',acm_bad:'Wrong username or password',acm_taken:'That username is taken, try another',acm_weak:'The password needs 6 or more characters',acm_many:'Too many attempts, wait a little and try again',acm_off:'Accounts are not switched on yet',acm_net:'Could not connect. Check your connection and try again',lb:'Leaderboard',lbByW:'By wins',lbByH:'By hours played',lbName:'Player',lbHrs:'Hours',lbLoad:'Loading…',lbErr:'Could not load the list. Check your connection and try again',lbNone:'Nobody here yet. Play and be the first',lbOff:'The leaderboard is coming soon',lbYou:'You: {0} wins · {1} hours played',c_peace:'Peace',b_peace:'Offer peace (30 seconds with no attacks either way)',st_truce:'At peace',m_peaceProp:'{0} asks you for peace',m_peace:'Peace with {0} for 30 seconds',m_peaceWeak:'{0} refused peace: it thinks its army is stronger',m_peaceTrust:'{0} refused peace: it does not trust you. Send gold or grow your army',m_peaceNo:'{0} refused peace',e_pcd:'Wait a little before offering peace again',say_peace:['Let us end this war.','This war has gone on long enough. Peace?'],s_factory:'Factory',d_factory:'Lays railways to your nearby cities and ports, and runs trains that trade with neighbours at peace',ef_factory:'Income +{0}/s · train gold +{1}%',quitXp:'You left the battle: +{0} XP (no win)',lvl:'Level {0} of 5',upTo:'Upgrade to level {0}',upMax:'Maximum level reached',upBusy:'Upgrading… {0} s left',upNeed:'Needs the {0}',e_lvmax:'Maximum level reached',e_upbusy:'The building is busy, wait a little',m_upDone:'{0} reached level {1}',
+Object.assign(TX.en,{selfSub:'Your realm',gold:'Gold',c_emo:'Emoji',b_emoSelf:'Show an emoji over your realm for everyone',b_emoTo:'Send them an emoji shown over your realm',c_tradeOff:'Stop trade',c_tradeOn:'Start trade',b_tradeOff:'Stop trading with every realm',b_tradeOn:'Trade with every realm again',b_tradeOff1:'Stop trading with this realm',b_tradeOn1:'Trade with this realm again',tradeOn:'Trading is on',tradeOff:'Trading stopped with everyone',c_auto:'Auto upgrade',b_auto:'Upgrade your buildings automatically with spare gold',auOn:'On',auOff:'Off',auKeep:'Never take my gold below',auMax:'Most a single upgrade may cost',auRate:'Buildings per two minutes',auPer:'{0} buildings',auNoMax:'No limit',auAsk:'Ask me first',auNoAsk:'Upgrade without asking',auNote:'Picks the cheapest available upgrade and never spends gold below your limit',auQ:'Upgrade {0} to level {1} for {2}?',auDone:'{0} upgraded to level {1} automatically',m_emo:'{0} sent you {1}',m_embOn:'{0} stopped trading with you',m_embOff:'{0} trades with you again',m_embAll:'{0} stopped trading with every realm',e_emoCd:'Wait a moment before the next emoji',gfx:'Graphics',gfxs:['Low','Medium','High'],gfxNote:'Low is lighter on weak devices; High is sharper with more effects',maxP:'Players',e_full:'The room is full',ac_title:'One account on all your devices',ac_note:'Create an account with a username and password, then sign in on your phone or PC and keep the same wins and rank',ac_user:'Username (letters, numbers)',ac_pass:'Password (6+ characters)',ac_reg:'Create account',ac_in:'Sign in',ac_out:'Sign out',ac_signed:'Signed in as {0}',ac_signedNote:'Sign in with the same account on any other device; your progress is saved online',acm_made:'Done! Your account is ready and your wins are saved in it',acm_in:'Signed in, your progress is here',acm_out:'Signed out, your progress is saved online',acm_user:'Usernames are 3 to 16 English letters, numbers or _',acm_bad:'Wrong username or password',acm_taken:'That username is taken, try another',acm_weak:'The password needs 6 or more characters',acm_many:'Too many attempts, wait a little and try again',acm_off:'Accounts are not switched on yet',acm_net:'Could not connect. Check your connection and try again',lb:'Leaderboard',lbByW:'By wins',lbByH:'By hours played',lbName:'Player',lbHrs:'Hours',lbLoad:'Loading…',lbErr:'Could not load the list. Check your connection and try again',lbNone:'Nobody here yet. Play and be the first',lbOff:'The leaderboard is coming soon',lbYou:'You: {0} wins · {1} hours played',c_peace:'Peace',b_peace:'Offer peace (30 seconds with no attacks either way)',st_truce:'At peace',m_peaceProp:'{0} asks you for peace',m_peace:'Peace with {0} for 30 seconds',m_peaceWeak:'{0} refused peace: it thinks its army is stronger',m_peaceTrust:'{0} refused peace: it does not trust you. Send gold or grow your army',m_peaceNo:'{0} refused peace',e_pcd:'Wait a little before offering peace again',say_peace:['Let us end this war.','This war has gone on long enough. Peace?'],s_factory:'Factory',d_factory:'Lays railways to your nearby cities and ports, and runs trains that trade with neighbours at peace',ef_factory:'Income +{0}/s · train gold +{1}%',quitXp:'You left the battle: +{0} XP (no win)',lvl:'Level {0} of 5',upTo:'Upgrade to level {0}',upMax:'Maximum level reached',upBusy:'Upgrading… {0} s left',upNeed:'Needs the {0}',e_lvmax:'Maximum level reached',e_upbusy:'The building is busy, wait a little',m_upDone:'{0} reached level {1}',
  ef_city:'Army +{0} · gold +{1}/s · stronger defence and garrison',ef_fort:'Defence ×{0} · holds up to {1} troops · range {2}',ef_port:'Income +{0}/s · trade gold +{1}%',ef_coast:'Range {0} · damage to ships +{1}%',ef_silo:'Missiles reload {0}% faster',ef_shield:'Stops: rocket {0}% · atom {1}% · doomsday {2}% · range {3}',pickSea:'Choose the landing spot on {0}\'s coast',e_noshore:'Pick a spot on their coast or the sea next to it',e_nopath:'No sea route reaches that coast from your shores',diagOk:'✔ Your device is ready for online play',diagWait:'… Checking your connection',diagOld:'✖ Your phone\'s browser is too old for online play. Update the system or browser, or try Chrome',diagLib:'✖ Could not load the online tool. Check your internet and refresh',diagNet:'⚠ Your network blocks direct connections. Try Wi-Fi instead of mobile data, or the reverse',e_old:'Your phone\'s browser is too old for online play. Update the system or browser, or try Chrome',e_lib:'Could not load the online tool. Check your internet and refresh',updNew:'A new update is out! Refresh the page to get the latest version',updMp:'A new update is out! Refresh after this battle',updGo:'Refresh now',updLater:'Later',mpSlow:'Waiting for {0}\'s device to catch up…',e_ver:'Your game version differs from the host\'s. Refresh the page and join again',c_atk:'Attack',c_annex:'Annex',c_sea:'Sea',c_ally:'Ally',c_break:'Break',c_aid:'Troops',c_gift:'Gold',c_arms:'Allies',c_find:'Locate',c_send:'Send',b_aid:'Send troops to help them; it raises their trust in you',b_giftPick:'Gift gold and choose the amount',m_aidSent:'You sent {0} troops to help {1}',m_aidGot:'{0} sent you {1} troops',beta:'The game is still in development. Expect some bugs, and help us fix them through “Your suggestions”',roomName:'Room name',roomOf:'{0}\'s room',pingHost:'Your connection to the host',rooms:'Open rooms',roomsWait:'Looking for rooms…',roomsNone:'No public rooms right now. Open your own and make it public to list it here.',roomType:'Room type',pubRoom:'Public',privRoom:'Private',roomPub:'Public room: listed in the room browser until the battle starts',roomPriv:'Private room: only people with the code can join',rematch:'Rematch',rematchWait:'Waiting for the host to start a rematch. You will return to the room automatically.',m_cityRuin:'Your missile left {0} in ruins',m_cityRuinYou:'{0} lies in ruins! No growth or gold until it is rebuilt',m_cityGone:'You wiped {0} off the map',m_cityGoneYou:'Your city {0} was wiped out!',d_rocket:'Strikes a point and leaves a city in ruins: it drops a level and stops growing and paying gold for 40 seconds',d_nuke:'Erases and poisons an area; wipes out small cities and ruins large ones for 90 seconds',d_doom:'The strongest weapon: erases every building and city it reaches, with twice the atom bomb\'s radius',amode:'Attack type',am_pt:'At a point',am_all:'Along every border',allyLeft:'{0} left',m_allyWarn:'Your alliance with {0} ends in 20 seconds. Renew it?',m_allyNo:'{0} does not want to renew; the alliance ends in 20 seconds',renewY:'Renew alliance',renewN:'End it',m_allyRenew:'Alliance with {0} renewed for two more minutes',m_allyEnd:'Your alliance with {0} has ended',m_renewSent:'You told {0} you want to renew',langName:'Language',suggest:'Your suggestions',sgNote:'Have an idea for the game, or found a problem? Write it here and it reaches the game\'s owner.',sgText:'Your suggestion',sgPh:'Write your suggestion here…',sgSend:'Send suggestion',sgDone:'Your suggestion was received. Thank you!',e_sgShort:'Write your suggestion first',e_sgSite:'Suggestions can only be sent from the game website',e_sgFail:'Could not send the suggestion, try again shortly',e_sgOff:'Suggestions are paused for now',allRanks:'All ranks',ranksNote:'The number beside each rank is the wins you need to reach it.',b_sea:'Attack by sea',settings:'Settings',volM:'Music volume',volS:'Sound effects volume',s_coast:'Coastal guns',d_coast:'Shore artillery that shells approaching enemy ships and sinks them before they land',m_sunk:'Your guns sank an enemy ship',m_sunkYou:'Coastal guns sank your ship',sizes:['Small','Medium','Large','Giant'],confirm:'Confirm',cancel:'Cancel',s_doom:'Doomsday bomb',d_doom:'The strongest weapon: erases twice the radius of the atom bomb and poisons it for longer',
  ranks:['Newcomer','Soldier','Corporal','Sergeant','Lieutenant','Captain','Major','Lt. Colonel','Colonel','Brigadier','Major General','General','Army Chief','Knight','Emir','War Vizier','Sultan','King','Emperor','Conqueror','Legend','Kingbreaker'],accNext:'{0} more wins to reach “{1}”',
  seaGood:['Armies grow 30% faster: fill your ranks','Attacks move 18% faster: the best time to invade','Gold is up 40%: build and advance your age','Defense is stronger: dig in and gather'],
@@ -1778,6 +1812,8 @@ function applyCmd(pid,c){
     case'era':if(n.era<4&&!eraUp(g,n)&&mine)err('gold');return;
     case'ally':if(D)propose(g,pid,c.d);return;
     case'break':if(D)breakAlly(g,pid,c.d);return;
+    case'emb':setEmb(g,pid,c.d|0,c.v);return;
+    case'emo':r=setEmo(g,pid,+c.e,c.d|0);if(mine&&r==='cd')err('emoCd');return;
     case'peace':if(D){r=proposePeace(g,pid,c.d);if(mine&&r==='cd')err('pcd');}return;
     case'gift':if(!D)return;r=gift(g,pid,c.d,+c.amt||0);if(mine){if(!r)err('gold');UI.cardGift=Math.max(50,Math.round(n.gold*.25/10)*10);UI.cardKey='';}return;
     case'renew':if(D&&n.ally[c.d])n.allyRen[c.d]=c.y?1:0;return;
@@ -1832,7 +1868,7 @@ function netHost(tries){
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
           if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
           if(d.t==='ack'){k.ack=d.k;return;}
-          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=16)return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
+          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
         k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
@@ -1903,7 +1939,7 @@ function regClaim(){
   h.on('error',e=>{if(e.type==='unavailable-id'){try{h.destroy();}catch(_){}setTimeout(regLink,800+Math.random()*1500);}});
 }
 function regRooms(){const now=Date.now(),out=[];for(const c in LOBBY.book){const r=LOBBY.book[c];if(now-r.at>25000)delete LOBBY.book[c];else out.push(r);}return out.slice(0,40);}
-function myRoom(){return NET.on&&NET.host&&!NET.started&&NET.pub?{code:NET.code,name:roomName(),n:NET.players.length,type:UI.prof.type,size:UI.prof.size<0?1:UI.prof.size,diff:UI.prof.diff|0}:null;}
+function myRoom(){return NET.on&&NET.host&&!NET.started&&NET.pub?{code:NET.code,name:roomName(),n:NET.players.length,m:maxP(),type:UI.prof.type,size:UI.prof.size<0?1:UI.prof.size,diff:UI.prof.diff|0}:null;}
 function regSend(){const r=myRoom();if(LOBBY.hold){if(r)LOBBY.book[r.code]=Object.assign({},r,{at:Date.now()});}else if(LOBBY.up&&r)LOBBY.up.send({t:'reg',room:r});}
 function regUnreg(){if(!NET.code)return;if(LOBBY.hold)delete LOBBY.book[NET.code];else if(LOBBY.up)LOBBY.up.send({t:'unreg',code:NET.code});}
 function regTick(){diagDraw();if(NET.on&&!NET.host&&NET.up&&!NET.started)NET.up.send({t:'ping',ts:performance.now()});if(!LOBBY.on)return;pingRooms();regSend();if(LOBBY.hold){LOBBY.list=regRooms();regDraw();}else if(LOBBY.up)LOBBY.up.send({t:'list'});}
@@ -1919,7 +1955,7 @@ function pingRooms(){
 }
 function regDraw(){
   const e=$('#rooms');if(!e||NET.on)return;const L=LOBBY.list.filter(r=>r.code!==NET.code);
-  e.innerHTML=!LOBBY.ok?`<p class="keys">${t('roomsWait')}</p>`:!L.length?`<p class="keys">${t('roomsNone')}</p>`:L.map(r=>`<div class="room"><div><b>${esc(r.name)}</b><small>${esc(t('types')[r.type]||'')} · ${esc(t('sizes')[r.size]||'')} · ${esc(t('diffs')[r.diff]||'')}</small></div><span>${r.n|0}/16</span><button class="btn sm ok" data-a="joinR:${esc(r.code)}">${t('join')}</button>${pingTag(PING[r.code]?PING[r.code].ms:null)}</div>`).join('');
+  e.innerHTML=!LOBBY.ok?`<p class="keys">${t('roomsWait')}</p>`:!L.length?`<p class="keys">${t('roomsNone')}</p>`:L.map(r=>`<div class="room"><div><b>${esc(r.name)}</b><small>${esc(t('types')[r.type]||'')} · ${esc(t('sizes')[r.size]||'')} · ${esc(t('diffs')[r.diff]||'')}</small></div><span>${r.n|0}/${(r.m|0)||16}</span><button class="btn sm ok" data-a="joinR:${esc(r.code)}"${(r.n|0)>=((r.m|0)||16)?' disabled':''}>${(r.n|0)>=((r.m|0)||16)?t('e_full'):t('join')}</button>${pingTag(PING[r.code]?PING[r.code].ms:null)}</div>`).join('');
 }
 function renderNet(){
   $('#net').innerHTML=`<h2>${t('online')}</h2><p class="keys">${t('netNote')}</p>
@@ -1931,7 +1967,7 @@ function renderNet(){
 function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
   $('#net').innerHTML=`<h2>${esc(NET.host?roomName():NET.room||t('lobby'))}</h2>${NET.host?'':`<p class="keys">${t('pingHost')}: ${pingTag(NET.ping,'myPing')}</p>`}<div class="code" dir="ltr">${NET.code}</div>${link?`<p class="keys" style="user-select:text;-webkit-user-select:text" dir="ltr">${esc(link)}</p>`:''}
-  <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)}</h3>
+  <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)} ${NET.host?'/ '+maxP():''}</h3>
   <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
   <div class="row"><button class="btn" data-a="leave">${t('leave')}</button>${NET.host?`<button class="btn big" data-a="netStart">${t('startNet')}</button>`:''}</div>`;
 }
@@ -2052,6 +2088,7 @@ function worldThumb(k){
   const C=[0xff6e3a10,0xff9c6f2a,0xff54a07c,0xff427646,0xff88c6de,0xff648c94,0xff72787e,0xffeee8e2];
   for(let i=0;i<M.N;i++)d[i]=C[M.ter[i]];x.putImageData(im,0,0);return THUMB[k]=c.toDataURL();
 }
+function maxP(){const v=UI.prof.maxP|0;return v>=2&&v<=32?v:16;}
 function renderSetup(){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
   const chips=(key,arr,cur)=>arr.map((s,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${s}</button>`).join('');
@@ -2061,6 +2098,7 @@ function renderSetup(){
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
   <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="30" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
   <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div></div>
+  ${host?`<div class="opts" style="grid-template-columns:minmax(0,1fr)"><div><h3>${t('maxP')}</h3><div class="rng"><input type="range" id="inMaxP" min="2" max="32" step="1" value="${maxP()}" aria-label="${t('maxP')}"><b id="maxPV">${maxP()}</b></div></div></div>`:''}
   ${host?`<div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>`:''}
   ${NET.on&&NET.host?`<div class="row"><button class="btn" data-a="lobbyBack">${t('lobby')} (${NET.players.length})</button><button class="btn big" data-a="netStart">${t('startNet')}</button></div>`:`${host?`<div class="row"><button class="btn" data-a="online">${t('back')}</button><button class="btn big" data-a="hostRoom">${t('hostRoom')}</button></div>`:`<div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`}`}`;
 }
@@ -2082,12 +2120,15 @@ function renderQuick(){
   $('#help').innerHTML=`<h2>${t('quick')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(520px,100%)"><div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div><div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div><p class="keys">${t('foes')}: <b>${quickBots(p)}</b></p></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="goQ">${t('start')}</button></div>`;
 }
+function gfxLv(){const v=UI.prof.gfx;return v==null?(UI.mob?1:2):v;}
+function applyGfx(){R.q=gfxLv();try{resize();}catch(e){}}
 function renderSettings(){
   const p=UI.prof,vm=p.volM==null?70:p.volM,vs=p.volS==null?70:p.volS;
   $('#help').innerHTML=`<h2>${t('settings')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(460px,100%)">
   <div><h3>${t('volM')}</h3><div class="rng"><input type="range" id="volM" min="0" max="100" step="5" value="${vm}" aria-label="${t('volM')}"><b id="volMv">${vm}</b></div></div>
   <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div>
   <div><h3>${t('langName')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${UI.lang==='ar'?' on':''}" data-a="lang:ar">العربية</button><button class="chip${UI.lang==='en'?' on':''}" data-a="lang:en">English</button></div></div>
+  <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><p class="keys" style="text-align:start">${t('gfxNote')}</p></div>
   <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
@@ -2336,7 +2377,44 @@ function err(code){sfx('err');toast(t('e_'+code),'bad');}
 function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span class="q">«${L[(Math.random()*L.length)|0]}»</span>`,'say');}
 
 // nation card
-function openCard(id,tile){UI.cardTile=tile==null?-1:tile;
+// your own realm: emoji, trade with everyone on/off, and automatic upgrades within the limits you set
+function openSelf(){
+  const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
+  const c=$('#card');c.hidden=false;
+  c.innerHTML=`<div class="ch"><i style="background:${me.css}"></i><div><b>${esc(natName(me))}</b><small>${t('selfSub')}</small></div><button class="ib" data-a="closeCard" aria-label="close">✕</button></div>
+  <div class="cs ci"><div title="${t('troops')}"><img src="${R.url.sword}" alt=""><b id="cT"></b></div><div title="${t('land')}"><img src="${R.url.flag}" alt=""><b id="cL"></b></div><div title="${t('cities')}"><img src="${R.url.city}" alt=""><b id="cC"></b></div><div title="${t('gold')}"><img src="${R.url.coin}" alt=""><b id="cG"></b></div></div><div id="cS"></div><div class="cg" id="cB"></div><div id="cAmt"></div>`;
+  cardRefresh();
+}
+function selfRefresh(){
+  const g=G,me=g.nations[g.human],au=auCfg();$('#cT').textContent=fmt(me.troops);$('#cL').textContent=(me.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=me.cnt.city;$('#cG').textContent=fmt(me.gold);
+  const key='self|'+me.embAll+'|'+au.on;if(key===UI.cardKey)return;UI.cardKey=key;const S=$('#cS');S.textContent=t(me.embAll?'tradeOff':'tradeOn');S.className=me.embAll?'bad':'good';
+  const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
+  $('#cB').innerHTML=B('emoOpen:0','crown',t('c_emo'),t('b_emoSelf'))+(me.embAll?B('embAll:0','ship',t('c_tradeOn'),t('b_tradeOn'),'ok'):B('embAll:1','ship',t('c_tradeOff'),t('b_tradeOff'),'warn'))+B('auOpen','city',t('c_auto'),t('b_auto'),au.on?'ok':'');
+}
+function auCfg(){const p=UI.prof;const a=p.au||(p.au={on:false,keep:1000,max:5000,ask:true});if(a.rate==null)a.rate=4;return a;}
+function auOpen(){
+  const a=auCfg(),e=$('#cAmt');UI.cardAmt=null;const L=[0,500,1000,2000,5000,10000,20000,50000],M=[500,1000,2000,5000,10000,20000,50000,1e9];
+  const sel=(id,arr,v,lab)=>`<label class="aul"><span>${lab}</span><select id="${id}">${arr.map(x=>`<option value="${x}"${x===v?' selected':''}>${x>=1e9?t('auNoMax'):fmt(x)}</option>`).join('')}</select></label>`;
+  e.innerHTML=`<div class="auf"><div class="chips"><button class="chip${a.on?' on':''}" data-a="auSet:on:1">${t('auOn')}</button><button class="chip${!a.on?' on':''}" data-a="auSet:on:0">${t('auOff')}</button></div>
+  ${sel('auKeep',L,a.keep,t('auKeep'))}${sel('auMax',M,a.max,t('auMax'))}<label class="aul"><span>${t('auRate')}</span><select id="auRate">${[1,2,4,8,0].map(x=>`<option value="${x}"${x===a.rate?' selected':''}>${x?t('auPer',x):t('auNoMax')}</option>`).join('')}</select></label>
+  <div class="chips"><button class="chip${a.ask?' on':''}" data-a="auSet:ask:1">${t('auAsk')}</button><button class="chip${!a.ask?' on':''}" data-a="auSet:ask:0">${t('auNoAsk')}</button></div><p class="keys">${t('auNote')}</p></div>`;
+}
+// the cheapest upgrade that keeps the reserve and stays under the cap
+function auPick(){
+  const g=G,me=g.nations[g.human],a=auCfg();let best=null,bc=1e18;
+  for(const s of g.structs)if(!s.dead&&s.owner===me.id&&!canUp(g,me,s)){const c=upCost(s);if(c<=a.max&&me.gold-c>=a.keep&&(c<bc||(c===bc&&s.type==='city'&&best.type!=='city'))){bc=c;best=s;}}
+  return best;
+}
+function auTick(){
+  const g=G,a=auCfg();if(!a.on||!g||g.o.demo||!g.started||g.over||UI.phase!=='play')return;const me=g.nations[g.human];if(!me||!me.alive)return;
+  const now=performance.now();if(now<(UI.auNext||0)||(UI.auToast&&UI.auToast.isConnected))return;
+  // at most a.rate upgrades in any two minutes of game time
+  const L=(UI.auLog||(UI.auLog=[])).filter(x=>x<=g.tick&&g.tick-x<1200);UI.auLog=L;if(a.rate&&L.length>=a.rate){UI.auNext=now+2000;return;}const s=auPick();if(!s){UI.auNext=now+3000;return;}
+  const nm=s.type==='city'?cityName(s.name,UI.lang):t('s_'+s.type);
+  if(!a.ask){send({k:'up',i:s.i});UI.auLog.push(g.tick);UI.auNext=now+2500;feed(t('auDone',esc(nm),s.level+1),'good');return;}
+  UI.auPend=s.i;UI.auToast=toast(`<span>⬆ ${t('auQ',esc(nm),s.level+1,fmt(upCost(s)))}</span><button class="btn sm ok" data-a="auY">✓</button><button class="btn sm" data-a="auN">✕</button>`,'au',9000);UI.auNext=now+9500;
+}
+function openCard(id,tile){if(G&&id===G.human)return openSelf();UI.cardTile=tile==null?-1:tile;
   const g=G,n=g.nations[id];if(!n||!n.alive||id===g.human||UI.phase!=='play')return;UI.sel=id;UI.cardKey='';UI.cardGift=Math.max(50,Math.round(g.nations[g.human].gold*.25/10)*10);
   const c=$('#card');c.hidden=false;
   c.innerHTML=`<div class="ch"><i style="background:${n.css}"></i><div><b>${esc(natName(n))}</b><small>${leader(n)} · ${t('f_'+n.fac)} · ${t('p_'+n.pers)}</small></div><button class="ib" data-a="closeCard" aria-label="close">✕</button></div>
@@ -2382,17 +2460,17 @@ function buildRefresh(){
     `<button class="btn sm ok up" data-a="upB"${r&&r!=='gold'?' disabled':''}>${t('upTo',s.level+1)} · ${fmt(upCost(s))}</button>${r==='era'?`<p class="bad">${t('upNeed',t('eras')[upEra(s)-1])}</p>`:r==='gold'?`<p class="bad">${t('e_gold')}</p>`:''}`;
 }
 function closeCard(){UI.bs=null;const c=$('#card');if(c)c.hidden=true;UI.sel=0;}
-function cardRefresh(){if(UI.bs)return buildRefresh();
+function cardRefresh(){if(UI.bs)return buildRefresh();if(G&&UI.sel===G.human&&!$('#card').hidden)return selfRefresh();
   const g=G,id=UI.sel,c=$('#card');if(!id||!c||c.hidden)return;const n=g.nations[id],me=g.nations[g.human];if(!n.alive||!me.alive)return closeCard();
   $('#cT').textContent=fmt(n.troops);$('#cL').textContent=(n.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=n.cnt.city;
   const a=n.att[me.id],mi=a<-40?0:a<-10?1:a<10?2:a<40?3:4,M=$('#cM');M.textContent=t('moods')[mi];M.className='m'+mi;$('#cMd').className='md m'+mi;
-  const ally=me.ally[id],tr=!ally&&g.tick<me.truce[id],war=!tr&&!ally&&atWar(g,me.id,id),key=ally+'|'+war+'|'+tr,S=$('#cS');
+  const ally=me.ally[id],tr=!ally&&g.tick<me.truce[id],war=!tr&&!ally&&atWar(g,me.id,id),key=ally+'|'+war+'|'+tr+'|'+me.emb[id],S=$('#cS');
   S.textContent=t(ally?'st_ally':tr?'st_truce':war?'st_war':'st_peace')+(ally?' · '+t('allyLeft',clock(Math.max(0,me.allyUntil[id]-g.tick))):tr?' · '+clock(me.truce[id]-g.tick):'');S.className=ally||tr?'good':war?'bad':'';
   if(key===UI.cardKey)return;UI.cardKey=key;let any=false;for(const m of g.nations)if(m&&m.alive&&me.ally[m.id]&&m.id!==id)any=true;
   const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
   $('#cB').innerHTML=(war&&!n.minor?B('peace:'+id,'flag',t('c_peace'),t('b_peace'),'ok'):'')+(ally||tr?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'ship',t('c_sea'),t('b_sea'),'sea'))
     +(ally?B('break:'+id,'ally',t('c_break'),t('b_break'),'warn')+B('aidOpen:'+id,'sword',t('c_aid'),t('b_aid'),'ok'):B('ally:'+id,'ally',t('c_ally'),t('b_ally')))
-    +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('find:'+id,'eye',t('c_find'),t('b_find'));
+    +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('emoOpen:'+id,'crown',t('c_emo'),t('b_emoTo'))+(n.minor?'':B('emb:'+id+':'+(me.emb[id]?0:1),'ship',t(me.emb[id]?'c_tradeOn':'c_tradeOff'),t(me.emb[id]?'b_tradeOn1':'b_tradeOff1'),me.emb[id]?'ok':''))+B('find:'+id,'eye',t('c_find'),t('b_find'));
 }
 
 // ── player actions ──
@@ -2413,7 +2491,7 @@ function onMapTap(i,x,y){
   if(m){if(UI.mob){if(m[0]==='b'){const k=m.slice(2);if(k==='port'||k==='coast')i=snapPort(g,me,i,6,k);const r=canBuild(g,me,k,i);if(r)return err(r);}UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):m[0]==='s'?t('c_sea'):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
     placeAt(i);return;}
   if(g.M.ter[i]<2)return closeCard();
-  const o=g.owner[i];if(o===me.id){const st=structNear(g,i,me.id);return st?openBuild(st):closeCard();}if(o&&me.ally[o])return openCard(o);
+  const o=g.owner[i];if(o===me.id){const st=structNear(g,i,me.id);if(st)return openBuild(st);const cd=$('#card');return cd&&!cd.hidden?closeCard():openSelf();}if(o&&me.ally[o])return openCard(o);
   if(o&&UI.mob&&!g.nations[o].minor)return openCard(o,i);
   send({k:'atk',i,r:UI.ratio,m:UI.prof.amode||'pt'});
 }
@@ -2437,6 +2515,15 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
+    case'emoOpen':{UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>`<button data-a="emoS:${i+1}">${e}</button>`).join('')}</div>`;break;}
+    case'emoS':send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
+    case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
+    case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;
+    case'auOpen':auOpen();break;
+    case'auSet':{const a=auCfg();a[v]=w==='1';saveProf();auOpen();UI.cardKey='';UI.auNext=0;break;}
+    case'auY':if(UI.auPend>=0){send({k:'up',i:UI.auPend});(UI.auLog||(UI.auLog=[])).push(G.tick);}UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+2000;break;
+    case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
+    case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
@@ -2484,8 +2571,10 @@ function handleEvents(){
       case'upDone':if(e.a===me){feed(t('m_upDone',e.s.type==='city'?esc(cityName(e.s.name,UI.lang)):t('s_'+e.s.type),e.s.level),'good');sfx('era');addFx('ring',e.s.x,e.s.y,{r:5,col:'#ffe9a8',dur:900});UI.bKey='';}break;
       case'train':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
       case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
-      case'dead':if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
+      case'dead':if(e.a===me&&e.tr>0){addFx('sword',e.x,e.y,{s:'+'+fmt(e.tr),dur:2600});sfx('city');}if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
       case'proposal':{if(e.b!==me)break;const d=toast(`<span>${t('m_prop',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button><button class="btn sm" data-a="find:${A.id}">${t('b_focus')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
+      case'emo':if(e.to===me&&e.a!==me)feed(t('m_emo',nmh(A),EMO[e.e-1]));break;
+      case'emb':if(e.d===me&&e.a!==me)feed(t(e.v?'m_embOn':'m_embOff',nmh(A)),e.v?'bad':'good');else if(!e.d&&e.a!==me&&e.v&&g.nations[me]&&g.nb&&g.nb[me*g.nations.length+e.a]>0)feed(t('m_embAll',nmh(A)),'bad');break;
       case'peaceProp':{if(e.b!==me)break;const d=toast(`<span>${t('m_peaceProp',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
       case'peace':if(e.a===me||e.b===me){feed(t('m_peace',nmh(N[e.a===me?e.b:e.a])),'good');sfx('city');UI.cardKey='';}break;
       case'peaceRej':if(e.b===me){feed(t(e.why==='weak'?'m_peaceWeak':e.why==='trust'?'m_peaceTrust':'m_peaceNo',nmh(A)),'bad');}break;
@@ -2561,6 +2650,8 @@ function bindInput(){
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
+  $('#app').addEventListener('change',e=>{if(e.target.id==='auKeep'||e.target.id==='auMax'||e.target.id==='auRate'){const a=auCfg();a[{auKeep:'keep',auMax:'max',auRate:'rate'}[e.target.id]]=+e.target.value;saveProf();UI.auNext=0;}});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
@@ -2591,7 +2682,7 @@ function boot(){
   {const c=mk(64,64),x=c.getContext('2d');x.drawImage(R.glyph.nuke,8,8,48,48);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(32,32,29,0,7);x.stroke();R.glyph.doom=c;R.url.doom=c.toDataURL();}
   resize();addEventListener('resize',()=>{applyMode();resize();placeAmode();});
   if(window.ResizeObserver)new ResizeObserver(resize).observe(cv);
-  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);addEventListener('pagehide',()=>{if(NET.on)netClose();});
+  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};

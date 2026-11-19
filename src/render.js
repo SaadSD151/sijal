@@ -6,7 +6,7 @@ function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;r
 const w2s=(x,y)=>({x:(x-cam.x)*cam.z+view.w/2,y:(y-cam.y)*cam.z+view.h/2});
 const s2w=(x,y)=>({x:(x-view.w/2)/cam.z+cam.x,y:(y-view.h/2)/cam.z+cam.y});
 function resize(){
-  const r=cv.getBoundingClientRect();view.w=Math.max(50,r.width);view.h=Math.max(50,r.height);view.dpr=Math.min(window.devicePixelRatio||1,2);
+  const r=cv.getBoundingClientRect();view.w=Math.max(50,r.width);view.h=Math.max(50,r.height);view.dpr=Math.min(window.devicePixelRatio||1,[1,1.5,2][R.q==null?2:R.q]);
   cv.width=Math.round(view.w*view.dpr);cv.height=Math.round(view.h*view.dpr);
 }
 function fitZoom(g){return Math.min(view.w/g.W,view.h/g.H);}
@@ -128,12 +128,12 @@ function draw(g,dt,ts){
   const c=ctx,dpr=view.dpr,cw=view.w,ch=view.h,me=g.human;
   refreshOwn(g);camStep(g);const z=cam.z;
   R.winter+=((g.season===3?1:0)-R.winter)*.025;R.autumn+=((g.season===2?1:0)-R.autumn)*.025;
-  let shx=0,shy=0;if(R.shake>.3){shx=(Math.random()-.5)*R.shake;shy=(Math.random()-.5)*R.shake;R.shake*=.9;}
+  let shx=0,shy=0;if(R.q===0)R.shake=0;if(R.shake>.3){shx=(Math.random()-.5)*R.shake;shy=(Math.random()-.5)*R.shake;R.shake*=.9;}
   c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#092440';c.fillRect(0,0,cw,ch);
   c.setTransform(dpr*z,0,0,dpr*z,dpr*(cw/2-cam.x*z+shx),dpr*(ch/2-cam.y*z+shy));
   c.imageSmoothingEnabled=true;c.drawImage(R.land,0,0,g.W,g.H);
-  if(R.winter>.01){c.globalAlpha=R.winter;c.drawImage(R.snow,0,0,g.W,g.H);c.globalAlpha=1;}
-  if(R.autumn>.01){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
+  if(R.winter>.01&&R.q!==0){c.globalAlpha=R.winter;c.drawImage(R.snow,0,0,g.W,g.H);c.globalAlpha=1;}
+  if(R.autumn>.01&&R.q!==0){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
   c.drawImage(R.own,0,0,g.W,g.H);c.drawImage(R.water,0,0,g.W,g.H);
   c.setTransform(dpr,0,0,dpr,0,0);c.lineCap=c.lineJoin='round';c.textAlign='center';c.textBaseline='middle';
   // offensives that involve the player: where they start and where they are headed
@@ -150,10 +150,17 @@ function draw(g,dt,ts){
   if(g.rails.length){const tw=Math.max(.9,z*.2);
     for(const r of g.rails){const P=r.path;if(P.length<2)continue;c.beginPath();for(let k=0;k<P.length;k++){const p=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5);k?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y);}
       c.strokeStyle='rgba(30,22,18,.38)';c.lineWidth=tw+1.2;c.stroke();c.strokeStyle='rgba(138,122,102,.5)';c.lineWidth=tw;c.stroke();
-      if(z>=4){c.strokeStyle='rgba(30,22,18,.4)';c.lineWidth=.8;for(let k=1;k<P.length-1;k+=2){const a=w2s(P[k-1]%g.W+.5,((P[k-1]/g.W)|0)+.5),b=w2s(P[k+1]%g.W+.5,((P[k+1]/g.W)|0)+.5),m=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5),an=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2,l=tw*1.1;c.beginPath();c.moveTo(m.x-Math.cos(an)*l,m.y-Math.sin(an)*l);c.lineTo(m.x+Math.cos(an)*l,m.y+Math.sin(an)*l);c.stroke();}}}
+      if(z>=4&&R.q===2){c.strokeStyle='rgba(30,22,18,.4)';c.lineWidth=.8;for(let k=1;k<P.length-1;k+=2){const a=w2s(P[k-1]%g.W+.5,((P[k-1]/g.W)|0)+.5),b=w2s(P[k+1]%g.W+.5,((P[k+1]/g.W)|0)+.5),m=w2s(P[k]%g.W+.5,((P[k]/g.W)|0)+.5),an=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2,l=tw*1.1;c.beginPath();c.moveTo(m.x-Math.cos(an)*l,m.y-Math.sin(an)*l);c.lineTo(m.x+Math.cos(an)*l,m.y+Math.sin(an)*l);c.stroke();}}}
     for(const tr of g.trains){const W=g.W,P=tr.path,i0=Math.floor(tr.p),n=g.nations[tr.a],s=clamp(z*.7,3,7);
       for(let w=0;w<3;w++){const pp=Math.max(0,Math.min(P.length-1,tr.p-w*tr.dir*1.1)),k0=Math.floor(pp),k1=Math.min(k0+1,P.length-1),f=pp-k0,p=w2s(lerp(P[k0]%W,P[k1]%W,f)+.5,lerp((P[k0]/W)|0,(P[k1]/W)|0,f)+.5);
         if(p.x<-20||p.y<-20||p.x>cw+20||p.y>ch+20)continue;c.fillStyle=w?n.css:'#2a2522';c.strokeStyle='rgba(6,12,20,.9)';c.lineWidth=1;c.beginPath();c.rect(p.x-s*.7,p.y-s*.5,s*1.4,s);c.fill();c.stroke();if(!w){c.fillStyle='#ffe9a8';c.beginPath();c.arc(p.x,p.y,s*.22,0,7);c.fill();}}}}
+  // where my ships will land (and where enemy ships are headed into my land)
+  if(me)for(const b of g.boats){if(b.a!==me&&g.owner[b.ti]!==me)continue;const W=g.W,q=w2s(b.ti%W+.5,((b.ti/W)|0)+.5);if(q.x<-30||q.y<-30||q.x>cw+30||q.y>ch+30)continue;
+    const r=Math.max(9,z*2.4)+Math.sin(ts/220)*2;c.strokeStyle=b.a===me?'rgba(255,233,168,.95)':'rgba(255,90,70,.95)';c.lineWidth=2.5;c.setLineDash([5,4]);c.lineDashOffset=-ts/60;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.setLineDash([]);
+    c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.stroke();}
+  // troops pushing on each front that involves me
+  if(me){c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.fx==null||k.troops<1)continue;const q=w2s(k.fx+.5,k.fy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
+    c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,fmt(k.troops),q.x,q.y,k.a===me?'#8fd3ff':'#ff9a8a');}}
   // trade ships: small, white-sailed, shuttling between ports
   for(const b of g.trades){
     const W=g.W,i0=Math.floor(b.p),i1=Math.min(i0+1,b.path.length-1),f=b.p-i0,a=b.path[i0],d=b.path[i1],p=w2s(lerp(a%W,d%W,f)+.5,lerp((a/W)|0,(d/W)|0,f)+.5);
@@ -170,6 +177,10 @@ function draw(g,dt,ts){
     if(z>=3.5){c.font=`700 11px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.85)';txt(c,fmt(b.troops),p.x,p.y-s-7,'#fff');}
   }
   const SP=[];
+  // protected area of my forts and shield domes (and every dome while I am aiming a missile)
+  {const aimM=UI.mode&&UI.mode[0]==='m';for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
+    const r=(s.type==='fort'?R_FORT+s.level-1:SH_R(s.level))*z,p=w2s(s.x+.5,s.y+.5);if(p.x+r<0||p.y+r<0||p.x-r>cw||p.y-r>ch||r<6)continue;
+    const col=!mine?'255,90,70':s.type==='shield'?'120,190,255':'255,233,168';c.fillStyle=`rgba(${col},${s.type==='shield'?.12:.09})`;c.strokeStyle=`rgba(${col},.45)`;c.lineWidth=1.5;c.beginPath();c.arc(p.x,p.y,r,0,7);c.fill();c.stroke();}}
   // structures
   for(const s of g.structs){
     if(s.dead)continue;const city=s.type==='city';
@@ -215,6 +226,7 @@ function draw(g,dt,ts){
     c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';txt(c,nm,p.x,y,'#fff');
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
+    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.font=`${q}px sans-serif`;c.globalAlpha=age>.85?(1-age)/.15:1;c.fillText(EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5));c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
   }
   R.lb=LB;
   // missiles and pending strikes
@@ -239,6 +251,9 @@ function draw(g,dt,ts){
       c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();c.strokeStyle=`rgba(255,235,200,${.8*(1-f.t)})`;c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,rr*1.08,0,7);c.stroke();
     }else if(f.type==='ring'){c.strokeStyle=f.col||'#ffe9a8';c.globalAlpha=1-f.t;c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,(f.r||8)*z*e+4,0,7);c.stroke();c.globalAlpha=1;}
     else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
+    else if(f.type==='sword'){const pop=f.t<.15?f.t/.15:1,q=46*(f.t<.15?.4+pop*.75:1.15-.15*Math.min(1,(f.t-.15)*3)),a=f.t>.75?(1-f.t)/.25:1;c.globalAlpha=a;
+      c.save();c.translate(p.x,p.y-30-e*24);c.rotate(f.t<.15?(1-pop)*.8:0);c.shadowColor='rgba(255,210,120,.9)';c.shadowBlur=R.q?14:0;c.drawImage(R.glyph.sword,-q/2,-q/2,q,q);c.restore();
+      c.font=`800 22px ${FONT}`;c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-30-e*24+q*.75,'#ffe9a8');c.globalAlpha=1;}
     else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand

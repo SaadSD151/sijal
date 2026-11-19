@@ -106,6 +106,7 @@ function worldThumb(k){
   const C=[0xff6e3a10,0xff9c6f2a,0xff54a07c,0xff427646,0xff88c6de,0xff648c94,0xff72787e,0xffeee8e2];
   for(let i=0;i<M.N;i++)d[i]=C[M.ter[i]];x.putImageData(im,0,0);return THUMB[k]=c.toDataURL();
 }
+function maxP(){const v=UI.prof.maxP|0;return v>=2&&v<=32?v:16;}
 function renderSetup(){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
   const chips=(key,arr,cur)=>arr.map((s,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${s}</button>`).join('');
@@ -115,6 +116,7 @@ function renderSetup(){
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
   <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="30" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
   <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div></div>
+  ${host?`<div class="opts" style="grid-template-columns:minmax(0,1fr)"><div><h3>${t('maxP')}</h3><div class="rng"><input type="range" id="inMaxP" min="2" max="32" step="1" value="${maxP()}" aria-label="${t('maxP')}"><b id="maxPV">${maxP()}</b></div></div></div>`:''}
   ${host?`<div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>`:''}
   ${NET.on&&NET.host?`<div class="row"><button class="btn" data-a="lobbyBack">${t('lobby')} (${NET.players.length})</button><button class="btn big" data-a="netStart">${t('startNet')}</button></div>`:`${host?`<div class="row"><button class="btn" data-a="online">${t('back')}</button><button class="btn big" data-a="hostRoom">${t('hostRoom')}</button></div>`:`<div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`}`}`;
 }
@@ -136,12 +138,15 @@ function renderQuick(){
   $('#help').innerHTML=`<h2>${t('quick')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(520px,100%)"><div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div><div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div><p class="keys">${t('foes')}: <b>${quickBots(p)}</b></p></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="goQ">${t('start')}</button></div>`;
 }
+function gfxLv(){const v=UI.prof.gfx;return v==null?(UI.mob?1:2):v;}
+function applyGfx(){R.q=gfxLv();try{resize();}catch(e){}}
 function renderSettings(){
   const p=UI.prof,vm=p.volM==null?70:p.volM,vs=p.volS==null?70:p.volS;
   $('#help').innerHTML=`<h2>${t('settings')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(460px,100%)">
   <div><h3>${t('volM')}</h3><div class="rng"><input type="range" id="volM" min="0" max="100" step="5" value="${vm}" aria-label="${t('volM')}"><b id="volMv">${vm}</b></div></div>
   <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div>
   <div><h3>${t('langName')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${UI.lang==='ar'?' on':''}" data-a="lang:ar">العربية</button><button class="chip${UI.lang==='en'?' on':''}" data-a="lang:en">English</button></div></div>
+  <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><p class="keys" style="text-align:start">${t('gfxNote')}</p></div>
   <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
@@ -390,7 +395,44 @@ function err(code){sfx('err');toast(t('e_'+code),'bad');}
 function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span class="q">«${L[(Math.random()*L.length)|0]}»</span>`,'say');}
 
 // nation card
-function openCard(id,tile){UI.cardTile=tile==null?-1:tile;
+// your own realm: emoji, trade with everyone on/off, and automatic upgrades within the limits you set
+function openSelf(){
+  const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
+  const c=$('#card');c.hidden=false;
+  c.innerHTML=`<div class="ch"><i style="background:${me.css}"></i><div><b>${esc(natName(me))}</b><small>${t('selfSub')}</small></div><button class="ib" data-a="closeCard" aria-label="close">✕</button></div>
+  <div class="cs ci"><div title="${t('troops')}"><img src="${R.url.sword}" alt=""><b id="cT"></b></div><div title="${t('land')}"><img src="${R.url.flag}" alt=""><b id="cL"></b></div><div title="${t('cities')}"><img src="${R.url.city}" alt=""><b id="cC"></b></div><div title="${t('gold')}"><img src="${R.url.coin}" alt=""><b id="cG"></b></div></div><div id="cS"></div><div class="cg" id="cB"></div><div id="cAmt"></div>`;
+  cardRefresh();
+}
+function selfRefresh(){
+  const g=G,me=g.nations[g.human],au=auCfg();$('#cT').textContent=fmt(me.troops);$('#cL').textContent=(me.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=me.cnt.city;$('#cG').textContent=fmt(me.gold);
+  const key='self|'+me.embAll+'|'+au.on;if(key===UI.cardKey)return;UI.cardKey=key;const S=$('#cS');S.textContent=t(me.embAll?'tradeOff':'tradeOn');S.className=me.embAll?'bad':'good';
+  const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
+  $('#cB').innerHTML=B('emoOpen:0','crown',t('c_emo'),t('b_emoSelf'))+(me.embAll?B('embAll:0','ship',t('c_tradeOn'),t('b_tradeOn'),'ok'):B('embAll:1','ship',t('c_tradeOff'),t('b_tradeOff'),'warn'))+B('auOpen','city',t('c_auto'),t('b_auto'),au.on?'ok':'');
+}
+function auCfg(){const p=UI.prof;const a=p.au||(p.au={on:false,keep:1000,max:5000,ask:true});if(a.rate==null)a.rate=4;return a;}
+function auOpen(){
+  const a=auCfg(),e=$('#cAmt');UI.cardAmt=null;const L=[0,500,1000,2000,5000,10000,20000,50000],M=[500,1000,2000,5000,10000,20000,50000,1e9];
+  const sel=(id,arr,v,lab)=>`<label class="aul"><span>${lab}</span><select id="${id}">${arr.map(x=>`<option value="${x}"${x===v?' selected':''}>${x>=1e9?t('auNoMax'):fmt(x)}</option>`).join('')}</select></label>`;
+  e.innerHTML=`<div class="auf"><div class="chips"><button class="chip${a.on?' on':''}" data-a="auSet:on:1">${t('auOn')}</button><button class="chip${!a.on?' on':''}" data-a="auSet:on:0">${t('auOff')}</button></div>
+  ${sel('auKeep',L,a.keep,t('auKeep'))}${sel('auMax',M,a.max,t('auMax'))}<label class="aul"><span>${t('auRate')}</span><select id="auRate">${[1,2,4,8,0].map(x=>`<option value="${x}"${x===a.rate?' selected':''}>${x?t('auPer',x):t('auNoMax')}</option>`).join('')}</select></label>
+  <div class="chips"><button class="chip${a.ask?' on':''}" data-a="auSet:ask:1">${t('auAsk')}</button><button class="chip${!a.ask?' on':''}" data-a="auSet:ask:0">${t('auNoAsk')}</button></div><p class="keys">${t('auNote')}</p></div>`;
+}
+// the cheapest upgrade that keeps the reserve and stays under the cap
+function auPick(){
+  const g=G,me=g.nations[g.human],a=auCfg();let best=null,bc=1e18;
+  for(const s of g.structs)if(!s.dead&&s.owner===me.id&&!canUp(g,me,s)){const c=upCost(s);if(c<=a.max&&me.gold-c>=a.keep&&(c<bc||(c===bc&&s.type==='city'&&best.type!=='city'))){bc=c;best=s;}}
+  return best;
+}
+function auTick(){
+  const g=G,a=auCfg();if(!a.on||!g||g.o.demo||!g.started||g.over||UI.phase!=='play')return;const me=g.nations[g.human];if(!me||!me.alive)return;
+  const now=performance.now();if(now<(UI.auNext||0)||(UI.auToast&&UI.auToast.isConnected))return;
+  // at most a.rate upgrades in any two minutes of game time
+  const L=(UI.auLog||(UI.auLog=[])).filter(x=>x<=g.tick&&g.tick-x<1200);UI.auLog=L;if(a.rate&&L.length>=a.rate){UI.auNext=now+2000;return;}const s=auPick();if(!s){UI.auNext=now+3000;return;}
+  const nm=s.type==='city'?cityName(s.name,UI.lang):t('s_'+s.type);
+  if(!a.ask){send({k:'up',i:s.i});UI.auLog.push(g.tick);UI.auNext=now+2500;feed(t('auDone',esc(nm),s.level+1),'good');return;}
+  UI.auPend=s.i;UI.auToast=toast(`<span>⬆ ${t('auQ',esc(nm),s.level+1,fmt(upCost(s)))}</span><button class="btn sm ok" data-a="auY">✓</button><button class="btn sm" data-a="auN">✕</button>`,'au',9000);UI.auNext=now+9500;
+}
+function openCard(id,tile){if(G&&id===G.human)return openSelf();UI.cardTile=tile==null?-1:tile;
   const g=G,n=g.nations[id];if(!n||!n.alive||id===g.human||UI.phase!=='play')return;UI.sel=id;UI.cardKey='';UI.cardGift=Math.max(50,Math.round(g.nations[g.human].gold*.25/10)*10);
   const c=$('#card');c.hidden=false;
   c.innerHTML=`<div class="ch"><i style="background:${n.css}"></i><div><b>${esc(natName(n))}</b><small>${leader(n)} · ${t('f_'+n.fac)} · ${t('p_'+n.pers)}</small></div><button class="ib" data-a="closeCard" aria-label="close">✕</button></div>
@@ -436,17 +478,17 @@ function buildRefresh(){
     `<button class="btn sm ok up" data-a="upB"${r&&r!=='gold'?' disabled':''}>${t('upTo',s.level+1)} · ${fmt(upCost(s))}</button>${r==='era'?`<p class="bad">${t('upNeed',t('eras')[upEra(s)-1])}</p>`:r==='gold'?`<p class="bad">${t('e_gold')}</p>`:''}`;
 }
 function closeCard(){UI.bs=null;const c=$('#card');if(c)c.hidden=true;UI.sel=0;}
-function cardRefresh(){if(UI.bs)return buildRefresh();
+function cardRefresh(){if(UI.bs)return buildRefresh();if(G&&UI.sel===G.human&&!$('#card').hidden)return selfRefresh();
   const g=G,id=UI.sel,c=$('#card');if(!id||!c||c.hidden)return;const n=g.nations[id],me=g.nations[g.human];if(!n.alive||!me.alive)return closeCard();
   $('#cT').textContent=fmt(n.troops);$('#cL').textContent=(n.tiles/g.M.land*100).toFixed(1)+'%';$('#cC').textContent=n.cnt.city;
   const a=n.att[me.id],mi=a<-40?0:a<-10?1:a<10?2:a<40?3:4,M=$('#cM');M.textContent=t('moods')[mi];M.className='m'+mi;$('#cMd').className='md m'+mi;
-  const ally=me.ally[id],tr=!ally&&g.tick<me.truce[id],war=!tr&&!ally&&atWar(g,me.id,id),key=ally+'|'+war+'|'+tr,S=$('#cS');
+  const ally=me.ally[id],tr=!ally&&g.tick<me.truce[id],war=!tr&&!ally&&atWar(g,me.id,id),key=ally+'|'+war+'|'+tr+'|'+me.emb[id],S=$('#cS');
   S.textContent=t(ally?'st_ally':tr?'st_truce':war?'st_war':'st_peace')+(ally?' · '+t('allyLeft',clock(Math.max(0,me.allyUntil[id]-g.tick))):tr?' · '+clock(me.truce[id]-g.tick):'');S.className=ally||tr?'good':war?'bad':'';
   if(key===UI.cardKey)return;UI.cardKey=key;let any=false;for(const m of g.nations)if(m&&m.alive&&me.ally[m.id]&&m.id!==id)any=true;
   const B=(a,ic,lb,tt,cls)=>`<button class="ca${cls?' '+cls:''}" data-a="${a}" title="${tt}"><img src="${R.url[ic]}" alt=""><span>${lb}</span></button>`;
   $('#cB').innerHTML=(war&&!n.minor?B('peace:'+id,'flag',t('c_peace'),t('b_peace'),'ok'):'')+(ally||tr?'':B('atk:'+id,'sword',t(canAnnex(g,me.id,id)?'c_annex':'c_atk'),t(canAnnex(g,me.id,id)?'b_annexS':'b_atk'),'go')+B('sea:'+id,'ship',t('c_sea'),t('b_sea'),'sea'))
     +(ally?B('break:'+id,'ally',t('c_break'),t('b_break'),'warn')+B('aidOpen:'+id,'sword',t('c_aid'),t('b_aid'),'ok'):B('ally:'+id,'ally',t('c_ally'),t('b_ally')))
-    +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('find:'+id,'eye',t('c_find'),t('b_find'));
+    +B('giftOpen:'+id,'coin',t('c_gift'),t('b_giftPick'))+(!ally&&any?B('arms:'+id,'crown',t('c_arms'),t('b_arms')):'')+B('emoOpen:'+id,'crown',t('c_emo'),t('b_emoTo'))+(n.minor?'':B('emb:'+id+':'+(me.emb[id]?0:1),'ship',t(me.emb[id]?'c_tradeOn':'c_tradeOff'),t(me.emb[id]?'b_tradeOn1':'b_tradeOff1'),me.emb[id]?'ok':''))+B('find:'+id,'eye',t('c_find'),t('b_find'));
 }
 
 // ── player actions ──
@@ -467,7 +509,7 @@ function onMapTap(i,x,y){
   if(m){if(UI.mob){if(m[0]==='b'){const k=m.slice(2);if(k==='port'||k==='coast')i=snapPort(g,me,i,6,k);const r=canBuild(g,me,k,i);if(r)return err(r);}UI.pend=UI.hover=i;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();toast(`<span>${m[0]==='b'?t('s_'+m.slice(2)):m[0]==='s'?t('c_sea'):t('aim')}</span><button class="btn sm ok" data-a="cfm">${t('confirm')}</button><button class="btn sm" data-a="cfx">${t('cancel')}</button>`,'prop cfm',0);return;}
     placeAt(i);return;}
   if(g.M.ter[i]<2)return closeCard();
-  const o=g.owner[i];if(o===me.id){const st=structNear(g,i,me.id);return st?openBuild(st):closeCard();}if(o&&me.ally[o])return openCard(o);
+  const o=g.owner[i];if(o===me.id){const st=structNear(g,i,me.id);if(st)return openBuild(st);const cd=$('#card');return cd&&!cd.hidden?closeCard():openSelf();}if(o&&me.ally[o])return openCard(o);
   if(o&&UI.mob&&!g.nations[o].minor)return openCard(o,i);
   send({k:'atk',i,r:UI.ratio,m:UI.prof.amode||'pt'});
 }
@@ -491,6 +533,15 @@ function act(a){
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'closeCard':closeCard();break;
+    case'emoOpen':{UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>`<button data-a="emoS:${i+1}">${e}</button>`).join('')}</div>`;break;}
+    case'emoS':send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
+    case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
+    case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;
+    case'auOpen':auOpen();break;
+    case'auSet':{const a=auCfg();a[v]=w==='1';saveProf();auOpen();UI.cardKey='';UI.auNext=0;break;}
+    case'auY':if(UI.auPend>=0){send({k:'up',i:UI.auPend});(UI.auLog||(UI.auLog=[])).push(G.tick);}UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+2000;break;
+    case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
+    case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
@@ -538,8 +589,10 @@ function handleEvents(){
       case'upDone':if(e.a===me){feed(t('m_upDone',e.s.type==='city'?esc(cityName(e.s.name,UI.lang)):t('s_'+e.s.type),e.s.level),'good');sfx('era');addFx('ring',e.s.x,e.s.y,{r:5,col:'#ffe9a8',dur:900});UI.bKey='';}break;
       case'train':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
       case'trade':if(e.a===me){addFx('text',e.x,e.y,{s:'+'+e.amt,dur:1400,col:'#ffe9a8'});sfx('trade');}break;
-      case'dead':if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
+      case'dead':if(e.a===me&&e.tr>0){addFx('sword',e.x,e.y,{s:'+'+fmt(e.tr),dur:2600});sfx('city');}if(e.d===me&&g.o.mp){banner(t('mpDead'),'bad');feed(t('mpDead'),'bad');sfx('lose');}break;
       case'proposal':{if(e.b!==me)break;const d=toast(`<span>${t('m_prop',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button><button class="btn sm" data-a="find:${A.id}">${t('b_focus')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
+      case'emo':if(e.to===me&&e.a!==me)feed(t('m_emo',nmh(A),EMO[e.e-1]));break;
+      case'emb':if(e.d===me&&e.a!==me)feed(t(e.v?'m_embOn':'m_embOff',nmh(A)),e.v?'bad':'good');else if(!e.d&&e.a!==me&&e.v&&g.nations[me]&&g.nb&&g.nb[me*g.nations.length+e.a]>0)feed(t('m_embAll',nmh(A)),'bad');break;
       case'peaceProp':{if(e.b!==me)break;const d=toast(`<span>${t('m_peaceProp',nmh(A))}</span><button class="btn sm" data-a="acc:${A.id}">${t('yes')}</button><button class="btn sm" data-a="rej:${A.id}">${t('no')}</button>`,'prop',0);if(d)d.dataset.from=A.id;sfx('coin');break;}
       case'peace':if(e.a===me||e.b===me){feed(t('m_peace',nmh(N[e.a===me?e.b:e.a])),'good');sfx('city');UI.cardKey='';}break;
       case'peaceRej':if(e.b===me){feed(t(e.why==='weak'?'m_peaceWeak':e.why==='trust'?'m_peaceTrust':'m_peaceNo',nmh(A)),'bad');}break;
@@ -615,6 +668,8 @@ function bindInput(){
   cv.addEventListener('wheel',e=>{e.preventDefault();if(G&&!G.o.demo){const q=xy(e);zoomAt(G,q.x,q.y,Math.exp(-e.deltaY*.0016));}},{passive:false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
+  $('#app').addEventListener('change',e=>{if(e.target.id==='auKeep'||e.target.id==='auMax'||e.target.id==='auRate'){const a=auCfg();a[{auKeep:'keep',auMax:'max',auRate:'rate'}[e.target.id]]=+e.target.value;saveProf();UI.auNext=0;}});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
@@ -645,7 +700,7 @@ function boot(){
   {const c=mk(64,64),x=c.getContext('2d');x.drawImage(R.glyph.nuke,8,8,48,48);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(32,32,29,0,7);x.stroke();R.glyph.doom=c;R.url.doom=c.toDataURL();}
   resize();addEventListener('resize',()=>{applyMode();resize();placeAmode();});
   if(window.ResizeObserver)new ResizeObserver(resize).observe(cv);
-  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);addEventListener('pagehide',()=>{if(NET.on)netClose();});
+  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};

@@ -1,5 +1,6 @@
 // ── SIJAL · AI leaders: expansion, war, building, diplomacy ──
-function say(g,n,key,to){emit(g,'say',{a:n.id,key,to});}
+const SAY_EMO={war:11,betray:13,peace:22,ally:21,reject:7,arms:24};
+function say(g,n,key,to){emit(g,'say',{a:n.id,key,to});const e=SAY_EMO[key];if(e)setEmo(g,n.id,e,to);}
 function commonEnemy(g,a,b){const now=g.tick;for(const e of g.nations)if(e&&e.alive&&e!==a&&e!==b&&now-a.lastHit[e.id]<600&&(now-b.lastHit[e.id]<600||now-b.lastAtk[e.id]<600))return true;return false;}
 function aiAccepts(g,B,A){
   const P=PERS[B.pers];let allies=0;for(const n of g.nations)if(n&&n.alive&&B.ally[n.id])allies++;

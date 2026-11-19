@@ -240,6 +240,14 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .ping.good{color:var(--good)}.ping.warn{color:var(--warn)}.ping.bad{color:var(--bad)}
 .room span{color:var(--gold2);font-variant-numeric:tabular-nums}
 /* rank ladder */
+.emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
+.emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
+.emg button:active{transform:scale(.92)}
+.auf{display:flex;flex-direction:column;gap:8px;padding:6px 0}
+.aul{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+.aul select{background:rgba(0,0,0,.3);color:inherit;border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit}
+.ts.au{padding:6px 8px;font-size:13px;gap:6px}
+.ts.au .btn.sm{padding:4px 10px;min-width:0}
 .accb{width:min(420px,100%);background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
 .accb h3{margin:0}.accb p{margin:0}
 .accf{display:flex;flex-direction:column;gap:8px;width:100%}

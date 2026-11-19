@@ -16,7 +16,7 @@ function emit(g,t,d){d=d||{};d.t=t;d.tick=g.tick;g.ev.push(d);}
 function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
-    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),pg:new Float32Array(128),pAsk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
+    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),pg:new Float32Array(128),emb:new Uint8Array(128),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
@@ -104,7 +104,7 @@ function setOwner(g,i,o){
   if(o){const P=g.nations[o];P.tiles++;P.val+=v;}
   g.dirty.push(i);
   const si=g.structAt[i];if(si)captured(g,g.structs[si-1],old,o);
-  if(old){const O=g.nations[old];if(O.alive&&O.tiles<=0)killNation(g,O,o);}
+  if(old){const O=g.nations[old];if(O.alive&&O.tiles<=0)killNation(g,O,o,i%g.W,(i/g.W)|0);}
 }
 function captured(g,s,old,o){
   if(g.annexing&&s.type==='city'){touchStruct(g,s,old,-1);s.owner=o;touchStruct(g,s,o,1);s.capital=false;s.grow=0;return;}
@@ -144,14 +144,16 @@ function collapseNation(g,O,o,s){
   if(!O.alive)return;emit(g,'collapse',{d:O.id,a:o});
   const own=g.owner,W=g.W,keep=[];for(const t of g.structs)if(!t.dead&&t.owner===O.id&&t.type!=='mon')keep.push(t.x,t.y);
   for(let i=0;i<g.N;i++)if(own[i]===O.id){const x=i%W,y=(i/W)|0,dx=x-s.x,dy=y-s.y;let mine=dx*dx+dy*dy<=225;for(let k=0;k<keep.length&&!mine;k+=2)mine=(x-keep[k])**2+(y-keep[k+1])**2<=9;setOwner(g,i,mine?o:0);}
-  if(O.alive)killNation(g,O,o);
+  if(O.alive)killNation(g,O,o,s.x,s.y);
 }
-function killNation(g,O,by){
-  if(!O.alive)return;O.alive=false;O.troops=0;
-  const B=g.nations[by];if(B){B.gold+=O.gold*.5;B.st.kills++;}O.gold=0;
+function killNation(g,O,by,x,y){
+  if(!O.alive)return;O.alive=false;
+  // the victor takes in what is left of the fallen army, its marching columns included
+  let left=O.troops;for(const k of g.attacks)if(k.a===O.id){left+=k.troops;k.troops=0;}const B=g.nations[by],tr=B&&B.alive?Math.floor(left*.6):0;O.troops=0;
+  if(B){B.gold+=O.gold*.5;B.st.kills++;B.troops+=tr;}O.gold=0;if(x==null&&B&&B.cap){x=B.cap.x;y=B.cap.y;}
   for(const s of g.structs)if(!s.dead&&s.owner===O.id)killStruct(g,s);
   for(const n of g.nations)if(n){n.ally[O.id]=0;O.ally[n.id]=0;}
-  emit(g,'dead',{d:O.id,a:by});
+  emit(g,'dead',{d:O.id,a:by,tr,x:x|0,y:y|0});
 }
 
 // annexation: a realm whose every land border is yours, and whose army is smaller, can be absorbed without a fight
@@ -235,7 +237,7 @@ function tickAttacks(g){
         if(g.fall[i]>now){h.push(g.fall[i]+1,i);continue;}
         if(!adjOwn(g,i,k.a))continue;
         const c=tileCost(g,k,i,A,D);if(k.troops<c){done=true;break;}
-        k.troops-=c;k.gain++;A.st.conq++;
+        k.troops-=c;k.gain++;A.st.conq++;{const x=i%g.W,y=(i/g.W)|0;if(k.fx==null){k.fx=x;k.fy=y;}else{k.fx+=(x-k.fx)*.08;k.fy+=(y-k.fy)*.08;}}
         if(D){D.troops-=Math.min(D.troops,D.troops/Math.max(D.tiles,25)+garrison(g,i,D)*.5);D.st.lost++;D.lastHitAny=now;D.lastHit[k.a]=now;A.lastAtk[k.d]=now;}
         if(g.structAt[i]){const fs=g.structs[g.structAt[i]-1];if(fs.type==='fort'&&k.troops>=700000*fs.level)killStruct(g,fs);}
         setOwner(g,i,k.a);
@@ -324,7 +326,7 @@ function railBuild(g,f){g.rails=g.rails.filter(r=>r.f!==f||r.trade);for(const p 
 // the up-to-3 nearest cities of neighbours at peace that trains from (x,y) can reach
 function trainTargets(g,owner,x,y){
   const A=g.nations[owner],now=g.tick,c=[];
-  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===owner)continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[owner]<=300)continue;
+  for(const s of g.structs){if(s.dead||s.type!=='city'||!s.owner||s.owner===owner||!tradeOk(g,owner,s.owner))continue;const O=g.nations[s.owner];if(O.minor||now-A.lastHit[s.owner]<=300||now-O.lastHit[owner]<=300)continue;
     const d=(s.x-x)**2+(s.y-y)**2;if(d<=4900)c.push([d,s]);}
   c.sort((a,b)=>a[0]-b[0]||a[1].i-b[1].i);return c.slice(0,3).map(e=>e[1]);
 }
@@ -342,9 +344,15 @@ function tickTrains(g){
       else if(b.dir<0&&b.p<=0){const amt=Math.round((50+b.path.length*2)*(1+.25*(A.era-1))*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'train',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trains[j]=g.trains[g.trains.length-1];g.trains.pop();}}
 }
+// trade embargo: a realm can stop trading with one neighbour or with everyone; either side refusing stops ships and trains
+function tradeOk(g,a,b){const A=g.nations[a],B=g.nations[b];return!A.embAll&&!B.embAll&&!A.emb[b]&&!B.emb[a];}
+function setEmb(g,a,d,v){const A=g.nations[a];if(!A)return;v=v?1:0;if(d){if(g.nations[d])A.emb[d]=v;}else{A.embAll=v;if(!v)A.emb.fill(0);}
+  for(const L of[g.trades,g.trains])for(let j=L.length-1;j>=0;j--){const b=L[j],o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)){L[j]=L[L.length-1];L.pop();}}emit(g,'emb',{a,d,v});}
+// emoji over a realm for everyone to see (optionally aimed at one realm), at most one every 3 seconds
+function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
 function launchTrade(g,s){
   const A=g.nations[s.owner],now=g.tick,c=[];
-  for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
+  for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&tradeOk(g,s.owner,p.owner)&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
   if(!c.length)return;const d=c[(g.rng()*c.length)|0],rt=s.rt||(s.rt={});let path=rt[d.i];
   if(path===undefined)path=rt[d.i]=portPath(g,s,d,true)||portPath(g,s,d,false);if(!path||path.length<4)return;
   g.trades.push({a:s.owner,lv:s.level,from:s,to:d,path,p:0,dir:1,spd:.45*(FAC[A.fac].boat||1)});
