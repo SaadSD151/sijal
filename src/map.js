@@ -59,7 +59,7 @@ function genMap(o){
   for(let i=0;i<N;i++)if(riv[i]&&land[i]){const x=i%W;for(const n of[i,x>0?i-1:i,x<W-1?i+1:i,i>=W?i-W:i,i<N-W?i+W:i]){if(!land[n])continue;if(ter[n]===4)ter[n]=2;if(riv[n]<2)riv[n]=riv[n]||2;}}
   for(let i=0;i<N;i++)if(land[i])val[i]=T_VAL[ter[i]]+(riv[i]?.35:0);
   // neutral cities
-  const cities=[],used=new Set(),nc=clamp(Math.round(landN/1100),6,90);
+  const cities=[],used=new Set(),nc=clamp(Math.round(landN/1700),5,60);
   for(let t=0;t<nc*120&&cities.length<nc;t++){
     const x=4+(rng()*(W-8))|0,y=4+(rng()*(H-8))|0,i=y*W+x,tt=ter[i];if(tt<2||tt===6)continue;
     if(rng()>(cd[i]<=2?.5:0)+(riv[i]?.4:0)+T_VAL[tt]*.5+.12)continue;

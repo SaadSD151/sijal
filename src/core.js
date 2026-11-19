@@ -2,9 +2,10 @@
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
 const T_DELAY=[0,0,1.5,2.3,1.8,3,6.5,2.9],T_COST=[0,0,11,17,14,26,60,22],T_DEF=[0,0,1,1.3,.9,1.6,2.6,1.25],T_VAL=[0,0,1,.75,.3,.5,.12,.22];
-const ST={city:{era:1,cost:300,inc:.5},fort:{era:1,cost:150,inc:.35},port:{era:2,cost:250,inc:.5},factory:{era:3,cost:800,inc:.5},coast:{era:2,cost:300,inc:.4},silo:{era:3,cost:1000,inc:.5},shield:{era:3,cost:700,inc:.4},mon:{era:4,cost:12000,inc:0}};
+// each further building of a kind costs `mul` times the previous one
+const ST={city:{era:1,cost:400,mul:1.4},fort:{era:1,cost:200,mul:1.3},port:{era:2,cost:400,mul:1.45},factory:{era:3,cost:1200,mul:1.5},coast:{era:2,cost:350,mul:1.35},silo:{era:3,cost:1500,mul:1.5},shield:{era:3,cost:900,mul:1.4},mon:{era:4,cost:15000,mul:1}};
 const MSL={rocket:{era:3,cost:900,r:4,cd:50},nuke:{era:4,cost:6000,r:10,cd:50},doom:{era:4,cost:18000,r:20,cd:50}};
-const ERA_COST=[0,800,3000,9000];
+const ERA_COST=[0,1500,6000,18000];
 const ULT={blitz:{cost:200,cd:900},wall:{cost:200,cd:900},levy:{cost:250,cd:1000},bribe:{cost:400,cd:1000,tg:1},tsunami:{cost:400,cd:1000,tg:1},beam:{cost:400,cd:900,tg:1}};
 const FAC={
   hawks:{c:[226,158,44],spd:.78,ult:'blitz'},

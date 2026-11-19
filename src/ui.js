@@ -455,7 +455,7 @@ function structNear(g,i,o){const W=g.W,x0=i%W,y0=(i/W)|0;let b=null,bd=9;for(let
 function effText(s,lv){
   switch(s.type){
     case'city':return t('ef_city',fmt(4000*lv*(s.capital?1.5:1)),1+lv);
-    case'fort':return t('ef_fort',5+lv-1,fmt(70000*lv),R_FORT+lv-1);
+    case'fort':return t('ef_fort',5+lv-1,fmt(60000*lv),R_FORT+lv-1);
     case'port':return t('ef_port',2*lv,35*(lv-1));
     case'coast':return t('ef_coast',13+2*(lv-1),35*(lv-1));
     case'silo':return t('ef_silo',15*(lv-1));

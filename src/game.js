@@ -77,7 +77,7 @@ function defOf(g,n){
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
 function nearestCity(g,owner,x,y){let b=null,bd=1e9;for(const s of g.structs)if(!s.dead&&s.type==='city'&&s.owner===owner){const d=(s.x-x)**2+(s.y-y)**2;if(d<bd){bd=d;b=s;}}return b;}
 function portOk(g,i){const W=g.W,b=g.M.big,x=i%W;return(x>0&&b[i-1])||(x<W-1&&b[i+1])||(i>=W&&b[i-W])||(i<g.N-W&&b[i+W])?true:false;}
-function buildCost(g,n,type){const s=ST[type];let c=s.cost*(1+s.inc*n.cnt[type]);if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
+function buildCost(g,n,type){const s=ST[type];let c=s.cost;for(let k=0;k<n.cnt[type];k++)c*=s.mul;if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
 function canBuild(g,n,type,i){
   const s=ST[type];if(n.era<s.era)return'era';if(n.gold<buildCost(g,n,type))return'gold';if(type==='mon'&&n.mon)return'busy';
   if(i==null||i<0)return 0;
@@ -240,7 +240,7 @@ function tickAttacks(g){
         const c=tileCost(g,k,i,A,D);if(k.troops<c){done=true;break;}
         k.troops-=c;k.gain++;A.st.conq++;{const x=i%g.W,y=(i/g.W)|0;if(k.fx==null){k.fx=x;k.fy=y;}else{k.fx+=(x-k.fx)*.08;k.fy+=(y-k.fy)*.08;}}
         if(D){D.troops-=Math.min(D.troops,D.troops/Math.max(D.tiles,25)+garrison(g,i,D)*.5);D.st.lost++;D.lastHitAny=now;D.lastHit[k.a]=now;A.lastAtk[k.d]=now;}
-        if(g.structAt[i]){const fs=g.structs[g.structAt[i]-1];if(fs.type==='fort'&&k.troops>=700000*fs.level)killStruct(g,fs);}
+        if(g.structAt[i]){const fs=g.structs[g.structAt[i]-1];if(fs.type==='fort'&&k.troops>=60000*fs.level)killStruct(g,fs);}
         setOwner(g,i,k.a);
         if(D&&!D.alive){done=true;break;}
         pushNb(g,k,i);
@@ -539,7 +539,7 @@ function callArms(g,a,target){
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
     n.mSpd=(f.spd||1)*(now<n.blitz?.5:1);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1);
-    const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0048*x*(1-x):-(n.troops-n.maxT)*.02;
+    const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0046*x*(1-x):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
     n.troops+=gr;n.gold+=n.income/TPS;}
 }
@@ -548,12 +548,13 @@ function structPass(g){
   for(const s of g.structs)if(!s.dead&&s.type==='port')ports++;
   for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;if(s.type==='factory')railBuild(g,s);}
     if(s.upAt&&s.upAt<=g.tick){s.upAt=0;s.level=Math.min(5,s.level+1);n.defDirty=true;emit(g,'upDone',{a:n.id,s});}
-    if(s.type==='city'){const rn=s.ruin>g.tick;n._pop+=4000*s.level*(s.capital?1.5:1)*(rn?.3:1);if(!rn)n._inc+=1+s.level;
+    if(s.type==='city'){const rn=s.ruin>g.tick;n._pop+=s.level*(s.capital?1.5:1)*(rn?.3:1);if(!rn)n._inc+=1+s.level;
       if(!rn&&!s.upAt&&s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}
     else if(s.type==='factory'){n._inc+=3*s.level;if(g.tick>=(s.rr||0)){s.rr=g.tick+600;railBuild(g,s);}if(g.tick>=(s.tcd||0)){s.tcd=g.tick+Math.max(110,240-28*(s.level-1))+((g.rng()*100)|0);launchTrain(g,s);}}
     else if(s.type==='port'){n._inc+=2*s.level*(FAC[n.fac].port||1);if(g.tick>=(s.tcd||0)){s.tcd=g.tick+Math.max(120,250-30*(s.level-1))+((g.rng()*120)|0);launchTrade(g,s);}}}
   for(const n of ns)if(n&&n.alive){const f=FAC[n.fac];
-    n.maxT=6000+n.val*120*(1+.12*(n.era-1))+n._pop;if(n.minor)n.maxT*=.5;
+    // troop ceiling grows with land and cities, but with diminishing returns so huge empires do not reach millions
+    n.maxT=18000+2700*Math.sqrt(n.val)*(1+.1*(n.era-1))+9500*Math.sqrt(n._pop);if(n.minor)n.maxT*=.5;
     n.income=(3+n.val*.003+n._inc)*(f.gold||1)*g.sGold*(1+.1*(n.era-1))*(n.human?1:g.diff.gold);
     if(n.tiles>n.st.peak)n.st.peak=n.tiles;}
 }
