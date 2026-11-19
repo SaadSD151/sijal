@@ -10,15 +10,15 @@ function aiAccepts(g,B,A){
 }
 function aiThink(g,n){
   if(n.minor){
-    // tribes: creep into free land, raid each other, and only rarely dare to raid a real realm
-    const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai;let has=false;for(const k of g.attacks)if(k.a===n.id)has=true;
-    if(has||n.troops/n.maxT<.5)return;
-    if(n.tiles<480&&g.nb[n.id*K]>0){launchAttack(g,n.id,0,.25,-1,-1);return;}
-    if(now<ai.nextWar)return;ai.nextWar=now+110+rng()*200;let best=null,bs=0;
-    for(const m of g.nations){if(!m||!m.alive||m===n||g.nb[n.id*K+m.id]<3)continue;
-      if(!m.minor&&(rng()>.05||(m.human&&now<g.grace)))continue;
-      const s=n.troops/(m.troops+1)*(m.minor?1:3)+rng()*.4;if(s>.9&&s>bs){bs=s;best=m;}}
-    if(best){const c=nearestCity(g,best.id,n.cx,n.cy);launchAttack(g,n.id,best.id,.45,c?c.x:-1,c?c.y:-1);}
+    // tribes are simple and greedy: everything above a 2000-man reserve goes on the attack, then they wait to refill
+    const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai,spare=n.troops-2000;if(spare<600||now<(ai.nextHit||0))return;ai.nextHit=now+15+((rng()*15)|0);
+    const r=spare/n.troops;let cur=null;for(const k of g.attacks)if(k.a===n.id&&!k.naval){cur=k;break;}
+    if(cur){launchAttack(g,n.id,cur.d,r,cur.tx,cur.ty,cur.focus);return;}
+    if(g.nb[n.id*K]>0){launchAttack(g,n.id,0,r,-1,-1);return;}
+    // no free land left next to them: hit the weakest neighbour (a real realm only now and then, and never a player during the grace period)
+    let best=null,bs=1e18;for(const m of g.nations){if(!m||!m.alive||m===n||g.nb[n.id*K+m.id]<1||n.ally[m.id]||now<n.truce[m.id])continue;
+      if(m.human&&now<g.grace)continue;if(!m.minor&&rng()>.35)continue;const s=m.troops/Math.max(1,m.tiles)+rng()*2;if(s<bs){bs=s;best=m;}}
+    if(best)launchAttack(g,n.id,best.id,r,-1,-1);
     return;
   }
   const ai=n.ai,P=PERS[n.pers],now=g.tick,K=g.nations.length,id=n.id,rng=g.rng,U=FAC[n.fac].ult,ratio=n.troops/n.maxT;

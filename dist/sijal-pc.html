@@ -400,7 +400,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='pc';(function(){"use strict";
-const BUILD_ID='c8176bef69';
+const BUILD_ID='69b42b7422';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1200,15 +1200,15 @@ function aiAccepts(g,B,A){
 }
 function aiThink(g,n){
   if(n.minor){
-    // tribes: creep into free land, raid each other, and only rarely dare to raid a real realm
-    const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai;let has=false;for(const k of g.attacks)if(k.a===n.id)has=true;
-    if(has||n.troops/n.maxT<.5)return;
-    if(n.tiles<480&&g.nb[n.id*K]>0){launchAttack(g,n.id,0,.25,-1,-1);return;}
-    if(now<ai.nextWar)return;ai.nextWar=now+110+rng()*200;let best=null,bs=0;
-    for(const m of g.nations){if(!m||!m.alive||m===n||g.nb[n.id*K+m.id]<3)continue;
-      if(!m.minor&&(rng()>.05||(m.human&&now<g.grace)))continue;
-      const s=n.troops/(m.troops+1)*(m.minor?1:3)+rng()*.4;if(s>.9&&s>bs){bs=s;best=m;}}
-    if(best){const c=nearestCity(g,best.id,n.cx,n.cy);launchAttack(g,n.id,best.id,.45,c?c.x:-1,c?c.y:-1);}
+    // tribes are simple and greedy: everything above a 2000-man reserve goes on the attack, then they wait to refill
+    const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai,spare=n.troops-2000;if(spare<600||now<(ai.nextHit||0))return;ai.nextHit=now+15+((rng()*15)|0);
+    const r=spare/n.troops;let cur=null;for(const k of g.attacks)if(k.a===n.id&&!k.naval){cur=k;break;}
+    if(cur){launchAttack(g,n.id,cur.d,r,cur.tx,cur.ty,cur.focus);return;}
+    if(g.nb[n.id*K]>0){launchAttack(g,n.id,0,r,-1,-1);return;}
+    // no free land left next to them: hit the weakest neighbour (a real realm only now and then, and never a player during the grace period)
+    let best=null,bs=1e18;for(const m of g.nations){if(!m||!m.alive||m===n||g.nb[n.id*K+m.id]<1||n.ally[m.id]||now<n.truce[m.id])continue;
+      if(m.human&&now<g.grace)continue;if(!m.minor&&rng()>.35)continue;const s=m.troops/Math.max(1,m.tiles)+rng()*2;if(s<bs){bs=s;best=m;}}
+    if(best)launchAttack(g,n.id,best.id,r,-1,-1);
     return;
   }
   const ai=n.ai,P=PERS[n.pers],now=g.tick,K=g.nations.length,id=n.id,rng=g.rng,U=FAC[n.fac].ult,ratio=n.troops/n.maxT;
@@ -1855,7 +1855,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your best time today is saved; try to beat it.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'3.5',d:'2026-11-19',ar:['⚖️ توازن جديد للعبة: الجنود يزيدون بشكل واقعي (حوالي 30 ألف بعد دقيقتين بدل ما توصل مليون)، والقيم يطول 15 لين 25 دقيقة','💰 المباني صارت أغلى: كل مبنى جديد من نفس النوع أغلى من اللي قبله بحوالي 40٪، والعصور أغلى','🏙️ المدن المحايدة في الخرائط صارت أقل، وأيقونات المدن والمباني صارت أكبر','🛡️ دائرة الحصن والقبة والدفاع البحري صارت ما تتعدى حدودك، ولها خط واضح على طرفها','🤝 علامة التحالف تطلع جنب اسم أي دولة متحالف معها'],en:['⚖️ New balance: troops grow realistically (about 30K after two minutes instead of reaching a million), and a match lasts 15 to 25 minutes','💰 Buildings cost more: each new one of a kind costs about 40% more than the last, and ages cost more','🏙️ Fewer neutral cities on the maps, and bigger city and building icons','🛡️ Fort, dome and coastal gun areas stop at your border, with a clear outline on their edge','🤝 A handshake shows next to the name of every realm you are allied with']},
+ {v:'3.5',d:'2026-11-19',ar:['⚖️ توازن جديد للعبة: الجنود يزيدون بشكل واقعي (حوالي 30 ألف بعد دقيقتين بدل ما توصل مليون)، والقيم يطول 15 لين 25 دقيقة','💰 المباني صارت أغلى: كل مبنى جديد من نفس النوع أغلى من اللي قبله بحوالي 40٪، والعصور أغلى','🏙️ المدن المحايدة في الخرائط صارت أقل، وأيقونات المدن والمباني صارت أكبر','🛡️ دائرة الحصن والقبة والدفاع البحري صارت ما تتعدى حدودك، ولها خط واضح على طرفها','🤝 علامة التحالف تطلع جنب اسم أي دولة متحالف معها','🏕️ القبائل الصغيرة صارت تهجم على طول بكل جنودها وتخلي 2000 بس، فتكبر بسرعة من أول القيم'],en:['⚖️ New balance: troops grow realistically (about 30K after two minutes instead of reaching a million), and a match lasts 15 to 25 minutes','💰 Buildings cost more: each new one of a kind costs about 40% more than the last, and ages cost more','🏙️ Fewer neutral cities on the maps, and bigger city and building icons','🛡️ Fort, dome and coastal gun areas stop at your border, with a clear outline on their edge','🤝 A handshake shows next to the name of every realm you are allied with','🏕️ Small tribes now attack right away with everything above a 2000-man reserve, so they grow fast from the start']},
  {v:'3.4',d:'2026-11-19',ar:['🔢 رقم الجنود صار يمشي ورا خط الهجوم ويتحرك مع الجبهة كاملة، يميل مع الحدود ويكبر لما الجبهة تكبر','🌾 رقم الجنود ما يطلع لما تهجم على أرض فاضية، بس لما تهجم على دولة'],en:['🔢 The troop count now rides behind the attack line and moves with the whole front, tilting along the border and growing with it','🌾 No troop count when you attack empty land, only against realms']},
  {v:'3.3',d:'2026-11-19',ar:['🟢 أي أرض فاضية تحاصرها بأرضك من كل الجهات تنضم لك تلقائياً مهما كان حجمها، وتتعبّى من الأطراف للنص بأنميشن','🎯 القائمة الدائرية صارت أوضح وأجمل: تحت كل زر كلمة تشرحه (هجوم، بحري، البطاقة، صواريخ، كل الحدود)','🖱️ كلك يمين في الكمبيوتر ما يطلّع قائمة المتصفح فوق الدائرة','🗡️ السيفين لما تقضي على دولة صاروا أصغر'],en:['🟢 Any empty land you ring on every side joins you automatically whatever its size, filling from the edges inward','🎯 A clearer, nicer radial menu: a word under each button (Attack, By sea, Card, Missiles, All borders)','🖱️ Right click on PC no longer opens the browser menu over the circle','🗡️ Smaller crossed swords when you wipe out a realm']},
  {v:'3.2',d:'2026-11-19',ar:['😡 البوتات الكبار صارت ترد عليك بإيموجي: لو هجمت عليها أو غدرت فيها أو أنهيت تحالف كانت تبيه، ولو رفضت لأنها ما تثق فيك، ولو أهديتها ذهب','💬 أسباب رفض السلام والتحالف صارت كثيرة وواقعية وتتغير كل مرة','🏗️ كل المباني تنبني خلال 6 ثواني بدل 10','🔢 رقم جنود العدو على حدودك صار ثابت مثل رقمك','🎮 قائمة الجرافيكس توضح وش ضحّينا فيه بالمنخفض عشان السلاسة، ووش أضفنا بالعالي، والفصول باقية في كل المستويات'],en:['😡 Big bots now answer you with emojis: when you attack or betray them, end an alliance they wanted, refuse you for lack of trust, or receive your gold','💬 Many varied, realistic reasons when peace or alliance is refused','🏗️ Every building finishes in 6 seconds instead of 10','🔢 The enemy troop count on your border is now as steady as yours','🎮 The graphics menu explains what Low gives up for smoothness and what High adds']},
