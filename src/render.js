@@ -122,6 +122,33 @@ function makeGlyphs(){
 }
 function addFx(type,x,y,o){R.fx.push(Object.assign({type,x,y,t:0,dur:900},o));}
 const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.PI*t)*Math.hypot(m.tx-m.sx,m.ty-m.sy)*.28);
+// where to write the troops of each front I am in: on the shared border, at the border tile nearest its middle
+// (or nearest the target of a focused push); after that it follows the front from where it was, eased on screen so it does not jump
+function frontSpots(g,me,ts){
+  R.front=R.front||{};if(ts-(R.frontT||0)<450)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,ter=g.M.ter,N=g.N,by={};
+  for(const k of g.attacks){if(k.a!==me&&k.d!==me)continue;const o=k.a===me?k.d:k.a;(by[o]||(by[o]=[])).push(k);}
+  const os=Object.keys(by);if(!os.length){R.front={};return;}const S={};for(const o of os)S[o]={x:0,y:0,n:0};
+  const nbOf=(i,x,y,f)=>{if(x>0)f(i-1);if(x<W-1)f(i+1);if(y>0)f(i-W);if(y<H-1)f(i+W);};
+  for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let hit=null;nbOf(i,x,y,j=>{const o=own[j];if(ter[j]>=2&&o!==me&&S[o]&&hit!==o){hit=o;const A=S[o];A.x+=x;A.y+=y;A.n++;}});}
+  const best={};for(const o of os){const A=S[o];if(!A.n)continue;for(const k of by[o]){const P=R.front[k.id],foc=k.focus&&k.tx>=0,fx=foc?k.tx:P?P.x:A.x/A.n,fy=foc?k.ty:P?P.y:A.y/A.n;best[k.id]={k,fx,fy,o:+o,d:1e18,x:fx,y:fy};}}
+  for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let adj=-1;nbOf(i,x,y,j=>{if(ter[j]>=2&&own[j]!==me&&S[own[j]])adj=own[j];});if(adj<0)continue;
+    for(const id in best){const B=best[id];if(B.o!==adj)continue;const d=(x-B.fx)**2+(y-B.fy)**2;if(d<B.d){B.d=d;B.x=x;B.y=y;}}}
+  const out={};for(const id in best){const B=best[id],P=R.front[id];out[id]={x:B.x,y:B.y,sx:P&&P.sx!=null?P.sx:B.x,sy:P&&P.sy!=null?P.sy:B.y};}R.front=out;
+}
+// a sword drawn in place: pivot at the hand, blade pointing up at angle 0
+function drawSword(c,x,y,L,ang){
+  c.save();c.translate(x,y);c.rotate(ang);c.shadowColor='rgba(0,0,0,.55)';c.shadowBlur=R.q?8:0;c.shadowOffsetY=2;
+  const bw=L*.075,bl=L*.72,g0=c.createLinearGradient(-bw,0,bw,0);g0.addColorStop(0,'#8b96a3');g0.addColorStop(.45,'#f4f8fb');g0.addColorStop(.55,'#d5dde5');g0.addColorStop(1,'#6e7884');
+  c.fillStyle=g0;c.beginPath();c.moveTo(-bw,-L*.06);c.lineTo(-bw*.92,-bl);c.lineTo(0,-bl-L*.12);c.lineTo(bw*.92,-bl);c.lineTo(bw,-L*.06);c.closePath();c.fill();
+  c.shadowBlur=0;c.shadowOffsetY=0;c.strokeStyle='rgba(60,70,82,.85)';c.lineWidth=1;c.stroke();
+  c.strokeStyle='rgba(120,132,146,.9)';c.lineWidth=Math.max(1,bw*.35);c.beginPath();c.moveTo(0,-L*.1);c.lineTo(0,-bl*.88);c.stroke();
+  const gw=L*.27,gh=L*.055,g1=c.createLinearGradient(0,-gh,0,gh);g1.addColorStop(0,'#ffe9a0');g1.addColorStop(.5,'#d4a437');g1.addColorStop(1,'#8a6416');
+  c.fillStyle=g1;c.beginPath();c.moveTo(-gw,-gh*.5);c.quadraticCurveTo(-gw*1.1,-gh*1.6,-gw*.75,-gh*1.1);c.lineTo(gw*.75,-gh*1.1);c.quadraticCurveTo(gw*1.1,-gh*1.6,gw,-gh*.5);c.lineTo(gw*.7,gh);c.lineTo(-gw*.7,gh);c.closePath();c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
+  const hl=L*.2,hw=bw*.85,g2=c.createLinearGradient(-hw,0,hw,0);g2.addColorStop(0,'#3a2414');g2.addColorStop(.5,'#7a4a26');g2.addColorStop(1,'#2a180c');c.fillStyle=g2;c.fillRect(-hw,gh,hw*2,hl);
+  c.strokeStyle='rgba(20,10,4,.7)';c.lineWidth=1;for(let k=1;k<5;k++){const yy=gh+hl*k/5;c.beginPath();c.moveTo(-hw,yy-1.5);c.lineTo(hw,yy+1.5);c.stroke();}
+  const pr=L*.055;c.fillStyle=g1;c.beginPath();c.arc(0,gh+hl+pr*.8,pr,0,7);c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
+  c.restore();
+}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
 function draw(g,dt,ts){
@@ -159,7 +186,8 @@ function draw(g,dt,ts){
     const r=Math.max(9,z*2.4)+Math.sin(ts/220)*2;c.strokeStyle=b.a===me?'rgba(255,233,168,.95)':'rgba(255,90,70,.95)';c.lineWidth=2.5;c.setLineDash([5,4]);c.lineDashOffset=-ts/60;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.setLineDash([]);
     c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.stroke();}
   // troops pushing on each front that involves me
-  if(me){c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.fx==null||k.troops<1)continue;const q=w2s(k.fx+.5,k.fy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
+  if(me){frontSpots(g,me,ts);c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
+    F.sx+=(F.x-F.sx)*.12;F.sy+=(F.y-F.sy)*.12;const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
     c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,fmt(k.troops),q.x,q.y,k.a===me?'#8fd3ff':'#ff9a8a');}}
   // trade ships: small, white-sailed, shuttling between ports
   for(const b of g.trades){
@@ -251,10 +279,18 @@ function draw(g,dt,ts){
       c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();c.strokeStyle=`rgba(255,235,200,${.8*(1-f.t)})`;c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,rr*1.08,0,7);c.stroke();
     }else if(f.type==='ring'){c.strokeStyle=f.col||'#ffe9a8';c.globalAlpha=1-f.t;c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,(f.r||8)*z*e+4,0,7);c.stroke();c.globalAlpha=1;}
     else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
-    else if(f.type==='sword'){const pop=f.t<.15?f.t/.15:1,q=46*(f.t<.15?.4+pop*.75:1.15-.15*Math.min(1,(f.t-.15)*3)),a=f.t>.75?(1-f.t)/.25:1;c.globalAlpha=a;
-      c.save();c.translate(p.x,p.y-30-e*24);c.rotate(f.t<.15?(1-pop)*.8:0);c.shadowColor='rgba(255,210,120,.9)';c.shadowBlur=R.q?14:0;c.drawImage(R.glyph.sword,-q/2,-q/2,q,q);c.restore();
-      c.font=`800 22px ${FONT}`;c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-30-e*24+q*.75,'#ffe9a8');c.globalAlpha=1;}
-    else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
+    else if(f.type==='sword'){
+      // a drawn steel sword slashes down with a light trail, rests, then fades with the troops taken
+      const T=f.t,sw=Math.min(1,T/.22),ease=1-(1-sw)**3,a=T>.78?(1-T)/.22:1,L=clamp(z*11,76,110),cx=p.x,cy=p.y-30;
+      c.globalAlpha=a;
+      // two swords swing in from either side and lock in a cross
+      const A2=-2.1+ease*(2.1-.62),wob=T>.22&&T<.78?Math.sin((T-.22)*18)*.02:0;
+      if(T<.4){const k=T<.22?1:1-(T-.22)/.18;c.lineCap='round';for(const m of[1,-1]){c.strokeStyle=`rgba(255,248,225,${.5*k})`;c.lineWidth=L*.14;c.beginPath();if(m>0)c.arc(cx,cy,L*.78,-2.1-Math.PI/2,A2-Math.PI/2,false);else c.arc(cx,cy,L*.78,2.1-Math.PI/2,-A2-Math.PI/2,true);c.stroke();}}
+      drawSword(c,cx,cy,L,A2+wob);drawSword(c,cx,cy,L,-A2-wob);
+      if(T>.2&&T<.34){const k=1-(T-.2)/.14;c.fillStyle=`rgba(255,240,190,${.9*k})`;c.beginPath();c.arc(cx,cy-L*.46,L*.1*(1+(1-k)*1.5),0,7);c.fill();}
+      if(T>.18){const k=Math.min(1,(T-.18)/.1);c.font=`800 ${Math.round(20+4*k)}px ${FONT}`;c.lineWidth=4.5;c.strokeStyle='rgba(6,12,20,.92)';c.direction='ltr';txt(c,f.s,cx,cy+L*.62+(1-k)*8,'#ffe08a');c.direction='inherit';}
+      c.globalAlpha=1;}
+    else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';if(/^[+\-\d]/.test(f.s))c.direction='ltr';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.direction='inherit';c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand
   if(UI.mode&&(UI.pend>=0||UI.hover>=0)&&me){

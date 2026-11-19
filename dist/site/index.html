@@ -412,7 +412,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='5eee74b744';
+const BUILD_ID='cd93cce15d';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -673,7 +673,6 @@ function captured(g,s,old,o){
   if(!old){emit(g,'cityJoin',{a:o,s});if(P)P.gold+=60*s.level;flipAround(g,s,o,4);return;}
   const O=g.nations[old];if(s.level>1)s.level--;
   emit(g,'cityFall',{a:o,d:old,s,cap:s.capital});
-  surrender(g,s,O,o);
   if(s.capital){
     s.capital=false;let best=null;
     for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===old&&(!best||c.level>best.level))best=c;
@@ -800,7 +799,7 @@ function tickAttacks(g){
         if(D&&!D.alive){done=true;break;}
         pushNb(g,k,i);
       }
-      if(!done&&!h.size){if(k.focus)done=true;else if(now-k.reseed>10){k.reseed=now;if(!seedAttack(g,k))done=true;}}
+      if(!done&&!h.size){if(k.focus)done=true;else if(now-k.reseed>2){k.reseed=now;if(!seedAttack(g,k))done=true;}}
     }
     if(done){if(A.alive&&k.troops>0)A.troops+=k.troops;emit(g,'atkEnd',{a:k.a,d:k.d,gain:k.gain,id:k.id});g.attacks[ai]=g.attacks[g.attacks.length-1];g.attacks.pop();}
   }
@@ -1473,6 +1472,33 @@ function makeGlyphs(){
 }
 function addFx(type,x,y,o){R.fx.push(Object.assign({type,x,y,t:0,dur:900},o));}
 const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.PI*t)*Math.hypot(m.tx-m.sx,m.ty-m.sy)*.28);
+// where to write the troops of each front I am in: on the shared border, at the border tile nearest its middle
+// (or nearest the target of a focused push); after that it follows the front from where it was, eased on screen so it does not jump
+function frontSpots(g,me,ts){
+  R.front=R.front||{};if(ts-(R.frontT||0)<450)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,ter=g.M.ter,N=g.N,by={};
+  for(const k of g.attacks){if(k.a!==me&&k.d!==me)continue;const o=k.a===me?k.d:k.a;(by[o]||(by[o]=[])).push(k);}
+  const os=Object.keys(by);if(!os.length){R.front={};return;}const S={};for(const o of os)S[o]={x:0,y:0,n:0};
+  const nbOf=(i,x,y,f)=>{if(x>0)f(i-1);if(x<W-1)f(i+1);if(y>0)f(i-W);if(y<H-1)f(i+W);};
+  for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let hit=null;nbOf(i,x,y,j=>{const o=own[j];if(ter[j]>=2&&o!==me&&S[o]&&hit!==o){hit=o;const A=S[o];A.x+=x;A.y+=y;A.n++;}});}
+  const best={};for(const o of os){const A=S[o];if(!A.n)continue;for(const k of by[o]){const P=R.front[k.id],foc=k.focus&&k.tx>=0,fx=foc?k.tx:P?P.x:A.x/A.n,fy=foc?k.ty:P?P.y:A.y/A.n;best[k.id]={k,fx,fy,o:+o,d:1e18,x:fx,y:fy};}}
+  for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let adj=-1;nbOf(i,x,y,j=>{if(ter[j]>=2&&own[j]!==me&&S[own[j]])adj=own[j];});if(adj<0)continue;
+    for(const id in best){const B=best[id];if(B.o!==adj)continue;const d=(x-B.fx)**2+(y-B.fy)**2;if(d<B.d){B.d=d;B.x=x;B.y=y;}}}
+  const out={};for(const id in best){const B=best[id],P=R.front[id];out[id]={x:B.x,y:B.y,sx:P&&P.sx!=null?P.sx:B.x,sy:P&&P.sy!=null?P.sy:B.y};}R.front=out;
+}
+// a sword drawn in place: pivot at the hand, blade pointing up at angle 0
+function drawSword(c,x,y,L,ang){
+  c.save();c.translate(x,y);c.rotate(ang);c.shadowColor='rgba(0,0,0,.55)';c.shadowBlur=R.q?8:0;c.shadowOffsetY=2;
+  const bw=L*.075,bl=L*.72,g0=c.createLinearGradient(-bw,0,bw,0);g0.addColorStop(0,'#8b96a3');g0.addColorStop(.45,'#f4f8fb');g0.addColorStop(.55,'#d5dde5');g0.addColorStop(1,'#6e7884');
+  c.fillStyle=g0;c.beginPath();c.moveTo(-bw,-L*.06);c.lineTo(-bw*.92,-bl);c.lineTo(0,-bl-L*.12);c.lineTo(bw*.92,-bl);c.lineTo(bw,-L*.06);c.closePath();c.fill();
+  c.shadowBlur=0;c.shadowOffsetY=0;c.strokeStyle='rgba(60,70,82,.85)';c.lineWidth=1;c.stroke();
+  c.strokeStyle='rgba(120,132,146,.9)';c.lineWidth=Math.max(1,bw*.35);c.beginPath();c.moveTo(0,-L*.1);c.lineTo(0,-bl*.88);c.stroke();
+  const gw=L*.27,gh=L*.055,g1=c.createLinearGradient(0,-gh,0,gh);g1.addColorStop(0,'#ffe9a0');g1.addColorStop(.5,'#d4a437');g1.addColorStop(1,'#8a6416');
+  c.fillStyle=g1;c.beginPath();c.moveTo(-gw,-gh*.5);c.quadraticCurveTo(-gw*1.1,-gh*1.6,-gw*.75,-gh*1.1);c.lineTo(gw*.75,-gh*1.1);c.quadraticCurveTo(gw*1.1,-gh*1.6,gw,-gh*.5);c.lineTo(gw*.7,gh);c.lineTo(-gw*.7,gh);c.closePath();c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
+  const hl=L*.2,hw=bw*.85,g2=c.createLinearGradient(-hw,0,hw,0);g2.addColorStop(0,'#3a2414');g2.addColorStop(.5,'#7a4a26');g2.addColorStop(1,'#2a180c');c.fillStyle=g2;c.fillRect(-hw,gh,hw*2,hl);
+  c.strokeStyle='rgba(20,10,4,.7)';c.lineWidth=1;for(let k=1;k<5;k++){const yy=gh+hl*k/5;c.beginPath();c.moveTo(-hw,yy-1.5);c.lineTo(hw,yy+1.5);c.stroke();}
+  const pr=L*.055;c.fillStyle=g1;c.beginPath();c.arc(0,gh+hl+pr*.8,pr,0,7);c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
+  c.restore();
+}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
 function draw(g,dt,ts){
@@ -1510,7 +1536,8 @@ function draw(g,dt,ts){
     const r=Math.max(9,z*2.4)+Math.sin(ts/220)*2;c.strokeStyle=b.a===me?'rgba(255,233,168,.95)':'rgba(255,90,70,.95)';c.lineWidth=2.5;c.setLineDash([5,4]);c.lineDashOffset=-ts/60;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.setLineDash([]);
     c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.stroke();}
   // troops pushing on each front that involves me
-  if(me){c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.fx==null||k.troops<1)continue;const q=w2s(k.fx+.5,k.fy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
+  if(me){frontSpots(g,me,ts);c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
+    F.sx+=(F.x-F.sx)*.12;F.sy+=(F.y-F.sy)*.12;const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
     c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,fmt(k.troops),q.x,q.y,k.a===me?'#8fd3ff':'#ff9a8a');}}
   // trade ships: small, white-sailed, shuttling between ports
   for(const b of g.trades){
@@ -1602,10 +1629,18 @@ function draw(g,dt,ts){
       c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();c.strokeStyle=`rgba(255,235,200,${.8*(1-f.t)})`;c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,rr*1.08,0,7);c.stroke();
     }else if(f.type==='ring'){c.strokeStyle=f.col||'#ffe9a8';c.globalAlpha=1-f.t;c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,(f.r||8)*z*e+4,0,7);c.stroke();c.globalAlpha=1;}
     else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
-    else if(f.type==='sword'){const pop=f.t<.15?f.t/.15:1,q=46*(f.t<.15?.4+pop*.75:1.15-.15*Math.min(1,(f.t-.15)*3)),a=f.t>.75?(1-f.t)/.25:1;c.globalAlpha=a;
-      c.save();c.translate(p.x,p.y-30-e*24);c.rotate(f.t<.15?(1-pop)*.8:0);c.shadowColor='rgba(255,210,120,.9)';c.shadowBlur=R.q?14:0;c.drawImage(R.glyph.sword,-q/2,-q/2,q,q);c.restore();
-      c.font=`800 22px ${FONT}`;c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-30-e*24+q*.75,'#ffe9a8');c.globalAlpha=1;}
-    else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.globalAlpha=1;}
+    else if(f.type==='sword'){
+      // a drawn steel sword slashes down with a light trail, rests, then fades with the troops taken
+      const T=f.t,sw=Math.min(1,T/.22),ease=1-(1-sw)**3,a=T>.78?(1-T)/.22:1,L=clamp(z*11,76,110),cx=p.x,cy=p.y-30;
+      c.globalAlpha=a;
+      // two swords swing in from either side and lock in a cross
+      const A2=-2.1+ease*(2.1-.62),wob=T>.22&&T<.78?Math.sin((T-.22)*18)*.02:0;
+      if(T<.4){const k=T<.22?1:1-(T-.22)/.18;c.lineCap='round';for(const m of[1,-1]){c.strokeStyle=`rgba(255,248,225,${.5*k})`;c.lineWidth=L*.14;c.beginPath();if(m>0)c.arc(cx,cy,L*.78,-2.1-Math.PI/2,A2-Math.PI/2,false);else c.arc(cx,cy,L*.78,2.1-Math.PI/2,-A2-Math.PI/2,true);c.stroke();}}
+      drawSword(c,cx,cy,L,A2+wob);drawSword(c,cx,cy,L,-A2-wob);
+      if(T>.2&&T<.34){const k=1-(T-.2)/.14;c.fillStyle=`rgba(255,240,190,${.9*k})`;c.beginPath();c.arc(cx,cy-L*.46,L*.1*(1+(1-k)*1.5),0,7);c.fill();}
+      if(T>.18){const k=Math.min(1,(T-.18)/.1);c.font=`800 ${Math.round(20+4*k)}px ${FONT}`;c.lineWidth=4.5;c.strokeStyle='rgba(6,12,20,.92)';c.direction='ltr';txt(c,f.s,cx,cy+L*.62+(1-k)*8,'#ffe08a');c.direction='inherit';}
+      c.globalAlpha=1;}
+    else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';if(/^[+\-\d]/.test(f.s))c.direction='ltr';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.direction='inherit';c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand
   if(UI.mode&&(UI.pend>=0||UI.hover>=0)&&me){
@@ -1788,6 +1823,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your best time today is saved; try to beat it.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'3.1',d:'2026-11-19',ar:['🎯 قائمة دائرية: في الجوال اضغط على أي أرض، وفي الكمبيوتر كلك يمين. السيف في النص هجوم بري، والسفينة الزرقا هجوم بحري على نفس المكان، و«i» بطاقة الدولة، والمصافحة تحالف أو سلام','🚀 السيف الأحمر في الدائرة يفتح الصواريخ والهجوم من كل الحدود','⚔️ الهجوم ما يوقف لما تاخذ مدينة: تكمل الموجة بدون توقف','🔢 رقم جنودك على الجبهة صار ثابت على الحدود وما يرقص','🗡️ سيفين يتقاطعون لما تقضي على دولة','🛡️ دائرة للمنطقة اللي يحميها الدفاع البحري، وشرح أوضح للتطوير التلقائي'],en:['🎯 Radial menu: tap any land on a phone or right click on PC. The centre sword attacks by land, the blue ship attacks that spot by sea, i opens the realm card, and the handshake asks for alliance or peace','🚀 The red sword opens missiles and attack from all borders','⚔️ Attacks no longer pause when a city falls: the wave keeps rolling','🔢 Your troop count on a front now sits steady on the border','🗡️ Two crossed swords when you wipe out a realm','🛡️ A circle for the area each coastal gun protects, and clearer auto-upgrade settings']},
  {v:'3.0',d:'2026-11-19',ar:['🏰 اضغط على أرضك (بعيد عن المباني) وتطلع بطاقة دولتك: إيموجي، توقيف التجارة مع الكل، والتطوير التلقائي','⬆ التطوير التلقائي: تحدد حد ذهب ما ينزل تحته، وأقصى سعر للتطوير، وكم مبنى كل دقيقتين، ويسألك قبل كل تطوير برسالة صغيرة','😀 إيموجي فوق دولتك يشوفه الكل، وتقدر ترسل إيموجي لأي دولة من بطاقتها','⚔️ تشوف عدد جنودك على خط الهجوم، ودائرة على المكان اللي بتنزل فيه سفنك، وتاخذ جيش الدولة اللي تقضي عليها مع أنميشن السيف','🛡️ دائرة شفافة تبين المنطقة اللي يحميها الحصن وقبة الدفاع','🗺️ خريطتين جديدة: «سهول بلا بحر» و«جبال وأنهار»، وتقدر تختار عدد القبائل من 30 لين 120','🎮 الجرافيكس: منخفض ومتوسط وعالي من الإعدادات، والغرفة الأونلاين تختار لها من 2 لين 32 لاعب'],en:['🏰 Tap your land (away from buildings) for your realm card: emoji, stop trading with everyone, and auto upgrade','⬆ Auto upgrade: set gold it never goes below, the most one upgrade may cost, and how many per two minutes; it asks first with a small message','😀 Emojis over your realm for everyone to see, and you can send one to any realm from its card','⚔️ See your troops on the attack front, a circle where your ships will land, and take in the army of a realm you wipe out, with a sword animation','🛡️ A see-through circle shows the area each fort and shield dome protects','🗺️ Two new worlds: Flatlands and Highlands & rivers, and choose 30 to 120 small tribes','🎮 Graphics Low, Medium or High in Settings, and online rooms for 2 to 32 players']},
  {v:'2.9',d:'2026-11-18',ar:['👤 نظام الحسابات وصل! حساب واحد يشتغل على كل أجهزتك: الجوال والكمبيوتر بنفس الانتصارات والرتبة','📝 كيف؟ ادخل صفحة «الحساب»، اكتب اسم مستخدم (إنجليزي أو أرقام) وكلمة مرور، واضغط «سوّ حساب». انتصاراتك الحالية تنحفظ فيه','📱💻 بعدها من أي جهاز ثاني ادخل نفس الصفحة واضغط «سجّل دخول» بنفس الاسم وكلمة المرور، وتكمّل من حيث وقفت','🔒 تقدمك صار محفوظ أونلاين، ما يضيع لو مسحت المتصفح أو غيّرت جوالك. احفظ كلمة المرور زين لأنها ما تنسترجع','🖐️ صلّحنا مشكلة اللمس اللي كانت تخلي إصبع واحد يسوي زوم وما تقدر تحط مبنى','🗂️ القائمة الرئيسية صارت أرتب'],en:['👤 Accounts are here! One account works on all your devices: phone and PC with the same wins and rank','📝 How? Open the Account page, pick a username (letters or numbers) and a password, and tap Create account. Your current wins are saved into it','📱💻 Then on any other device open the same page and tap Sign in with the same username and password to carry on where you left off','🔒 Your progress is now saved online, so it is not lost if you clear the browser or change phones. Keep your password safe, it cannot be recovered','🖐️ Fixed the touch bug where one finger zoomed and you could not place buildings','🗂️ A tidier main menu']},
  {v:'2.8',d:'2026-11-18',ar:['🏆 لوحة المتصدرين صارت شغالة للكل! تلقاها في القائمة الرئيسية، ورتّبها بالانتصارات أو بساعات اللعب','👤 حسابات حقيقية: سوّ حساب من صفحة «الحساب» وادخل فيه من الجوال أو الكمبيوتر بنفس انتصاراتك','🆕 القائمة جديدة وتوها فاضية! أول ما تفتح اللعبة تنضاف باسمك وكل انتصاراتك السابقة، والساعات تنحسب من اليوم. كن أول واحد فيها 💪','⏱️ حسابك صار يحسب ساعات لعبك، تشوفها في صفحة الحساب','🏭 مبنى جديد: المصنع (عصر الصناعة) يمد سكك حديد لمدنك وموانئك، وقطاراته تتاجر مع جيرانك وتجيب لك ذهب','🕊️ زر «سلام» في بطاقة الدولة: البوت يقبل إذا يثق فيك (أهدِه ذهب) أو جيشك أقوى منه، والدول الخسرانة تطلب منك السلام','⚔️ إذا احتليت أرض دولة تاخذ كل مبانيها بنفس مستواها','🏙️ تقدر تبني المدن أقرب لبعض'],en:['🏆 The leaderboard is live for everyone! Find it in the main menu and sort by wins or hours played','👤 Real accounts: create one on the Account page and sign in on your phone or PC with the same wins','🆕 The list is brand new and still empty! Open the game and you join with your name and all your past wins; hours count from today. Be the first 💪','⏱️ Your account now counts your hours played, shown on the account page','🏭 New building: the Factory (Age of Industry) lays railways to your cities and ports, and its trains trade with neighbours for gold','🕊️ Peace button on the nation card: bots accept if they trust you (send gold) or your army is stronger, and losing realms ask you for peace','⚔️ Conquered land keeps all its buildings at their level','🏙️ Cities can be built closer together']},
@@ -1796,8 +1832,7 @@ const LOG=[
  {v:'2.5',d:'2026-11-17',ar:['تطوير المباني لين المستوى 5: اضغط على أي مبنى لك وطوّره','قبة الدفاع المطوّرة تصد القنبلة الذرّية وقنبلة الفناء','الحصن المطوّر يصمد قدام جيوش أكبر بكثير، والميناء يجيب ذهب أكثر، والدفاع البحري يضرب أبعد وأقوى، والمنصة تتجهّز أسرع','الهجوم من البحر: تختار بنفسك مكان الإنزال على ساحلهم','إذا انسحبت من معركة تاخذ خبرة على اللي سويته، بدون ما ينحسب نصر'],en:['Upgrade buildings up to level 5: tap any of your buildings','Upgraded air shields stop atom and Doomsday bombs','Upgraded forts hold far bigger armies, ports earn more, coastal guns hit farther and harder, silos reload faster','Sea attack: choose the exact landing spot on their coast','Leaving a battle early still gives XP for what you did, without counting a win']},
  {v:'2.4',d:'2026-11-17',ar:['إصلاح الأونلاين: المضيف ينتظر أي جهاز يتأخر عشان الكل يشوف نفس الحرب بنفس اللحظة','الأونلاين يرفض الدخول إذا نسختك من اللعبة قديمة ويطلب تحدّث الصفحة','إذا نزل تحديث وأنت فاتح اللعبة، تجيك رسالة تحدّث الصفحة','الأونلاين صار يشتغل على جوالات ومتصفحات أقدم، وشاشة الأونلاين تفحص جهازك وتقولك وش المشكلة','الهجوم من البحر: تختار بنفسك مكان الإنزال على ساحلهم، حتى لو بينكم حدود','بطاقة الدولة صارت أيقونات، وتختار مبلغ الهدية، وترسل جنود لحليفك','الصواريخ تخلّي المدن حطام، وقنبلة الفناء تمسح المباني'],en:['Online fix: the host waits for any device that falls behind, so everyone sees the same war at the same moment','Online refuses players on an older game version and asks them to refresh','If an update comes out while the game is open, you get a message to refresh','Online works on older phones and browsers, and the online screen checks your device and explains any problem','Sea attack: you choose the exact landing spot on their coast, even if you share a border','Icon realm card, exact gift amounts, and troop aid to allies','Missiles leave cities in ruins; the Doomsday bomb erases buildings']},
  {v:'2.3',d:'2026-11-17',ar:['الأونلاين: قائمة «الغرف المفتوحة» تدخل منها على خويك بضغطة','تختار غرفتك عامة أو خاصة، والغرفة تختفي من القائمة أول ما تبدأ المعركة','زر «إعادة المباراة» بعد نهاية القيم: المضيف يغيّر الإعدادات والكل يبقى في الغرفة','الهجوم على جزيرة فاضية صار يرسل سفنك لها','موقع جديد للعبة: saadsd151.github.io/sijal، والاقتراحات رجعت تشتغل','تختار اسم غرفتك، وسرعة الاتصال (البنق) تطلع جنب كل غرفة','قائمة «نوع الهجوم» وهي مقفلة تقدر تسحبها لأي مكان على الشاشة','بطاقة الدولة صارت أيقونات سهلة، وتختار مبلغ الهدية بالضبط','تقدر ترسل جنود مساعدة لحليفك، ويزيد ثقته فيك','الصواريخ تخلّي المدن حطام، والذرّية تمسح الصغيرة، والفناء تمسح كل المباني','المعركة السريعة: عدد الخصوم يزيد مع حجم الخريطة والصعوبة'],en:['Online: an Open rooms list lets you join a friend in one tap','Rooms can be public or private, and leave the list once the battle starts','Rematch button after a match: the host changes settings and everyone stays in the room','Tapping an empty island now sends your ships there','New home for the game: saadsd151.github.io/sijal, and suggestions work again','Name your room, and see each room\'s ping in the list','Drag the collapsed Attack type list anywhere on the screen','The realm card now uses simple icons, and you pick the exact gift amount','Send troops to help an ally, which raises their trust in you','Missiles leave cities in ruins, atom bombs wipe out small ones, Doomsday erases every building','Quick battle: more rivals on bigger maps and harder difficulties']},
- {v:'2.2',d:'2026-11-17',ar:['التحالف صار يدوم دقيقتين، وقبل ما يخلص بـ20 ثانية تجيك رسالة تكمّله أو لا','نوعين للهجوم من قائمة «نوع الهجوم»: على نقطة أو من كل الحدود، وتقدر تخفي القائمة','الهجوم على نقطة صار مركّز في ممر ضيّق باتجاه المكان اللي تضغطه','أسماء الدول ما عاد تتركّب على بعض، واسم دولتك له الأولوية','البوتات تتحرك وتهاجم من أول المباراة','المعركة السريعة: عدد الخصوم يزيد مع حجم الخريطة والصعوبة','الصواريخ تخلّي المدن حطام، والقنبلة الذرّية تمسح المدن الصغيرة، وقنبلة الفناء تمسح كل المباني'],en:['Alliances now last two minutes; 20 seconds before the end you choose whether to renew','Two attack types in the Attack type list: at a point or along every border, and the list can be hidden','Point attacks now stay in a narrow corridor toward the spot you tap','Realm names no longer overlap, and yours always takes priority','Bots move and attack from the very start','Quick battle: more rivals on bigger maps and harder difficulties','Missiles leave cities in ruins, atom bombs wipe out small cities, and the Doomsday bomb erases every building']},
- {v:'2.1',d:'2026-11-17',ar:['الدول الكبيرة صارت تاكل الدول الصغيرة والقبائل اللي جنبها بشكل أسرع','لكل موسم نغمة خاصة تعلن وصوله','إصلاح: على الآيفون شكل المبنى ومداه صار يطلع قبل التأكيد'],en:['Big realms now swallow weaker neighbours and tribes much faster','Each season now has its own arrival tune','Fix: on iPhone the building and its range now show before you confirm']}];
+ {v:'2.2',d:'2026-11-17',ar:['التحالف صار يدوم دقيقتين، وقبل ما يخلص بـ20 ثانية تجيك رسالة تكمّله أو لا','نوعين للهجوم من قائمة «نوع الهجوم»: على نقطة أو من كل الحدود، وتقدر تخفي القائمة','الهجوم على نقطة صار مركّز في ممر ضيّق باتجاه المكان اللي تضغطه','أسماء الدول ما عاد تتركّب على بعض، واسم دولتك له الأولوية','البوتات تتحرك وتهاجم من أول المباراة','المعركة السريعة: عدد الخصوم يزيد مع حجم الخريطة والصعوبة','الصواريخ تخلّي المدن حطام، والقنبلة الذرّية تمسح المدن الصغيرة، وقنبلة الفناء تمسح كل المباني'],en:['Alliances now last two minutes; 20 seconds before the end you choose whether to renew','Two attack types in the Attack type list: at a point or along every border, and the list can be hidden','Point attacks now stay in a narrow corridor toward the spot you tap','Realm names no longer overlap, and yours always takes priority','Bots move and attack from the very start','Quick battle: more rivals on bigger maps and harder difficulties','Missiles leave cities in ruins, atom bombs wipe out small cities, and the Doomsday bomb erases every building']}];
 function t(k,...a){let s=TX[UI.lang][k];if(s==null)s=TX.ar[k];if(s==null)return k;if(typeof s!=='string')return s;a.forEach((v,i)=>{s=s.split('{'+i+'}').join(v);});return s;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function natName(n){return n.minor?tribeName(n.tribe,UI.lang):n.pname?n.pname:n.human||n.nameIdx<0?(UI.prof&&UI.prof.name)||t('defName'):NAT[UI.lang][n.nameIdx][0];}

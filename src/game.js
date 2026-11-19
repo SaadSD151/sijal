@@ -117,7 +117,6 @@ function captured(g,s,old,o){
   if(!old){emit(g,'cityJoin',{a:o,s});if(P)P.gold+=60*s.level;flipAround(g,s,o,4);return;}
   const O=g.nations[old];if(s.level>1)s.level--;
   emit(g,'cityFall',{a:o,d:old,s,cap:s.capital});
-  surrender(g,s,O,o);
   if(s.capital){
     s.capital=false;let best=null;
     for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===old&&(!best||c.level>best.level))best=c;
@@ -244,7 +243,7 @@ function tickAttacks(g){
         if(D&&!D.alive){done=true;break;}
         pushNb(g,k,i);
       }
-      if(!done&&!h.size){if(k.focus)done=true;else if(now-k.reseed>10){k.reseed=now;if(!seedAttack(g,k))done=true;}}
+      if(!done&&!h.size){if(k.focus)done=true;else if(now-k.reseed>2){k.reseed=now;if(!seedAttack(g,k))done=true;}}
     }
     if(done){if(A.alive&&k.troops>0)A.troops+=k.troops;emit(g,'atkEnd',{a:k.a,d:k.d,gain:k.gain,id:k.id});g.attacks[ai]=g.attacks[g.attacks.length-1];g.attacks.pop();}
   }
