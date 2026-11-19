@@ -106,6 +106,21 @@ function worldThumb(k){
   const C=[0xff6e3a10,0xff9c6f2a,0xff54a07c,0xff427646,0xff88c6de,0xff648c94,0xff72787e,0xffeee8e2];
   for(let i=0;i<M.N;i++)d[i]=C[M.ter[i]];x.putImageData(im,0,0);return THUMB[k]=c.toDataURL();
 }
+// a small scene drawn at each graphics level: coarser and plainer on Low, glow and shadows on Medium, sharpest with railway sleepers on High
+const GFXP={};
+function gfxPreview(lv){
+  if(GFXP[lv])return GFXP[lv];const W=240,H=130,sc=[.4,.7,1][lv],w=Math.round(W*sc),h=Math.round(H*sc),M=genMap({w:96,h:52,seed:777,type:'pangaea'});
+  const src=mk(96,52),sx=src.getContext('2d'),im=sx.createImageData(96,52),d=new Uint32Array(im.data.buffer),C=[0xff6e3a10,0xff9c6f2a,0xff54a07c,0xff427646,0xff88c6de,0xff648c94,0xff72787e,0xffeee8e2];
+  for(let i=0;i<M.N;i++)d[i]=C[M.ter[i]];sx.putImageData(im,0,0);
+  const lo=mk(w,h),x=lo.getContext('2d');x.imageSmoothingEnabled=lv>0;x.drawImage(src,0,0,w,h);x.scale(sc,sc);
+  // a stretch of railway, a city and a fort with its range
+  x.strokeStyle='rgba(30,22,18,.6)';x.lineWidth=4;x.beginPath();x.moveTo(30,100);x.lineTo(120,70);x.lineTo(200,84);x.stroke();x.strokeStyle='#8a7a66';x.lineWidth=2.2;x.stroke();
+  if(lv===2){x.strokeStyle='rgba(30,22,18,.75)';x.lineWidth=1.2;for(let t=0;t<1;t+=.08){const px=30+90*t,py=100-30*t;x.beginPath();x.moveTo(px-2,py-5);x.lineTo(px+2,py+5);x.stroke();}for(let t=0;t<1;t+=.1){const px=120+80*t,py=70+14*t;x.beginPath();x.moveTo(px-1,py-5);x.lineTo(px+1,py+5);x.stroke();}}
+  x.fillStyle='rgba(255,233,168,.12)';x.strokeStyle='rgba(255,233,168,.6)';x.lineWidth=1.5;x.beginPath();x.arc(170,52,30,0,7);x.fill();x.stroke();
+  for(const [px,py,r,k,cap] of[[120,70,15,'cap',1],[170,52,11,'fort',0]]){x.save();if(lv>0){x.shadowColor=cap?'rgba(255,210,120,.9)':'rgba(0,0,0,.6)';x.shadowBlur=cap?16:8;}
+    x.fillStyle='#e0a03a';x.beginPath();x.arc(px,py,r,0,7);x.fill();x.restore();x.lineWidth=2;x.strokeStyle=cap?'#ffe9a8':'rgba(6,12,20,.9)';x.beginPath();x.arc(px,py,r,0,7);x.stroke();const q=r*1.5;x.drawImage(R.glyph[k],px-q/2,py-q/2,q,q);}
+  const out=mk(W,H),o=out.getContext('2d');o.imageSmoothingEnabled=false;o.drawImage(lo,0,0,W,H);return GFXP[lv]=out.toDataURL();
+}
 function tribesN(){const v=UI.prof.tribes|0;return v>=30&&v<=120?v:60;}
 function maxP(){const v=UI.prof.maxP|0;return v>=2&&v<=32?v:16;}
 function renderSetup(){
@@ -148,7 +163,7 @@ function renderSettings(){
   <div><h3>${t('volM')}</h3><div class="rng"><input type="range" id="volM" min="0" max="100" step="5" value="${vm}" aria-label="${t('volM')}"><b id="volMv">${vm}</b></div></div>
   <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div>
   <div><h3>${t('langName')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${UI.lang==='ar'?' on':''}" data-a="lang:ar">العربية</button><button class="chip${UI.lang==='en'?' on':''}" data-a="lang:en">English</button></div></div>
-  <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><div class="gfxd">${t('gfxD')[gfxLv()]}</div></div>
+  <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><div class="gfxp">${[0,1,2].map(i=>`<button class="${gfxLv()===i?'on':''}" data-a="gfx:${i}"><img src="${gfxPreview(i)}" alt="${t('gfxs')[i]}"><span>${t('gfxs')[i]}</span></button>`).join('')}</div><div class="gfxd">${t('gfxD')[gfxLv()]}</div></div>
   <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }

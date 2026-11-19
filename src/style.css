@@ -254,6 +254,13 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #radial .rb.red{background:linear-gradient(180deg,#e0513f,#a92a1c);border-color:#ffb1a4}#radial .rb.sea{background:linear-gradient(180deg,#3b95e6,#1f68b3);border-color:#bfe2ff}#radial .rb.ok{background:linear-gradient(180deg,#3aa766,#24774a);border-color:#b6efc9}
 #radial .rb.off{opacity:.4;filter:grayscale(1);cursor:default;box-shadow:none}
 #radial .rb:not(.off):hover{transform:scale(1.08)}#radial .rb:not(.off):active{transform:scale(.93)}
+.gfxd{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line2);text-align:start;font-size:13px}
+.gfxd span{color:var(--dim)}
+.gfxp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.gfxp button{padding:0;border-radius:9px;overflow:hidden;border:2px solid var(--line2);background:none;cursor:pointer;display:flex;flex-direction:column;color:inherit}
+.gfxp button.on{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,233,168,.25)}
+.gfxp img{width:100%;display:block}
+.gfxp span{font-size:12px;padding:3px 0;background:rgba(0,0,0,.35)}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button:active{transform:scale(.92)}
