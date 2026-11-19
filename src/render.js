@@ -122,18 +122,23 @@ function makeGlyphs(){
 }
 function addFx(type,x,y,o){R.fx.push(Object.assign({type,x,y,t:0,dur:900},o));}
 const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.PI*t)*Math.hypot(m.tx-m.sx,m.ty-m.sy)*.28);
-// where to write the troops of each front I am in: on the shared border, at the border tile nearest its middle
-// near where that push is actually taking land (or its focus target); it stays put while the push is within 60 tiles of it, eased on screen so it does not jump
+// troop count of each front I am in: drawn behind the front line, along it, sized by its length (from the attack's own frontier tiles)
 function frontSpots(g,me,ts){
-  R.front=R.front||{};if(ts-(R.frontT||0)<450)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,ter=g.M.ter,N=g.N,by={};
-  for(const k of g.attacks){if(k.a!==me&&k.d!==me)continue;const o=k.a===me?k.d:k.a;(by[o]||(by[o]=[])).push(k);}
-  const os=Object.keys(by);if(!os.length){R.front={};return;}const S={};for(const o of os)S[o]={x:0,y:0,n:0};
-  const nbOf=(i,x,y,f)=>{if(x>0)f(i-1);if(x<W-1)f(i+1);if(y>0)f(i-W);if(y<H-1)f(i+W);};
-  for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let hit=null;nbOf(i,x,y,j=>{const o=own[j];if(ter[j]>=2&&o!==me&&S[o]&&hit!==o){hit=o;const A=S[o];A.x+=x;A.y+=y;A.n++;}});}
-  const best={};for(const o of os){const A=S[o];if(!A.n)continue;for(const k of by[o]){const P=R.front[k.id],foc=k.focus&&k.tx>=0,ex=k.fx!=null?k.fx:A.x/A.n,ey=k.fx!=null?k.fy:A.y/A.n,stay=P&&(P.x-ex)**2+(P.y-ey)**2<3600,fx=foc?k.tx:stay?P.x:ex,fy=foc?k.ty:stay?P.y:ey;best[k.id]={k,fx,fy,o:+o,d:1e18,x:fx,y:fy};}}
-  for(let i=0;i<N;i++){if(own[i]!==me)continue;const x=i%W,y=(i/W)|0;let adj=-1;nbOf(i,x,y,j=>{if(ter[j]>=2&&own[j]!==me&&S[own[j]])adj=own[j];});if(adj<0)continue;
-    for(const id in best){const B=best[id];if(B.o!==adj)continue;const d=(x-B.fx)**2+(y-B.fy)**2;if(d<B.d){B.d=d;B.x=x;B.y=y;}}}
-  const out={};for(const id in best){const B=best[id],P=R.front[id];out[id]={x:B.x,y:B.y,sx:P&&P.sx!=null?P.sx:B.x,sy:P&&P.sy!=null?P.sy:B.y};}R.front=out;
+  R.front=R.front||{};if(ts-(R.frontT||0)<400)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,out={};
+  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const P=R.front[k.id],T=k.heap.v,F=[];
+    for(let m=0;m<T.length;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;let ax=0,ay=0,hit=false;
+      if(x>0&&own[i-1]===k.a){ax-=1;hit=true;}if(x<W-1&&own[i+1]===k.a){ax+=1;hit=true;}if(y>0&&own[i-W]===k.a){ay-=1;hit=true;}if(y<H-1&&own[i+W]===k.a){ay+=1;hit=true;}
+      if(hit)F.push(x,y,ax,ay);}
+    const stats=(cx,cy,r2)=>{let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0,bx=0,by=0,dmin=1e18;for(let m=0;m<F.length;m+=4){const x=F[m],y=F[m+1];if(r2&&(x-cx)**2+(y-cy)**2>r2)continue;n++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;bx+=F[m+2];by+=F[m+3];}
+      if(n<2)return null;const mx=sx/n,my=sy/n;for(let m=0;m<F.length;m+=4){const d=(F[m]-mx)**2+(F[m+1]-my)**2;if(d<dmin)dmin=d;}return{n,mx,my,cxx:sxx/n-mx*mx,cyy:syy/n-my*my,cxy:sxy/n-mx*my,bx,by,dmin};};
+    let S=stats();if(!S){if(P)out[k.id]=P;continue;}
+    // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
+    if(S.dmin>36){const ax=k.fx!=null?k.fx:P?P.x:S.mx,ay=k.fx!=null?k.fy:P?P.y:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
+    const th=.5*Math.atan2(2*S.cxy,S.cxx-S.cyy),ev=(S.cxx+S.cyy)/2+Math.sqrt(((S.cxx-S.cyy)/2)**2+S.cxy*S.cxy),len=Math.max(4,Math.sqrt(ev)*3.4);
+    let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;if(ang>1.35)ang-=Math.PI;
+    const bl=Math.hypot(S.bx,S.by)||1,back=2.5+Math.min(10,len*.12),x=S.mx+S.bx/bl*back,y=S.my+S.by/bl*back,sz=clamp(Math.sqrt(len)*1.35,3,14);
+    out[k.id]=P&&P.sx!=null?{x,y,ang,sz,sx:P.sx,sy:P.sy,sa:P.sa,ss:P.ss}:{x,y,ang,sz,sx:x,sy:y,sa:ang,ss:sz};}
+  R.front=out;
 }
 // a sword drawn in place: pivot at the hand, blade pointing up at angle 0
 function drawSword(c,x,y,L,ang){
@@ -186,9 +191,10 @@ function draw(g,dt,ts){
     const r=Math.max(9,z*2.4)+Math.sin(ts/220)*2;c.strokeStyle=b.a===me?'rgba(255,233,168,.95)':'rgba(255,90,70,.95)';c.lineWidth=2.5;c.setLineDash([5,4]);c.lineDashOffset=-ts/60;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.setLineDash([]);
     c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.stroke();}
   // troops pushing on each front that involves me
-  if(me){frontSpots(g,me,ts);c.font=`800 ${clamp(z*3.2,12,17)}px ${FONT}`;for(const k of g.attacks){if((k.a!==me&&k.d!==me)||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
-    F.sx+=(F.x-F.sx)*.12;F.sy+=(F.y-F.sy)*.12;const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-40||q.y<-20||q.x>cw+40||q.y>ch+20)continue;
-    c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';txt(c,fmt(k.troops),q.x,q.y,k.a===me?'#8fd3ff':'#ff9a8a');}}
+  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
+    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa+=da*.1;F.ss+=(F.sz-F.ss)*.1;
+    const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
+    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
   // trade ships: small, white-sailed, shuttling between ports
   for(const b of g.trades){
     const W=g.W,i0=Math.floor(b.p),i1=Math.min(i0+1,b.path.length-1),f=b.p-i0,a=b.path[i0],d=b.path[i1],p=w2s(lerp(a%W,d%W,f)+.5,lerp((a/W)|0,(d/W)|0,f)+.5);
