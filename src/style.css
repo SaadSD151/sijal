@@ -240,11 +240,25 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .ping.good{color:var(--good)}.ping.warn{color:var(--warn)}.ping.bad{color:var(--bad)}
 .room span{color:var(--gold2);font-variant-numeric:tabular-nums}
 /* rank ladder */
+#radial{position:fixed;width:0;height:0;z-index:40;pointer-events:none}
+#radial .rr{position:absolute;left:-78px;top:-78px;width:156px;height:156px;border-radius:50%;background:rgba(10,20,34,.55);border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 24px rgba(0,0,0,.4);backdrop-filter:blur(2px);animation:rpop .14s ease-out}
+#radial .rr.more{left:-112px;top:-112px;width:224px;height:224px}
+@keyframes rpop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+#radial .rb{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(28,44,66,.92);display:grid;place-items:center;cursor:pointer;pointer-events:auto;animation:rpop .16s ease-out;padding:0}
+#radial .rb img{width:24px;height:24px}
+#radial .rb.c{width:58px;height:58px;margin:-29px 0 0 -29px;background:#14284a;border-color:rgba(255,233,168,.5)}
+#radial .rb.c img{width:30px;height:30px}
+#radial .rb.t{left:0;top:-54px}#radial .rb.b{left:0;top:54px}#radial .rb.l{left:-54px;top:0}#radial .rb.r{left:54px;top:0}#radial .rb.c{left:0;top:0}
+#radial .rb.m0{left:-66px;top:-62px}#radial .rb.m1{left:0;top:-88px}#radial .rb.m2{left:66px;top:-62px}#radial .rb.m3{left:0;top:84px}
+#radial .rb.red{background:#c0392b;border-color:#ff8a7a}#radial .rb.sea{background:#2e7fd0;border-color:#9fd2ff}#radial .rb.ok{background:#2f8f55;border-color:#9fe3b6}
+#radial .rb.off{opacity:.38;filter:grayscale(1);cursor:default}
+#radial .rb:not(.off):active{transform:scale(.92)}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button:active{transform:scale(.92)}
 .auf{display:flex;flex-direction:column;gap:8px;padding:8px 0;border-top:1px solid var(--line2);margin-top:6px}
 .auf h3{margin:0;text-align:center}.auf>.keys{margin:0;text-align:center}
+.aug{display:flex;flex-direction:column;gap:2px}.aug small{color:var(--dim);font-size:12px;text-align:start}
 .aul{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
 .aul select{background:rgba(0,0,0,.3);color:inherit;border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit}
 .ts.au{padding:6px 8px;font-size:13px;gap:6px}

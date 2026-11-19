@@ -33,9 +33,9 @@ function applyCmd(pid,c){
       if(r==='noborder'){const cc=g.M.coastD[i]===1&&portOk(g,i)?i:nearCoast(g,i,8);r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';if(r==='nopath'){const sl=seaLanding(g,pid,o);if(sl>=0)r=launchBoat(g,pid,sl,ratio);}boat=typeof r==='object';}
       if(!mine)return;if(typeof r==='object')sfx(boat?'boat':'attack');if(r==='clash'){feed(t('m_clash'),'good');sfx('attack');}
       if(typeof r==='object'||r==='clash')addFx('text',tx,ty,{s:fmt(before-n.troops),dur:1100,col:'#ffe9a8'});else err(r);return;}
-    case'sea':{if(!D)return;const ratio=clamp(+c.r||.4,.05,1);let cc=-1;
+    case'sea':{const tgt=c.d!=null?c.d:(c.at&&c.i>=0&&c.i<g.N&&g.M.ter[c.i]>=2?g.owner[c.i]:-1);if(tgt<0||tgt===pid||(tgt&&!D&&!(g.nations[tgt]&&g.nations[tgt].alive)))return;const ratio=clamp(+c.r||.4,.05,1);let cc=-1;
       // a chosen spot lands exactly there (on their shore near the tap); without one, the nearest reachable shore
-      if(c.at&&c.i>=0&&c.i<g.N){cc=shoreNear(g,c.i,c.d,10);r=cc<0?'noshore':launchBoat(g,pid,cc,ratio);}
+      if(c.at&&c.i>=0&&c.i<g.N){cc=shoreNear(g,c.i,tgt,10);r=cc<0?'noshore':launchBoat(g,pid,cc,ratio);}
       else{cc=c.i>=0&&c.i<g.N&&g.owner[c.i]===c.d?(g.M.coastD[c.i]===1&&portOk(g,c.i)?c.i:nearCoast(g,c.i,8)):-1;r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';if(r==='nopath'){cc=seaLanding(g,pid,c.d);if(cc>=0)r=launchBoat(g,pid,cc,ratio);}}
       if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}
     case'up':{const si=c.i>=0&&c.i<g.N?g.structAt[c.i]:0,s=si?g.structs[si-1]:null;r=s?upgrade(g,n,s):'no';if(mine){if(r)err(r);else sfx('build');}return;}

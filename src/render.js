@@ -177,10 +177,10 @@ function draw(g,dt,ts){
     if(z>=3.5){c.font=`700 11px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.85)';txt(c,fmt(b.troops),p.x,p.y-s-7,'#fff');}
   }
   const SP=[];
-  // protected area of my forts and shield domes (and every dome while I am aiming a missile)
-  {const aimM=UI.mode&&UI.mode[0]==='m';for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
-    const r=(s.type==='fort'?R_FORT+s.level-1:SH_R(s.level))*z,p=w2s(s.x+.5,s.y+.5);if(p.x+r<0||p.y+r<0||p.x-r>cw||p.y-r>ch||r<6)continue;
-    const col=!mine?'255,90,70':s.type==='shield'?'120,190,255':'255,233,168';c.fillStyle=`rgba(${col},${s.type==='shield'?.12:.09})`;c.strokeStyle=`rgba(${col},.45)`;c.lineWidth=1.5;c.beginPath();c.arc(p.x,p.y,r,0,7);c.fill();c.stroke();}}
+  // protected area of my forts, shield domes and coastal guns (and every dome while I am aiming a missile)
+  {const aimM=UI.mode&&UI.mode[0]==='m';for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'&&s.type!=='coast'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
+    const r=(s.type==='fort'?R_FORT+s.level-1:s.type==='coast'?13+2*(s.level-1):SH_R(s.level))*z,p=w2s(s.x+.5,s.y+.5);if(p.x+r<0||p.y+r<0||p.x-r>cw||p.y-r>ch||r<6)continue;
+    const col=!mine?'255,90,70':s.type==='shield'?'120,190,255':s.type==='coast'?'90,220,200':'255,233,168';c.fillStyle=`rgba(${col},${s.type==='shield'?.12:.09})`;c.strokeStyle=`rgba(${col},.45)`;c.lineWidth=1.5;c.beginPath();c.arc(p.x,p.y,r,0,7);c.fill();c.stroke();}}
   // structures
   for(const s of g.structs){
     if(s.dead)continue;const city=s.type==='city';
