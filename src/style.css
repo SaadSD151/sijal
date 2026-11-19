@@ -243,7 +243,8 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button:active{transform:scale(.92)}
-.auf{display:flex;flex-direction:column;gap:8px;padding:6px 0}
+.auf{display:flex;flex-direction:column;gap:8px;padding:8px 0;border-top:1px solid var(--line2);margin-top:6px}
+.auf h3{margin:0;text-align:center}.auf>.keys{margin:0;text-align:center}
 .aul{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
 .aul select{background:rgba(0,0,0,.3);color:inherit;border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit}
 .ts.au{padding:6px 8px;font-size:13px;gap:6px}

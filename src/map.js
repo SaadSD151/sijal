@@ -2,7 +2,7 @@
 function genMap(o){
   const W=o.w,H=o.h,N=W*H,rng=mulberry32(o.seed),fbm=makeNoise(o.seed*7+13),fb2=makeNoise(o.seed*31+7);
   const elev=new Float32Array(N),ter=new Uint8Array(N),val=new Float32Array(N),moist=new Float32Array(N),T=o.type||'continents',asp=W/H;
-  const F={continents:2.4,pangaea:2.2,islands:4,inner:2.7,twin:2.5,shores:3.4,crescent:2.6,straits:2.5,lakes:3.6}[T]||2.5;
+  const F={continents:2.4,pangaea:2.2,islands:4,inner:2.7,twin:2.5,shores:3.4,crescent:2.6,straits:2.5,lakes:3.6,flat:2.2,highlands:3}[T]||2.5;
   for(let y=0,i=0;y<H;y++)for(let x=0;x<W;x++,i++){
     const u=x/H,v=y/H,nx=x/W,ny=y/H,wx=fb2(u*1.7+5.2,v*1.7+1.3,3)*.4,wy=fb2(u*1.7+9.1,v*1.7+7.7,3)*.4;
     let e=fbm((u+wx)*F,(v+wy)*F,6);
@@ -10,11 +10,13 @@ function genMap(o){
     if(T==='pangaea')e=e*.75+(.55-rc)*.8;else if(T==='inner')e=e*.7+(rc-.45)*.75;else if(T==='twin')e=e*.8-bump(nx-.5,.008)*.8;
     else if(T==='shores')e=e*.95+(.5-rc)*.35;else if(T==='crescent')e=e*.6+(.26-Math.abs(hyp(cx+.35,cy*.9)-.78))*1.3;
     else if(T==='straits')e=e*.8-bump(ny-.34,.0032)*.8-bump(ny-.67,.0032)*.8;else if(T==='lakes')e=e*.9+(.6-rc)*.3;
-    elev[i]=e-(1-smooth(0,.09,ed))*1.5;moist[i]=fb2(u*3+40,v*3+17,4);
+    if(T==='highlands')e=Math.abs(e)*1.25+fbm(u*6+3,v*6+9,4)*.25;else if(T==='flat')e*=.3;
+    elev[i]=T==='flat'||T==='highlands'?e:e-(1-smooth(0,.09,ed))*1.5;moist[i]=fb2(u*3+40,v*3+17,4);
   }
-  const ratio={continents:.47,pangaea:.52,islands:.34,inner:.46,twin:.46,shores:.46,crescent:.4,straits:.5,lakes:.7}[T]||.45;
-  const srt=Float32Array.from(elev).sort(),L0=Math.floor(N*(1-ratio)),sea=srt[L0],LN=N-L0;
-  const hHill=srt[L0+Math.floor(LN*.74)]-sea,hMnt=srt[L0+Math.floor(LN*.9)]-sea,hmax=srt[N-1]-sea;
+  const ratio={continents:.47,pangaea:.52,islands:.34,inner:.46,twin:.46,shores:.46,crescent:.4,straits:.5,lakes:.7,flat:1,highlands:1}[T]||.45;
+  const srt=Float32Array.from(elev).sort(),L0=Math.min(N-1,Math.floor(N*(1-ratio))),sea=srt[L0]-(ratio>=1?1e-6:0),LN=N-L0;
+  // no-sea worlds: flat ground has no hills at all; highlands are half hills, a fifth peaks
+  const HQ=T==='flat'?[2,2]:T==='highlands'?[.55,.88]:[.74,.9],hHill=srt[Math.min(N-1,L0+Math.floor(LN*HQ[0]))]-sea+(T==='flat'?1e9:0),hMnt=srt[Math.min(N-1,L0+Math.floor(LN*HQ[1]))]-sea+(T==='flat'?1e9:0),hmax=srt[N-1]-sea;
   for(let i=0;i<N;i++)elev[i]-=sea;
   // remove specks & ponds, mark open water
   const land=new Uint8Array(N),lab=new Uint8Array(N),q=new Int32Array(N),big=new Uint8Array(N);
@@ -45,13 +47,13 @@ function genMap(o){
   for(let s=0;s<N;s++){if(!land[s]||lid[s])continue;nl++;let qh=0,qt=0;q[qt++]=s;lid[s]=nl;
     while(qh<qt){const c=q[qh++],x=c%W;for(const n of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(n>=0&&land[n]&&!lid[n]){lid[n]=nl;q[qt++]=n;}}}
   // rivers: steepest descent from the highlands to the sea
-  const riv=new Uint8Array(N),rivers=[],want=Math.round(landN/2000)+2;
+  const riv=new Uint8Array(N),rivers=[],want=T==='flat'?0:T==='highlands'?Math.min(40,Math.round(landN/2500)+6):Math.round(landN/2000)+2,noSea=T==='flat'||T==='highlands';
   for(let t=0;t<want*10&&rivers.length<want;t++){
     let i=-1;for(let k=0;k<50;k++){const j=(rng()*N)|0;if(land[j]&&elev[j]>hHill*.85&&!riv[j]){i=j;break;}}if(i<0)continue;
     const path=[i],seen=new Set([i]);let ok=false;
     for(let s=0;s<500;s++){let best=-1,be=1e9;const x=i%W,y=(i/W)|0;
       for(let d=0;d<8;d++){const X=x+DX8[d],Y=y+DY8[d];if(X<0||Y<0||X>=W||Y>=H)continue;const n=Y*W+X;if(seen.has(n))continue;const e=elev[n]+rng()*.004;if(e<be){be=e;best=n;}}
-      if(best<0||be>elev[i]+.02)break;i=best;path.push(i);seen.add(i);if(!land[i]||riv[i]){ok=true;break;}}
+      if(best<0||be>elev[i]+.02){if(noSea&&path.length>=25)ok=true;break;}i=best;path.push(i);seen.add(i);const X=i%W,Y=(i/W)|0;if(!land[i]||riv[i]||(noSea&&(X<2||Y<2||X>=W-2||Y>=H-2))){ok=true;break;}}
     if(ok&&path.length>=10){rivers.push(path);for(const p of path)riv[p]=1;}
   }
   for(let i=0;i<N;i++)if(riv[i]&&land[i]){const x=i%W;for(const n of[i,x>0?i-1:i,x<W-1?i+1:i,i>=W?i-W:i,i<N-W?i+W:i]){if(!land[n])continue;if(ter[n]===4)ter[n]=2;if(riv[n]<2)riv[n]=riv[n]||2;}}

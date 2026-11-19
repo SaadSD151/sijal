@@ -16,7 +16,7 @@ function emit(g,t,d){d=d||{};d.t=t;d.tick=g.tick;g.ev.push(d);}
 function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
-    att:new Float32Array(128),ally:new Uint8Array(128),allyAt:new Int32Array(128),allyUntil:new Int32Array(128),allyRen:new Uint8Array(128),allyWarn:new Uint8Array(128),truce:new Int32Array(128),lastHit:new Int32Array(128).fill(-9999),lastAtk:new Int32Array(128).fill(-9999),pg:new Float32Array(128),emb:new Uint8Array(128),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(128).fill(-9999),lastHitAny:-9999,
+    att:new Float32Array(192),ally:new Uint8Array(192),allyAt:new Int32Array(192),allyUntil:new Int32Array(192),allyRen:new Uint8Array(192),allyWarn:new Uint8Array(192),truce:new Int32Array(192),lastHit:new Int32Array(192).fill(-9999),lastAtk:new Int32Array(192).fill(-9999),pg:new Float32Array(192),emb:new Uint8Array(192),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(192).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
@@ -34,7 +34,7 @@ function setupNations(g){
   }
   // minor tribes: weak villages scattered over the map, easy prey for whoever reaches them first
   const mc=o.minors==null?60:o.minors,tn=shuffle([...Array(600).keys()],rng);
-  for(let b=0;b<mc&&g.nations.length<124;b++){const i=pickSpawn(g,8);if(i<0)break;
+  for(let b=0;b<mc&&g.nations.length<188;b++){const i=pickSpawn(g,8);if(i<0)break;
     const n=addNation(g,{fac:'merchants',pers:'sage',color:[135+((rng()*50)|0),125+((rng()*45)|0),105+((rng()*45)|0)],nameIdx:-2});n.minor=true;n.tribe=tn[b];n.ai.nextWar=60+rng()*120;n.troops=2500;spawn(g,n,i);n.cap.level=1;}
   for(const n of g.nations)if(n&&!n.human)for(const m of g.nations)if(m&&m!==n)n.att[m.id]=rng()*40-15+(PERS[n.pers].trust-.5)*20+(m.human?[30,10,-5,-20][o.diff==null?1:o.diff]:0);
 }
