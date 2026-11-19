@@ -281,7 +281,7 @@ function draw(g,dt,ts){
     else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
     else if(f.type==='sword'){
       // a drawn steel sword slashes down with a light trail, rests, then fades with the troops taken
-      const T=f.t,sw=Math.min(1,T/.22),ease=1-(1-sw)**3,a=T>.78?(1-T)/.22:1,L=clamp(z*11,76,110),cx=p.x,cy=p.y-30;
+      const T=f.t,sw=Math.min(1,T/.22),ease=1-(1-sw)**3,a=T>.78?(1-T)/.22:1,L=clamp(z*8,54,80),cx=p.x,cy=p.y-24;
       c.globalAlpha=a;
       // two swords swing in from either side and lock in a cross
       const A2=-2.1+ease*(2.1-.62),wob=T>.22&&T<.78?Math.sin((T-.22)*18)*.02:0;

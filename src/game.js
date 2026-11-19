@@ -4,7 +4,7 @@ const R_CITY=5,R_CAP=6,R_FORT=6,CITY_MIN=6,ALLY_T=1200,PEACE_T=300,SHIELD_R=15,M
 function newGame(o){
   const M=genMap(o),N=M.N;
   const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),structAt:new Int16Array(N),
-    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
+    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],fills:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
     q:new Int32Array(N),prev:new Int32Array(N),lab:new Int32Array(N),nb:null,diff:DIFF[o.diff==null?1:o.diff],ncity:[],ncDirty:true,used:M.used,grace:[1500,900,450,150][o.diff==null?1:o.diff]};
   for(const c of M.cities)addStruct(g,'city',c.i,0,c.level,c.name);
@@ -576,16 +576,27 @@ function statsPass(g){
 function pocketPass(g){
   const W=g.W,N=g.N,own=g.owner,ter=g.M.ter,lab=g.lab,q=g.q,now=g.tick;lab.fill(0);
   for(let s=0;s<N;s++){
-    if(lab[s]||ter[s]<2)continue;const o=own[s];let qh=0,qt=0,nbo=-1,water=false,bad=false,hasS=false;q[qt++]=s;lab[s]=1;
+    if(lab[s]||ter[s]<2)continue;const o=own[s];let qh=0,qt=0,nbo=-1,water=false,bad=false,hasS=false,edge=false;q[qt++]=s;lab[s]=1;
     while(qh<qt){const c=q[qh++],x=c%W;if(g.fall[c]>now)bad=true;if(g.structAt[c])hasS=true;
-      for(let d=0;d<4;d++){let j;if(d===0){if(x===0)continue;j=c-1;}else if(d===1){if(x===W-1)continue;j=c+1;}else if(d===2){if(c<W)continue;j=c-W;}else{if(c>=N-W)continue;j=c+W;}
+      for(let d=0;d<4;d++){let j;if(d===0){if(x===0){edge=true;continue;}j=c-1;}else if(d===1){if(x===W-1){edge=true;continue;}j=c+1;}else if(d===2){if(c<W){edge=true;continue;}j=c-W;}else{if(c>=N-W){edge=true;continue;}j=c+W;}
         if(ter[j]<2){water=true;continue;}const p=own[j];
         if(p===o){if(!lab[j]){lab[j]=1;q[qt++]=j;}}else if(nbo===-1)nbo=p;else if(nbo!==p)nbo=-2;}}
-    if(bad||nbo<=0||qt>300||(hasS&&qt>25))continue;const K=g.nations[nbo];if(!K.alive)continue;
-    if(o===0){if(qt>45)continue;}
+    if(bad||nbo<=0)continue;const K=g.nations[nbo];if(!K.alive)continue;const open=water||edge;
+    // no man's land wholly ringed by one realm (not touching sea or the map edge) joins it whatever its size; open pockets only when tiny
+    if(o===0){if(open?(qt>45||(hasS&&qt>25)):qt>4000)continue;}
+    else if(qt>800||(hasS&&qt>25))continue;
     else{const O=g.nations[o];if((water&&!hasS)||O.ally[nbo]||now<K.truce[o])continue;O.troops*=Math.max(.3,1-qt/Math.max(O.tiles,1));emit(g,'pocket',{a:nbo,d:o,n:qt,x:s%W,y:(s/W)|0});}
-    const list=Array.from(q.subarray(0,qt));for(const i of list)setOwner(g,i,nbo);
+    // fill from the rim inward over about a second and a half
+    const list=q.slice(0,qt);if(qt<=45){for(const i of list)setOwner(g,i,nbo);continue;}
+    const dist=new Map();let h=0;const ord=[];for(const i of list){const x=i%W;if((x>0&&own[i-1]===nbo)||(x<W-1&&own[i+1]===nbo)||(i>=W&&own[i-W]===nbo)||(i<N-W&&own[i+W]===nbo)){dist.set(i,0);ord.push(i);}}
+    const inP=new Set(list);while(h<ord.length){const c=ord[h++],x=c%W;for(const j of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(j>=0&&inP.has(j)&&!dist.has(j)){dist.set(j,dist.get(c)+1);ord.push(j);}}
+    let cx=0,cy=0;for(const i of list){cx+=i%W;cy+=(i/W)|0;}g.fills.push({a:nbo,o,tiles:ord,p:0,step:Math.ceil(ord.length/15)});emit(g,'enclave',{a:nbo,d:o,n:qt,x:Math.round(cx/qt),y:Math.round(cy/qt)});
   }
+}
+function tickFills(g){
+  for(let j=g.fills.length-1;j>=0;j--){const f=g.fills[j],K=g.nations[f.a];if(!K.alive){g.fills.splice(j,1);continue;}
+    const end=Math.min(f.tiles.length,f.p+f.step);for(;f.p<end;f.p++){const i=f.tiles[f.p];if(g.owner[i]===f.o&&g.fall[i]<=g.tick)setOwner(g,i,f.a);}
+    if(f.p>=f.tiles.length)g.fills.splice(j,1);}
 }
 function worldEvent(g){
   const r=g.rng(),now=g.tick,W=g.W;g.nextEvent=now+500+g.rng()*500;
@@ -618,7 +629,7 @@ function snapshot(g){
 }
 function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
-  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickMissiles(g);tickPending(g);
+  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
     structPass(g);allyPass(g);if(g.ruins.length&&now%100===0)g.ruins=g.ruins.filter(r=>r.until>now);if(now%50===0)for(const n of g.nations)if(n)n.defDirty=true;const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);

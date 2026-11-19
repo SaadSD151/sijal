@@ -241,20 +241,19 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .room span{color:var(--gold2);font-variant-numeric:tabular-nums}
 /* rank ladder */
 #radial{position:fixed;width:0;height:0;z-index:40;pointer-events:none}
-#radial .rr{position:absolute;left:-78px;top:-78px;width:156px;height:156px;border-radius:50%;background:rgba(10,20,34,.55);border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 24px rgba(0,0,0,.4);backdrop-filter:blur(2px);animation:rpop .14s ease-out}
-#radial .rr.more{left:-112px;top:-112px;width:224px;height:224px}
-@keyframes rpop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
-#radial .rb{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(28,44,66,.92);display:grid;place-items:center;cursor:pointer;pointer-events:auto;animation:rpop .16s ease-out;padding:0}
-#radial .rb img{width:24px;height:24px}
-#radial .rb.c{width:58px;height:58px;margin:-29px 0 0 -29px;background:#14284a;border-color:rgba(255,233,168,.5)}
-#radial .rb.c img{width:30px;height:30px}
-#radial .rb.t{left:0;top:-54px}#radial .rb.b{left:0;top:54px}#radial .rb.l{left:-54px;top:0}#radial .rb.r{left:54px;top:0}#radial .rb.c{left:0;top:0}
-#radial .rb.m0{left:-66px;top:-62px}#radial .rb.m1{left:0;top:-88px}#radial .rb.m2{left:66px;top:-62px}#radial .rb.m3{left:0;top:84px}
-#radial .rb.red{background:#c0392b;border-color:#ff8a7a}#radial .rb.sea{background:#2e7fd0;border-color:#9fd2ff}#radial .rb.ok{background:#2f8f55;border-color:#9fe3b6}
-#radial .rb.off{opacity:.38;filter:grayscale(1);cursor:default}
-#radial .rb:not(.off):active{transform:scale(.92)}
-.gfxd{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line2);text-align:start;font-size:13px}
-.gfxd span{color:var(--dim)}
+#radial .rr{position:absolute;left:-92px;top:-92px;width:184px;height:184px;border-radius:50%;background:radial-gradient(circle,rgba(20,36,60,.82) 0 34%,rgba(12,22,38,.72) 35% 100%);border:1.5px solid rgba(255,233,168,.35);box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 0 22px rgba(255,233,168,.08);backdrop-filter:blur(3px);animation:rpop .16s ease-out}
+#radial .rr.more{left:-124px;top:-124px;width:248px;height:248px}
+@keyframes rpop{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+#radial .rb{position:absolute;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:linear-gradient(180deg,#2b4466,#1b2d48);display:grid;place-items:center;cursor:pointer;pointer-events:auto;animation:rpop .18s ease-out;padding:0;box-shadow:0 3px 10px rgba(0,0,0,.35);transition:transform .08s}
+#radial .rb img{width:24px;height:24px;pointer-events:none;-webkit-user-drag:none;user-select:none}
+#radial .rb i{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;font-style:normal;font-size:11px;font-weight:700;white-space:nowrap;color:#f4e3b0;text-shadow:0 1px 3px #000,0 0 2px #000;pointer-events:none}
+#radial .rb.c{width:62px;height:62px;margin:-31px 0 0 -31px;background:linear-gradient(180deg,#1f3d6e,#132748);border:2px solid rgba(255,233,168,.75);box-shadow:0 0 0 4px rgba(255,233,168,.12),0 4px 14px rgba(0,0,0,.45)}
+#radial .rb.c img{width:32px;height:32px}
+#radial .rb.t{left:0;top:-62px}#radial .rb.b{left:0;top:58px}#radial .rb.l{left:-62px;top:-4px}#radial .rb.r{left:62px;top:-4px}#radial .rb.c{left:0;top:-4px}
+#radial .rb.m0{left:-78px;top:-66px}#radial .rb.m1{left:0;top:-96px}#radial .rb.m2{left:78px;top:-66px}#radial .rb.m3{left:0;top:80px}
+#radial .rb.red{background:linear-gradient(180deg,#e0513f,#a92a1c);border-color:#ffb1a4}#radial .rb.sea{background:linear-gradient(180deg,#3b95e6,#1f68b3);border-color:#bfe2ff}#radial .rb.ok{background:linear-gradient(180deg,#3aa766,#24774a);border-color:#b6efc9}
+#radial .rb.off{opacity:.4;filter:grayscale(1);cursor:default;box-shadow:none}
+#radial .rb:not(.off):hover{transform:scale(1.08)}#radial .rb:not(.off):active{transform:scale(.93)}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button:active{transform:scale(.92)}
