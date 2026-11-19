@@ -77,8 +77,8 @@ function defOf(g,n){
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
 function nearestCity(g,owner,x,y){let b=null,bd=1e9;for(const s of g.structs)if(!s.dead&&s.type==='city'&&s.owner===owner){const d=(s.x-x)**2+(s.y-y)**2;if(d<bd){bd=d;b=s;}}return b;}
 function portOk(g,i){const W=g.W,b=g.M.big,x=i%W;return(x>0&&b[i-1])||(x<W-1&&b[i+1])||(i>=W&&b[i-W])||(i<g.N-W&&b[i+W])?true:false;}
-// price rises with how many of that kind you have built yourself (captured ones do not count): ×mul for the first 8, then +15% of that each
-function buildCost(g,n,type){const s=ST[type],b=n.bc[type]|0;let c=s.cost;for(let k=0;k<Math.min(b,8);k++)c*=s.mul;if(b>8)c*=1+.15*(b-8);if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
+// price rises with how many of that kind you have built yourself (captured ones do not count): ×mul for the first 6, then +12% of that each
+function buildCost(g,n,type){const s=ST[type],b=n.bc[type]|0;let c=s.cost;for(let k=0;k<Math.min(b,6);k++)c*=s.mul;if(b>6)c*=1+.12*(b-6);if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
 function canBuild(g,n,type,i){
   const s=ST[type];if(n.era<s.era)return'era';if(n.gold<buildCost(g,n,type))return'gold';if(type==='mon'&&n.mon)return'busy';
   if(i==null||i<0)return 0;
