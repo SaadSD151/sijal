@@ -254,6 +254,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #radial .rb.red{background:linear-gradient(180deg,#e0513f,#a92a1c);border-color:#ffb1a4}#radial .rb.sea{background:linear-gradient(180deg,#3b95e6,#1f68b3);border-color:#bfe2ff}#radial .rb.ok{background:linear-gradient(180deg,#3aa766,#24774a);border-color:#b6efc9}
 #radial .rb.off{opacity:.4;filter:grayscale(1);cursor:default;box-shadow:none}
 #radial .rb:not(.off):hover{transform:scale(1.08)}#radial .rb:not(.off):active{transform:scale(.93)}
+.namer{margin-top:8px}.namer .btn:disabled{opacity:.38;filter:grayscale(1);cursor:default}
 .gfxd{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line2);text-align:start;font-size:13px}
 .gfxd span{color:var(--dim)}
 .gfxp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}

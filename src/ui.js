@@ -280,7 +280,7 @@ function accPanel(){
 }
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
-  $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label></div>
+  $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
   <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
   <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
@@ -561,7 +561,7 @@ function act(a){
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=v==null?(p.ui+1)%3:+v;applyMode();resize();renderSettings();break;
-    case'fac':p.fac=v;renderFac();break;case'account':UI.accMsg='';renderAccount();show('help');break;case'accReg':accRegister();break;case'accIn':accLogin();break;case'accOut':accLogout();break;case'board':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'account':UI.accMsg='';UI.nameDraft=null;renderAccount();show('help');break;case'accReg':accRegister();break;case'accIn':accLogin();break;case'accOut':accLogout();break;case'board':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio,m:UI.prof.amode||'pt'});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
@@ -570,6 +570,8 @@ function act(a){
     case'lb':$('#lb').classList.toggle('open');break;
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
+    case'nameSave':{const v=(UI.nameDraft!=null?UI.nameDraft:p.name)||'';p.name=v;UI.nameDraft=null;saveProf();cloudSync();renderAccount();const m=$('#nameMsg');if(m)m.textContent=t('nameSaved',v||t('defName'));break;}
+    case'nameUndo':UI.nameDraft=null;renderAccount();break;
     case'closeCard':closeCard();break;
     case'radX':break;
     case'radAtk':if(UI.rad){send({k:'atk',i:UI.rad.i,r:UI.ratio,m:UI.prof.amode||'pt'});}radClose();break;
@@ -722,7 +724,7 @@ function bindInput(){
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inTribes'){UI.prof.tribes=clamp(+e.target.value|0,30,120);$('#tribesV').textContent=UI.prof.tribes;saveProf();return;}if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
   $('#app').addEventListener('change',e=>{if(e.target.id==='auKeep'||e.target.id==='auMax'||e.target.id==='auRate'){const a=auCfg();a[{auKeep:'keep',auMax:'max',auRate:'rate'}[e.target.id]]=+e.target.value;saveProf();UI.auNext=0;auOpen();}});
-  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.prof.name=e.target.value.trim().slice(0,18);saveProf();}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.nameDraft=e.target.value.trim().slice(0,18);const ch=UI.nameDraft!==(UI.prof.name||'');const b=$('#nameSave'),u=$('#nameUndo');if(b)b.disabled=!ch;if(u)u.disabled=!ch;const m=$('#nameMsg');if(m)m.textContent='';}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
     if(!G||G.o.demo)return;
