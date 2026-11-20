@@ -542,12 +542,15 @@ function economy(g){
     n.mSpd=(f.spd||1)*(now<n.blitz?.5:1);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1);
     const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0046*x*(1-x):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
-    n.troops+=gr;n.gold+=n.income/TPS;}
+    n.troops+=gr;n.gold+=n.income/TPS;
+    // custom-battle cheats for the player (solo only, never online)
+    const C=g.o.cheats;if(C&&n.human){if(C.gold)n.gold=Math.max(n.gold,1e9);if(C.troops)n.troops=Math.max(n.troops,9999999);if(C.era&&n.era<4)n.era=4;if(C.msl){n.ultAt=0;for(const s of g.structs)if(!s.dead&&s.owner===n.id&&s.type==='silo')s.cd=0;}}}
 }
 function structPass(g){
   const ns=g.nations;let ports=0;for(const n of ns)if(n){n._pop=0;n._inc=0;}
   for(const s of g.structs)if(!s.dead&&s.type==='port')ports++;
-  for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;if(s.type==='factory')railBuild(g,s);}
+  const CB=g.o.cheats&&g.o.cheats.build;
+  for(const s of g.structs){if(s.dead||!s.owner)continue;const n=ns[s.owner];if(CB&&n.human){if(s.build>g.tick)s.build=g.tick;if(s.upAt>g.tick)s.upAt=g.tick;}if(s.build){if(s.build>g.tick)continue;s.build=0;n.defDirty=true;if(s.type==='factory')railBuild(g,s);}
     if(s.upAt&&s.upAt<=g.tick){s.upAt=0;s.level=Math.min(5,s.level+1);n.defDirty=true;emit(g,'upDone',{a:n.id,s});}
     if(s.type==='city'){const rn=s.ruin>g.tick;n._pop+=s.level*(s.capital?1.5:1)*(rn?.3:1);if(!rn)n._inc+=1+s.level;
       if(!rn&&!s.upAt&&s.level<5&&g.tick-n.lastHitAny>150&&++s.grow>=40+35*s.level){s.grow=0;s.level++;emit(g,'cityUp',{a:n.id,s});}}

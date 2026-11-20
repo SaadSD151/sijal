@@ -132,7 +132,7 @@ function renderSetup(){
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
   <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="30" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
   <div><h3>${t('tribes')}</h3><div class="rng"><input type="range" id="inTribes" min="30" max="120" step="5" value="${tribesN()}" aria-label="${t('tribes')}"><b id="tribesV">${tribesN()}</b></div></div>
-  <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div></div>
+  <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div>${host?'':`<div class="cheats"><h3>🧪 ${t('cheats')}</h3><div class="chips">${CHEATS.map(k=>`<button class="chip${(p.cheat||{})[k]?' on':''}" data-a="cheat:${k}">${t('ch_'+k)}</button>`).join('')}</div><p class="keys">${t('cheatNote')}</p></div>`}</div>
   ${host?`<div class="opts" style="grid-template-columns:minmax(0,1fr)"><div><h3>${t('maxP')}</h3><div class="rng"><input type="range" id="inMaxP" min="2" max="32" step="1" value="${maxP()}" aria-label="${t('maxP')}"><b id="maxPV">${maxP()}</b></div></div></div>`:''}
   ${host?`<div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>`:''}
   ${NET.on&&NET.host?`<div class="row"><button class="btn" data-a="lobbyBack">${t('lobby')} (${NET.players.length})</button><button class="btn big" data-a="netStart">${t('startNet')}</button></div>`:`${host?`<div class="row"><button class="btn" data-a="online">${t('back')}</button><button class="btn big" data-a="hostRoom">${t('hostRoom')}</button></div>`:`<div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`}`}`;
@@ -303,23 +303,25 @@ function prep(g){
   lookAt(g.W/2,g.H/2,fitZoom(g)*(g.o.demo?1.5:1),true);
 }
 function startDemo(){G=newGame({w:200,h:128,seed:(Math.random()*2**31)|0,type:'continents',bots:9,diff:1,demo:true});prep(G);startGame(G);}
+const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
   let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
+  const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
   if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={w:420,h:264,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
   if(o.same&&UI.lastOpt)opt=Object.assign({},UI.lastOpt,{seed:UI.lastOpt.daily?UI.lastOpt.seed:(Math.random()*2**31)|0});
   UI.lastOpt=opt;loading(true);
-  setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);},40);
+  setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},40);
 }
 function quitXp(){
-  const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
+  const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone||g.o.cheats)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
   const xp=me.st.cities*4+me.st.kills*15;if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();return xp;
 }
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;const xp=10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();lbPush();
-  let best='';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
+  g.xpDone=true;const cheat=!!g.o.cheats,xp=cheat?0:10+(o.win?60:0)+me.st.cities*4+me.st.kills*15;if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();lbPush();}
+  let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
   $('#end').innerHTML=`<div class="endbox pn ${o.win?'won':'lost'}"><h1>${t(o.win?'win':'lose')}</h1><p>${why}</p>${best}<div class="stats">${st.map(s=>`<div><small>${s[0]}</small><b>${s[1]}</b></div>`).join('')}</div>
@@ -538,7 +540,10 @@ function radOpen(i,x,y,more){
   if(!more)closeCard();const cv=document.querySelector('#cv')||document.querySelector('canvas'),rc=cv.getBoundingClientRect();
   const RD=UI.rad&&UI.rad.i===i?UI.rad:{i,x,y,sea:seaReach(g,me,i)};RD.more=!!more;UI.rad=RD;
   const war=n&&!n.minor&&atWar(g,me.id,o),diplo=n&&!n.minor&&!me.ally[o],B=(a,ic,pos,cls,tt,off,lb)=>`<button class="rb ${pos} ${cls||''}${off?' off':''}" data-a="${off?'radX':a}" title="${tt}" aria-label="${tt}"><img src="${ic}" alt=""><i>${lb||''}</i></button>`,U=k=>RR().url[k];
-  let h=`<div class="rr${more?' more':''}"></div>`;
+  // what you are hitting and with how much; quick strength buttons under the circle
+  const nm=n?esc(natName(n)):t('neutral'),tr=n?fmt(n.troops):'—',sendN=fmt(Math.floor(me.troops*UI.ratio)),pc=Math.round(UI.ratio*100);
+  let h=`<div class="rr${more?' more':''}"></div><div class="rh${more?' more':''}"><b${n?` style="color:${n.css}"`:''}>${nm}</b><span>🛡 ${tr}</span><span class="me">⚔ ${sendN}</span></div>`;
+  if(!more)h+=`<div class="rq">${[25,50,75,100].map(v=>`<button class="${Math.abs(pc-v)<3?'on':''}" data-a="radR:${v}">${v}%</button>`).join('')}</div>`;
   if(!more){
     h+=B('radAtk',U('sword'),'c','go',t('rLand'),0,t('rl_land'))+B('radInfo',U('eye'),'t','',t('rInfo'),!n,t('rl_info'))+B('radSea',U('ship'),'r',RD.sea?'sea':'',t('rSea'),!RD.sea,t('rl_sea'))+B('radDip',U('ally'),'b',war?'ok':'',t(war?'c_peace':'c_ally'),!diplo,t(war?'c_peace':'c_ally'))+B('radMore',U('sword'),'l','red',t('rMore'),0,t('rl_more'));
   }else{
@@ -547,7 +552,9 @@ function radOpen(i,x,y,more){
     h+=B('radAll',U('flag'),'m3','go',t('am_all'),0,t('rl_all'));
   }
   let e=$('#radial');if(!e){e=document.createElement('div');e.id='radial';e.addEventListener('contextmenu',ev=>ev.preventDefault());$('#app').appendChild(e);}
-  e.innerHTML=h;e.hidden=false;e.style.left=clamp(rc.left+x,90,innerWidth-90)+'px';e.style.top=clamp(rc.top+y,90,innerHeight-90)+'px';sfx('click');
+  // on a phone the circle opens above the finger so the hand does not hide it
+  const up=UI.mob&&!more&&!RD.placed?70:0;if(!RD.placed){RD.px=clamp(rc.left+x,120,innerWidth-120);RD.py=clamp(rc.top+y-up,150,innerHeight-150);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
+  e.innerHTML=h;e.hidden=false;e.style.left=RD.px+'px';e.style.top=RD.py+'px';sfx('click');
 }
 function RR(){return R;}
 function radClose(){UI.rad=null;const e=$('#radial');if(e){e.hidden=true;e.innerHTML='';}}
@@ -572,6 +579,8 @@ function act(a){
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'nameSave':{const v=(UI.nameDraft!=null?UI.nameDraft:p.name)||'';p.name=v;UI.nameDraft=null;saveProf();cloudSync();renderAccount();const m=$('#nameMsg');if(m)m.textContent=t('nameSaved',v||t('defName'));break;}
     case'nameUndo':UI.nameDraft=null;renderAccount();break;
+    case'cheat':{const c=p.cheat||(p.cheat={});c[v]=!c[v];saveProf();renderSetup();break;}
+    case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
     case'closeCard':closeCard();break;
     case'radX':break;
     case'radAtk':if(UI.rad){send({k:'atk',i:UI.rad.i,r:UI.ratio,m:UI.prof.amode||'pt'});}radClose();break;
