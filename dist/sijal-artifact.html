@@ -258,10 +258,10 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .room span{color:var(--gold2);font-variant-numeric:tabular-nums}
 /* rank ladder */
 #radial{position:fixed;width:0;height:0;z-index:40;pointer-events:none}
-#radial .rr{position:absolute;left:-92px;top:-92px;width:184px;height:184px;border-radius:50%;background:radial-gradient(circle,rgba(20,36,60,.82) 0 34%,rgba(12,22,38,.72) 35% 100%);border:1.5px solid rgba(255,233,168,.35);box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 0 22px rgba(255,233,168,.08);backdrop-filter:blur(3px);animation:rpop .16s ease-out}
+#radial .rr{position:absolute;left:-92px;top:-92px;width:184px;height:184px;border-radius:50%;background:radial-gradient(circle,rgba(20,36,60,.82) 0 34%,rgba(12,22,38,.72) 35% 100%);border:1.5px solid rgba(255,233,168,.35);box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 0 22px rgba(255,233,168,.08);backdrop-filter:blur(3px);animation:rpop .07s ease-out}
 #radial .rr.more{left:-124px;top:-124px;width:248px;height:248px}
-@keyframes rpop{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
-#radial .rb{position:absolute;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:linear-gradient(180deg,#2b4466,#1b2d48);display:grid;place-items:center;cursor:pointer;pointer-events:auto;animation:rpop .18s ease-out;padding:0;box-shadow:0 3px 10px rgba(0,0,0,.35);transition:transform .08s}
+@keyframes rpop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+#radial .rb{position:absolute;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:linear-gradient(180deg,#2b4466,#1b2d48);display:grid;place-items:center;cursor:pointer;pointer-events:auto;animation:rpop .07s ease-out;padding:0;box-shadow:0 3px 10px rgba(0,0,0,.35);transition:transform .08s}
 #radial .rb img{width:24px;height:24px;pointer-events:none;-webkit-user-drag:none;user-select:none}
 #radial .rb i{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;font-style:normal;font-size:11px;font-weight:700;white-space:nowrap;color:#f4e3b0;text-shadow:0 1px 3px #000,0 0 2px #000;pointer-events:none}
 #radial .rb.c{width:62px;height:62px;margin:-31px 0 0 -31px;background:linear-gradient(180deg,#1f3d6e,#132748);border:2px solid rgba(255,233,168,.75);box-shadow:0 0 0 4px rgba(255,233,168,.12),0 4px 14px rgba(0,0,0,.45)}
@@ -269,17 +269,11 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #radial .rb.t{left:0;top:-62px}#radial .rb.b{left:0;top:58px}#radial .rb.l{left:-62px;top:-4px}#radial .rb.r{left:62px;top:-4px}#radial .rb.c{left:0;top:-4px}
 #radial .rb.m0{left:-78px;top:-66px}#radial .rb.m1{left:0;top:-96px}#radial .rb.m2{left:78px;top:-66px}#radial .rb.m3{left:0;top:80px}
 #radial .rb.red{background:linear-gradient(180deg,#e0513f,#a92a1c);border-color:#ffb1a4}#radial .rb.sea{background:linear-gradient(180deg,#3b95e6,#1f68b3);border-color:#bfe2ff}#radial .rb.ok{background:linear-gradient(180deg,#3aa766,#24774a);border-color:#b6efc9}
-#radial .rh{position:absolute;left:50%;top:-150px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;white-space:nowrap;padding:6px 12px;border-radius:999px;background:rgba(10,20,34,.9);border:1px solid rgba(255,233,168,.35);font-size:13px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4);animation:rpop .16s ease-out}
+#radial .rh{position:absolute;left:50%;top:-150px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;white-space:nowrap;padding:6px 12px;border-radius:999px;background:rgba(10,20,34,.9);border:1px solid rgba(255,233,168,.35);font-size:13px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4);animation:rpop .07s ease-out}
 #radial .rh.more{top:-176px}#radial .rh b{font-weight:800}#radial .rh span{color:#cfd8e3}#radial .rh .me{color:#8fd3ff;font-weight:700}
-#radial .rq{position:absolute;left:50%;top:108px;transform:translateX(-50%);display:flex;gap:5px;pointer-events:auto;animation:rpop .18s ease-out}
+#radial .rq{position:absolute;left:50%;top:108px;transform:translateX(-50%);display:flex;gap:5px;pointer-events:auto;animation:rpop .07s ease-out}
 #radial .rq button{min-width:46px;padding:7px 0;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(20,36,60,.92);color:#f4e3b0;font:700 13px inherit;font-family:inherit;cursor:pointer}
 #radial .rq button.on{background:linear-gradient(180deg,#f1cf6e,#c9952d);color:#1a1205;border-color:#ffe9a8}
-.mob #radial .rr{left:-104px;top:-104px;width:208px;height:208px}.mob #radial .rr.more{left:-132px;top:-132px;width:264px;height:264px}
-.mob #radial .rb{width:58px;height:58px;margin:-29px 0 0 -29px}.mob #radial .rb img{width:28px;height:28px}
-.mob #radial .rb.c{width:72px;height:72px;margin:-36px 0 0 -36px}.mob #radial .rb.c img{width:36px;height:36px}
-.mob #radial .rb.t{top:-72px}.mob #radial .rb.b{top:66px}.mob #radial .rb.l{left:-72px}.mob #radial .rb.r{left:72px}
-.mob #radial .rb.m0{left:-88px;top:-74px}.mob #radial .rb.m1{top:-106px}.mob #radial .rb.m2{left:88px;top:-74px}.mob #radial .rb.m3{top:92px}
-.mob #radial .rh{top:-164px;font-size:14px}.mob #radial .rh.more{top:-190px}.mob #radial .rq{top:124px}.mob #radial .rq button{min-width:54px;padding:9px 0;font-size:14px}
 #radial .rb.t i,#radial .rb.m0 i,#radial .rb.m1 i,#radial .rb.m2 i{top:auto;bottom:100%;margin:0 0 2px}
 #radial .rb.off{opacity:.4;filter:grayscale(1);cursor:default;box-shadow:none}
 #radial .rb:not(.off):hover{transform:scale(1.08)}#radial .rb:not(.off):active{transform:scale(.93)}
@@ -426,7 +420,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='5103040949';
+const BUILD_ID='5c4c492a55';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1899,7 +1893,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'4.1',d:'2026-11-20',ar:['🎖️ الباتل باس صار اسمه «السيزون صفر» وفيه 20 مستوى، كل مستوى بـ1000 خبرة، و5 سكنات جديدة: معيّنات، متعرّج، يشم، قرمزي، فضّي','🗂️ فوق القائمة الرئيسية صار فيه خانات: القائمة، والسيزون صفر، والتخصيص اللي تغيّر منه سكناتك','📅 تحدي اليوم صار محاولة وحدة بس كل يوم، وأول ما تبدأه تنحسب. الخبرة فيه ×1.5 و+50 لو فزت'],en:['🎖️ The Battle Pass is now Season Zero with 20 tiers at 1,000 experience each, and 5 new skins: diamonds, zigzag, jade, crimson, silver','🗂️ Tabs on top of the main menu: Menu, Season Zero, and Customize where you change your skins','📅 The daily challenge is now one attempt a day, counted as soon as you start it; experience there is ×1.5 and +50 if you win']},
+ {v:'4.1',d:'2026-11-20',ar:['🎖️ الباتل باس صار اسمه «السيزون صفر» وفيه 20 مستوى، كل مستوى بـ1000 خبرة، و5 سكنات جديدة: معيّنات، متعرّج، يشم، قرمزي، فضّي','🗂️ فوق القائمة الرئيسية صار فيه خانات: القائمة، والسيزون صفر، والتخصيص اللي تغيّر منه سكناتك','🎯 الدائرة في الجوال صارت أصغر وأسرع، وبدون الشريط والأزرار الزيادة','📅 تحدي اليوم صار محاولة وحدة بس كل يوم، وأول ما تبدأه تنحسب. الخبرة فيه ×1.5 و+50 لو فزت'],en:['🎖️ The Battle Pass is now Season Zero with 20 tiers at 1,000 experience each, and 5 new skins: diamonds, zigzag, jade, crimson, silver','🗂️ Tabs on top of the main menu: Menu, Season Zero, and Customize where you change your skins','🎯 The phone circle is smaller and quicker, without the extra bar and buttons','📅 The daily challenge is now one attempt a day, counted as soon as you start it; experience there is ×1.5 and +50 if you win']},
  {v:'4.0',d:'2026-11-20',ar:['🎖️ الباتل باس وصل! يفتح لما توصل 10 آلاف خبرة، وكل 1000 خبرة بعدها تفتح مستوى جديد، والمجموع 15 مستوى','🎨 نقشات للأرض: خطوط، نقاط، شطرنج، شبكة، أمواج، أسهم، طوب، نجوم، تتلوّن فيها دولتك كاملة','🏰 أشكال للمباني: ذهبي، حجري، نيون، ملكي، جليدي، أوبسيديان، ناري','👀 السكنات يشوفها كل اللاعبين معك في الأونلاين، تلبسها من زر «الباتل باس» في القائمة'],en:['🎖️ The Battle Pass is here! It opens at 10,000 experience, and every 1,000 after that unlocks a new tier, 15 tiers in all','🎨 Land patterns: stripes, dots, checker, grid, waves, chevrons, bricks, stars, covering your whole realm','🏰 Building styles: golden, stone, neon, royal, ice, obsidian, fire','👀 Other players see your skins online; equip them from the Battle Pass button in the menu']},
  {v:'3.9',d:'2026-11-20',ar:['⭐ تحدي اليوم صار يعطيك خبرة ×3، و+150 خبرة لو فزت','🗺️ خريطة تحدي اليوم صارت بحجم المتوسطة الجديدة'],en:['⭐ The daily challenge now gives triple experience, plus 150 if you win','🗺️ The daily challenge map is now the new medium size']},
  {v:'3.8',d:'2026-11-20',ar:['🧪 وضع الغش في المعركة المخصصة: ذهب لا نهائي، جنود لا نهائية، بناء وتطوير فوري، كل العصور مفتوحة، وصواريخ بدون انتظار. تلقاه تحت إعدادات المعركة المخصصة، والمعركة اللي فيها غش ما تنحسب في الانتصارات ولا المتصدرين','🎯 الدائرة في الجوال صارت أكبر وتطلع فوق إصبعك، وفوقها تشوف مين بتهجم عليه وكم جنوده وكم بترسل','💪 تحت الدائرة أزرار سريعة لقوة الهجوم: 25٪ و50٪ و75٪ و100٪'],en:['🧪 Cheat mode in Custom Battle: infinite gold, infinite troops, instant build and upgrades, all ages unlocked, and missiles without cooldown. Find it under the custom battle settings; a battle with cheats does not count toward wins or the leaderboard','🎯 The phone circle is bigger and opens above your finger, showing who you are attacking, their troops and how many you will send','💪 Quick strength buttons under the circle: 25%, 50%, 75% and 100%']},
@@ -2700,9 +2694,7 @@ function radOpen(i,x,y,more){
   const RD=UI.rad&&UI.rad.i===i?UI.rad:{i,x,y,sea:seaReach(g,me,i)};RD.more=!!more;UI.rad=RD;
   const war=n&&!n.minor&&atWar(g,me.id,o),diplo=n&&!n.minor&&!me.ally[o],B=(a,ic,pos,cls,tt,off,lb)=>`<button class="rb ${pos} ${cls||''}${off?' off':''}" data-a="${off?'radX':a}" title="${tt}" aria-label="${tt}"><img src="${ic}" alt=""><i>${lb||''}</i></button>`,U=k=>RR().url[k];
   // what you are hitting and with how much; quick strength buttons under the circle
-  const nm=n?esc(natName(n)):t('neutral'),tr=n?fmt(n.troops):'—',sendN=fmt(Math.floor(me.troops*UI.ratio)),pc=Math.round(UI.ratio*100);
-  let h=`<div class="rr${more?' more':''}"></div><div class="rh${more?' more':''}"><b${n?` style="color:${n.css}"`:''}>${nm}</b><span>🛡 ${tr}</span><span class="me">⚔ ${sendN}</span></div>`;
-  if(!more)h+=`<div class="rq">${[25,50,75,100].map(v=>`<button class="${Math.abs(pc-v)<3?'on':''}" data-a="radR:${v}">${v}%</button>`).join('')}</div>`;
+  let h=`<div class="rr${more?' more':''}"></div>`;
   if(!more){
     h+=B('radAtk',U('sword'),'c','go',t('rLand'),0,t('rl_land'))+B('radInfo',U('eye'),'t','',t('rInfo'),!n,t('rl_info'))+B('radSea',U('ship'),'r',RD.sea?'sea':'',t('rSea'),!RD.sea,t('rl_sea'))+B('radDip',U('ally'),'b',war?'ok':'',t(war?'c_peace':'c_ally'),!diplo,t(war?'c_peace':'c_ally'))+B('radMore',U('sword'),'l','red',t('rMore'),0,t('rl_more'));
   }else{
@@ -2712,7 +2704,7 @@ function radOpen(i,x,y,more){
   }
   let e=$('#radial');if(!e){e=document.createElement('div');e.id='radial';e.addEventListener('contextmenu',ev=>ev.preventDefault());$('#app').appendChild(e);}
   // on a phone the circle opens above the finger so the hand does not hide it
-  const up=UI.mob&&!more&&!RD.placed?70:0;if(!RD.placed){RD.px=clamp(rc.left+x,120,innerWidth-120);RD.py=clamp(rc.top+y-up,150,innerHeight-150);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
+  const up=UI.mob&&!more&&!RD.placed?30:0;if(!RD.placed){RD.px=clamp(rc.left+x,95,innerWidth-95);RD.py=clamp(rc.top+y-up,110,innerHeight-110);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
   e.innerHTML=h;e.hidden=false;e.style.left=RD.px+'px';e.style.top=RD.py+'px';sfx('click');
 }
 function RR(){return R;}

@@ -567,9 +567,7 @@ function radOpen(i,x,y,more){
   const RD=UI.rad&&UI.rad.i===i?UI.rad:{i,x,y,sea:seaReach(g,me,i)};RD.more=!!more;UI.rad=RD;
   const war=n&&!n.minor&&atWar(g,me.id,o),diplo=n&&!n.minor&&!me.ally[o],B=(a,ic,pos,cls,tt,off,lb)=>`<button class="rb ${pos} ${cls||''}${off?' off':''}" data-a="${off?'radX':a}" title="${tt}" aria-label="${tt}"><img src="${ic}" alt=""><i>${lb||''}</i></button>`,U=k=>RR().url[k];
   // what you are hitting and with how much; quick strength buttons under the circle
-  const nm=n?esc(natName(n)):t('neutral'),tr=n?fmt(n.troops):'—',sendN=fmt(Math.floor(me.troops*UI.ratio)),pc=Math.round(UI.ratio*100);
-  let h=`<div class="rr${more?' more':''}"></div><div class="rh${more?' more':''}"><b${n?` style="color:${n.css}"`:''}>${nm}</b><span>🛡 ${tr}</span><span class="me">⚔ ${sendN}</span></div>`;
-  if(!more)h+=`<div class="rq">${[25,50,75,100].map(v=>`<button class="${Math.abs(pc-v)<3?'on':''}" data-a="radR:${v}">${v}%</button>`).join('')}</div>`;
+  let h=`<div class="rr${more?' more':''}"></div>`;
   if(!more){
     h+=B('radAtk',U('sword'),'c','go',t('rLand'),0,t('rl_land'))+B('radInfo',U('eye'),'t','',t('rInfo'),!n,t('rl_info'))+B('radSea',U('ship'),'r',RD.sea?'sea':'',t('rSea'),!RD.sea,t('rl_sea'))+B('radDip',U('ally'),'b',war?'ok':'',t(war?'c_peace':'c_ally'),!diplo,t(war?'c_peace':'c_ally'))+B('radMore',U('sword'),'l','red',t('rMore'),0,t('rl_more'));
   }else{
@@ -579,7 +577,7 @@ function radOpen(i,x,y,more){
   }
   let e=$('#radial');if(!e){e=document.createElement('div');e.id='radial';e.addEventListener('contextmenu',ev=>ev.preventDefault());$('#app').appendChild(e);}
   // on a phone the circle opens above the finger so the hand does not hide it
-  const up=UI.mob&&!more&&!RD.placed?70:0;if(!RD.placed){RD.px=clamp(rc.left+x,120,innerWidth-120);RD.py=clamp(rc.top+y-up,150,innerHeight-150);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
+  const up=UI.mob&&!more&&!RD.placed?30:0;if(!RD.placed){RD.px=clamp(rc.left+x,95,innerWidth-95);RD.py=clamp(rc.top+y-up,110,innerHeight-110);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
   e.innerHTML=h;e.hidden=false;e.style.left=RD.px+'px';e.style.top=RD.py+'px';sfx('click');
 }
 function RR(){return R;}
