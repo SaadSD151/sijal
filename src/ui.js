@@ -577,7 +577,7 @@ function radOpen(i,x,y,more){
   }
   let e=$('#radial');if(!e){e=document.createElement('div');e.id='radial';e.addEventListener('contextmenu',ev=>ev.preventDefault());$('#app').appendChild(e);}
   // on a phone the circle opens above the finger so the hand does not hide it
-  const up=UI.mob&&!more&&!RD.placed?30:0;if(!RD.placed){RD.px=clamp(rc.left+x,95,innerWidth-95);RD.py=clamp(rc.top+y-up,110,innerHeight-110);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
+  const up=0;if(!RD.placed){RD.px=clamp(rc.left+x,95,innerWidth-95);RD.py=clamp(rc.top+y-up,110,innerHeight-110);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
   RD.at=performance.now();e.innerHTML=h;e.hidden=false;e.style.left=RD.px+'px';e.style.top=RD.py+'px';sfx('click');
 }
 function RR(){return R;}

@@ -289,7 +289,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #radial .rb i{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:2px;font-style:normal;font-size:11px;font-weight:700;white-space:nowrap;color:#f4e3b0;text-shadow:0 1px 3px #000,0 0 2px #000;pointer-events:none}
 #radial .rb.c{width:62px;height:62px;margin:-31px 0 0 -31px;background:linear-gradient(180deg,#1f3d6e,#132748);border:2px solid rgba(255,233,168,.75);box-shadow:0 0 0 4px rgba(255,233,168,.12),0 4px 14px rgba(0,0,0,.45)}
 #radial .rb.c img{width:32px;height:32px}
-#radial .rb.t{left:0;top:-62px}#radial .rb.b{left:0;top:58px}#radial .rb.l{left:-62px;top:-4px}#radial .rb.r{left:62px;top:-4px}#radial .rb.c{left:0;top:-4px}
+#radial .rb.t{left:0;top:-62px}#radial .rb.b{left:0;top:58px}#radial .rb.l{left:-62px;top:0}#radial .rb.r{left:62px;top:0}#radial .rb.c{left:0;top:0}
 #radial .rb.m0{left:-78px;top:-66px}#radial .rb.m1{left:0;top:-96px}#radial .rb.m2{left:78px;top:-66px}#radial .rb.m3{left:0;top:80px}
 #radial .rb.red{background:linear-gradient(180deg,#e0513f,#a92a1c);border-color:#ffb1a4}#radial .rb.sea{background:linear-gradient(180deg,#3b95e6,#1f68b3);border-color:#bfe2ff}#radial .rb.ok{background:linear-gradient(180deg,#3aa766,#24774a);border-color:#b6efc9}
 #radial .rh{position:absolute;left:50%;top:-150px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;white-space:nowrap;padding:6px 12px;border-radius:999px;background:rgba(10,20,34,.9);border:1px solid rgba(255,233,168,.35);font-size:13px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
@@ -445,7 +445,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='47d965d5ed';
+const BUILD_ID='ba408214d8';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2729,7 +2729,7 @@ function radOpen(i,x,y,more){
   }
   let e=$('#radial');if(!e){e=document.createElement('div');e.id='radial';e.addEventListener('contextmenu',ev=>ev.preventDefault());$('#app').appendChild(e);}
   // on a phone the circle opens above the finger so the hand does not hide it
-  const up=UI.mob&&!more&&!RD.placed?30:0;if(!RD.placed){RD.px=clamp(rc.left+x,95,innerWidth-95);RD.py=clamp(rc.top+y-up,110,innerHeight-110);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
+  const up=0;if(!RD.placed){RD.px=clamp(rc.left+x,95,innerWidth-95);RD.py=clamp(rc.top+y-up,110,innerHeight-110);RD.placed=1;try{if(UI.mob&&navigator.vibrate)navigator.vibrate(8);}catch(_){}}
   RD.at=performance.now();e.innerHTML=h;e.hidden=false;e.style.left=RD.px+'px';e.style.top=RD.py+'px';sfx('click');
 }
 function RR(){return R;}
