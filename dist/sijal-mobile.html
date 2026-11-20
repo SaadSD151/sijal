@@ -149,7 +149,12 @@ html,body,#app,#hud,.screen,#gToasts{touch-action:manipulation}
 @keyframes lgbg{0%,100%{filter:drop-shadow(0 0 3px rgba(200,140,255,.7))}50%{filter:drop-shadow(0 0 7px rgba(241,194,76,.95))}}
 .bdgrow{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}.bdgshow{font-size:20px;padding:6px 14px;border-radius:999px;background:rgba(109,40,217,.2);border:1px solid rgba(192,132,255,.45)}
 .bpbuy{flex:none;background:linear-gradient(180deg,#8a5cf0,#5b2bc4);border-color:#d6b8ff;color:#fff}
-.bpc .btn:disabled,.bpbuy:disabled{opacity:.45;filter:grayscale(.6);cursor:default}
+.bpbuy:disabled{opacity:.45;filter:grayscale(.6);cursor:default}
+.bpc.can,.bpc.cant{opacity:1}
+.bpc.can{background:linear-gradient(180deg,rgba(74,222,128,.22),rgba(22,101,52,.25));border-color:#6ee7a0;box-shadow:0 0 0 2px rgba(110,231,160,.35),0 0 18px rgba(74,222,128,.35)}
+.bpc.can .btn{background:linear-gradient(180deg,#86efac,#22c55e);border-color:#bbf7d0;color:#052e14;font-weight:800}
+.bpc.cant{background:linear-gradient(180deg,rgba(20,83,45,.35),rgba(5,46,22,.4));border-color:#166534}
+.bpc.cant .btn,.bpc.cant .btn:disabled{background:linear-gradient(180deg,#166534,#0f3d22);border-color:#14532d;color:#86a893;opacity:1;filter:none;cursor:default}
 .bpc em.ok{color:#8fe3a8}.bpc .none{width:96px;height:64px;border-radius:8px;display:grid;place-items:center;font-size:26px;color:var(--dim);background:rgba(255,255,255,.05);border:1px dashed var(--line2)}
 .dlock{padding:8px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line2);font-weight:700}
 .bpbar{flex:none;position:relative;width:min(560px,100%);height:26px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line2);overflow:hidden}
@@ -438,7 +443,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='mobile';(function(){"use strict";
-const BUILD_ID='1ab45b1cb5';
+const BUILD_ID='05b67692bb';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2492,7 +2497,7 @@ function renderPass(){
   const head=on?(n>=PASS.length?t('bpDone'):xp>=PASS_STEP?t('bpReady',n+1):t('bpNext',fmt(PASS_STEP-xp),n+1)):xp>=PASS_AT?t('bpCanOpen'):t('bpLock',fmt(PASS_AT-xp));
   const openBtn=on?'':`<button class="btn big bpbuy" data-a="bpBuy"${xp>=PASS_AT?'':' disabled'}>🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
   $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}
-  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy"${xp>=PASS_STEP?'':' disabled'}>${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
+  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}${on&&j===n?(xp>=PASS_STEP?' can':' cant'):''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy"${xp>=PASS_STEP?'':' disabled'}>${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 // customization: equip what you have unlocked
