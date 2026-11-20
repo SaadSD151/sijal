@@ -314,7 +314,9 @@ const passTier=p=>p.passT>0?Math.min(PASS.length,p.passT):0;
 function passBuy(){
   const p=UI.prof;if(p.passT==null)p.passT=-1;const on=p.passT>=0,cost=on?PASS_STEP:PASS_AT;
   if(on&&p.passT>=PASS.length)return;if((p.xp|0)<cost)return err('bpXp');
-  addStat('xp',-cost);p.passT=on?p.passT+1:0;saveProf();sfx('era');toast(on?t('bpGotTier',p.passT):t('bpOpened'),'prop',3500);cloudSync();renderPass();
+  addStat('xp',-cost);p.passT=on?p.passT+1:0;saveProf();sfx('era');toast(on?t('bpGotTier',p.passT):t('bpOpened'),'prop',3500);cloudSync();
+  // redraw without losing where the player had scrolled to
+  const h=$('#help'),g0=$('#help .bpg'),hs=h?h.scrollTop:0,gs=g0?g0.scrollTop:0;renderPass();const g1=$('#help .bpg');if(h)h.scrollTop=hs;if(g1)g1.scrollTop=gs;
 }
 const canBuy=p=>{const n=p.passT==null?-1:p.passT;return n<0?(p.xp|0)>=PASS_AT:n<PASS.length&&(p.xp|0)>=PASS_STEP;};
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
