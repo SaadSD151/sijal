@@ -23,6 +23,7 @@ function lookAt(x,y,z,instant){cam.tx=x;cam.ty=y;if(z)cam.tz=z;if(instant){cam.x
 function natPix(n){
   const[r,g,b]=n.color,k=n.me?0:.5,m=n.me?.7:0,q=v=>clamp(Math.round(v*(1-k)*(1-m)+255*m),0,255);
   n.pF=((138<<24)|(b<<16)|(g<<8)|r)>>>0;n.pB=((255<<24)|(q(b)<<16)|(q(g)<<8)|q(r))>>>0;n.css=`rgb(${r},${g},${b})`;
+  const L=v=>Math.round(v+(255-v)*.38);n.pP=((196<<24)|(L(b)<<16)|(L(g)<<8)|L(r))>>>0;
 }
 // pre-render the world once: land (opaque), winter variant, and a water layer drawn over the territory for smooth coasts
 function buildTerrain(g){
@@ -75,7 +76,7 @@ function tileWrite(g,i){
   const W=g.W,W2=W*2,o32=R.o32,ter=g.M.ter,own=g.owner,N=g.nations,x=i%W,y=(i/W)|0,p=y*2*W2+x*2;
   if(ter[i]<2){o32[p]=o32[p+1]=o32[p+W2]=o32[p+W2+1]=0;return;}
   const P=own[i],A=y>0&&ter[i-W]>1?own[i-W]:-1,B=x<W-1&&ter[i+1]>1?own[i+1]:-1,C=x>0&&ter[i-1]>1?own[i-1]:-1,D=y<g.H-1&&ter[i+W]>1?own[i+W]:-1;
-  const bd=(A>=0&&A!==P)||(B>=0&&B!==P)||(C>=0&&C!==P)||(D>=0&&D!==P),base=P?(bd?N[P].pB:N[P].pF):g.fall[i]>g.tick?0x8830c858:0;
+  const bd=(A>=0&&A!==P)||(B>=0&&B!==P)||(C>=0&&C!==P)||(D>=0&&D!==P),base=P?(bd?N[P].pB:N[P].pat&&patOn(N[P].pat,x,y)?N[P].pP:N[P].pF):g.fall[i]>g.tick?0x8830c858:0;
   let p1=base,p2=base,p3=base,p4=base;
   if(bd){
     if(C===A&&C>=0&&C!==P&&C!==D&&A!==B)p1=A?N[A].pB:0;
@@ -154,6 +155,7 @@ function drawSword(c,x,y,L,ang){
   const pr=L*.055;c.fillStyle=g1;c.beginPath();c.arc(0,gh+hl+pr*.8,pr,0,7);c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
   c.restore();
 }
+function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
 function draw(g,dt,ts){
@@ -224,7 +226,9 @@ function draw(g,dt,ts){
     if(s.dead)continue;const city=s.type==='city';
     const p=w2s(s.x+.5,s.y+.5);if(p.x<-40||p.y<-40||p.x>cw+40||p.y>ch+40)continue;
     const n=g.nations[s.owner],r=Math.max(2.5,z*(city?2.5+(s.capital?.7:0)+s.level*.15:2.6));if(s.build>g.tick)c.globalAlpha=.55;
-    const rn=city&&s.ruin>g.tick;SP.push(p.x,p.y,r);c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=rn?'#5f5650':n?n.css:'#8a8d92';c.fill();c.lineWidth=s.capital?2.2:1.4;c.strokeStyle=s.capital?'#ffe9a8':'rgba(6,12,20,.9)';c.stroke();
+    const rn=city&&s.ruin>g.tick,BS=!rn&&n&&n.bld?BSTY[n.bld]:null;SP.push(p.x,p.y,r);
+    if(BS){bShape(c,BS.sh,p.x,p.y,r);if(BS.gl&&R.q){c.save();c.shadowColor=BS.gl;c.shadowBlur=r*.9;c.fillStyle=BS.f;c.fill();c.restore();}else{c.fillStyle=BS.f;c.fill();}c.lineWidth=Math.max(1.6,r*.16);c.strokeStyle=BS.s;c.stroke();c.lineWidth=Math.max(1.2,r*.1);c.strokeStyle=n.css;bShape(c,BS.sh,p.x,p.y,r+c.lineWidth*1.4);c.stroke();}
+    else{c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=rn?'#5f5650':n?n.css:'#8a8d92';c.fill();c.lineWidth=s.capital?2.2:1.4;c.strokeStyle=s.capital?'#ffe9a8':'rgba(6,12,20,.9)';c.stroke();}
     if(r>5.5){const q=r*1.5;c.drawImage(R.glyph[rn?'ruin':s.capital?'cap':s.type],p.x-q/2,p.y-q/2,q,q);}
     if(rn){c.strokeStyle=n?n.css:'#888';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+2,0,7);c.stroke();for(let k=0;k<3;k++){const ph=(ts/1400+k/3)%1;c.fillStyle=`rgba(70,66,62,${.55*(1-ph)})`;c.beginPath();c.arc(p.x+Math.sin(k*2.1+ph*3)*r*.4,p.y-r-ph*r*2.4,r*(.35+ph*.55),0,7);c.fill();}}
     if(!city&&s.level>1&&z>=2.6){c.beginPath();c.arc(p.x+r*.8,p.y-r*.8,6,0,7);c.fillStyle='#0b1826';c.fill();c.font=`700 10px ${FONT}`;c.fillStyle='#f6dc9a';c.fillText(s.level,p.x+r*.8,p.y-r*.75);}

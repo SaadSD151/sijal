@@ -19,6 +19,15 @@ const PERS={war:{agg:.9,trust:.3,tre:.4,thr:.9},conq:{agg:.75,trust:.45,tre:.3,t
 const PKEYS=Object.keys(PERS);
 const DIFF=[{grow:.5,gold:.6,hate:-1},{grow:.75,gold:.8,hate:-.3},{grow:1,gold:1,hate:.2},{grow:1.35,gold:1.35,hate:.7}];
 const SEAS=[{spd:1,cost:1,grow:1.3,gold:1},{spd:.82,cost:1,grow:1,gold:1},{spd:1,cost:1,grow:1,gold:1.4},{spd:1.4,cost:1.25,grow:.7,gold:.9}];
+// battle pass: opens at 10,000 experience, then one tier every 1,000; each tier unlocks a land pattern or a building style
+const PASS_AT=10000,PASS_STEP=1000,PATS=['stripes','dots','checker','grid','waves','chevron','bricks','stars'],BLDS=['gold','stone','neon','royal','ice','obsidian','fire'];
+const PASS=[['pat','stripes'],['bld','gold'],['pat','dots'],['bld','stone'],['pat','checker'],['bld','neon'],['pat','grid'],['bld','royal'],['pat','waves'],['bld','ice'],['pat','chevron'],['bld','obsidian'],['pat','bricks'],['bld','fire'],['pat','stars']];
+// building styles: fill, rim, shape, glow
+const BSTY={gold:{f:'#d9a93c',s:'#fff1c2',sh:'c',gl:'rgba(255,214,120,.9)'},stone:{f:'#8b877f',s:'#3b3833',sh:'hex'},neon:{f:'#0d1828',s:'#3ff0ff',sh:'c',gl:'rgba(63,240,255,.95)'},royal:{f:'#6a3c9e',s:'#ffd36b',sh:'c'},ice:{f:'#4fa6dc',s:'#e9f8ff',sh:'hex',gl:'rgba(190,235,255,.8)'},obsidian:{f:'#1c1a22',s:'#a586ff',sh:'oct'},fire:{f:'#d2461c',s:'#ffd166',sh:'c',gl:'rgba(255,140,40,.95)'}};
+// whether a land pattern colours tile (x,y)
+function patOn(k,x,y){switch(k){case'stripes':return(x+y)%6<2;case'dots':return x%6<2&&y%6<2;case'checker':return((x>>2)+(y>>2))&1;case'grid':return x%7===0||y%7===0;
+  case'waves':return(y+Math.round(2*Math.sin(x/3)))%7<2;case'chevron':return(y+Math.abs(x%10-5))%8<2;case'bricks':return y%4===0||(x+((y>>2)&1)*4)%8===0;
+  case'stars':{const a=x%9,b=y%9;return(a===4&&b>=3&&b<=5)||(b===4&&a>=3&&a<=5);}}return false;}
 // emoji a realm can show over its land
 const EMO=['😀','😊','😂','😍','😎','🤔','🙄','😢','😭','😱','😡','🤬','😈','🤡','💀','👍','👎','👏','🙏','💪','🤝','🕊️','🏳️','⚔️','🔥','💣','☢️','⚠️','🎯','👑','💰','❤️','💔','🆘','⏳','👀'];
 const PAL=[[231,76,60],[52,152,219],[46,204,113],[241,196,15],[155,89,182],[230,126,34],[26,188,156],[236,112,160],[127,140,255],[149,165,60],[211,84,0],[94,214,214],[190,144,212],[255,165,120],[100,180,100],[170,120,80],[220,220,110],[90,120,200],[200,90,130],[60,160,140],[240,150,200],[140,200,240],[180,60,60],[120,120,160]];

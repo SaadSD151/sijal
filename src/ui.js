@@ -96,7 +96,7 @@ function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t(
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2 m2b"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button><button class="btn bpb" data-a="pass">🎖️ ${t('bp')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
   <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
@@ -303,12 +303,31 @@ function prep(g){
   lookAt(g.W/2,g.H/2,fitZoom(g)*(g.o.demo?1.5:1),true);
 }
 function startDemo(){G=newGame({w:200,h:128,seed:(Math.random()*2**31)|0,type:'continents',bots:9,diff:1,demo:true});prep(G);startGame(G);}
+// ── battle pass ──
+const passTier=p=>p.xp<PASS_AT?0:Math.min(PASS.length,Math.floor((p.xp-PASS_AT)/PASS_STEP)+1);
+const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
+function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:''};}
+const SKP={};
+function skinPreview(t,k){
+  const key=t+k;if(SKP[key])return SKP[key];const c=mk(96,64),x=c.getContext('2d'),col=FAC[UI.prof.fac||'hawks'].c,css=`rgb(${col[0]},${col[1]},${col[2]})`;
+  x.fillStyle='#2f5d3a';x.fillRect(0,0,96,64);
+  if(t==='pat'){for(let y=0;y<32;y++)for(let X=0;X<48;X++){x.fillStyle=patOn(k,X,y)?`rgba(${Math.round(col[0]+(255-col[0])*.38)},${Math.round(col[1]+(255-col[1])*.38)},${Math.round(col[2]+(255-col[2])*.38)},.9)`:`rgba(${col[0]},${col[1]},${col[2]},.55)`;x.fillRect(X*2,y*2,2,2);}}
+  else{x.fillStyle=`rgba(${col[0]},${col[1]},${col[2]},.55)`;x.fillRect(0,0,96,64);const S=BSTY[k];bShape(x,S.sh,48,32,20);if(S.gl){x.save();x.shadowColor=S.gl;x.shadowBlur=16;x.fillStyle=S.f;x.fill();x.restore();}else{x.fillStyle=S.f;x.fill();}x.lineWidth=3;x.strokeStyle=S.s;x.stroke();x.lineWidth=2;x.strokeStyle=css;bShape(x,S.sh,48,32,23);x.stroke();x.drawImage(R.glyph.city,48-15,32-15,30,30);}
+  return SKP[key]=c.toDataURL();
+}
+function renderPass(){
+  const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.xp>=PASS_AT,next=on?PASS_AT+n*PASS_STEP:PASS_AT,prev=on?PASS_AT+(n-1)*PASS_STEP:0,pc=n>=PASS.length?100:clamp((p.xp-prev)/(next-prev)*100,0,100);
+  const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(next-p.xp),n+1)):t('bpLock',fmt(PASS_AT-p.xp));
+  $('#help').innerHTML=`<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span>${on?t('bpTier',n,PASS.length):fmt(p.xp)+' / '+fmt(PASS_AT)}</span></div><p class="keys">${head}</p>
+  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<button class="btn sm${eq?'':' ok'}" data-a="skin:${ty}:${eq?'':id}">${eq?'✓ '+t('bpOn'):t('bpWear')}</button>`:`<em>🔒 ${fmt(PASS_AT+j*PASS_STEP)}</em>`}</div>`;}).join('')}</div>
+  <div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+}
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
   let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
-  const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
-  if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
+  opt.skin=mySkin();const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
+  if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
   if(o.same&&UI.lastOpt)opt=Object.assign({},UI.lastOpt,{seed:UI.lastOpt.daily?UI.lastOpt.seed:(Math.random()*2**31)|0});
   UI.lastOpt=opt;loading(true);
   setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},40);
@@ -581,6 +600,8 @@ function act(a){
     case'nameUndo':UI.nameDraft=null;renderAccount();break;
     case'cheat':{const c=p.cheat||(p.cheat={});c[v]=!c[v];saveProf();renderSetup();break;}
     case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
+    case'pass':renderPass();show('help');break;
+    case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderPass();break;}
     case'closeCard':closeCard();break;
     case'radX':break;
     case'radAtk':if(UI.rad){send({k:'atk',i:UI.rad.i,r:UI.ratio,m:UI.prof.amode||'pt'});}radClose();break;
