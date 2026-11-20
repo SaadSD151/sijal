@@ -422,7 +422,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='e7972b9396';
+const BUILD_ID='83ca927677';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2907,7 +2907,7 @@ function bindInput(){
 
 // ── main loop ──
 function frame(ts){
-  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);if(g.o.daily&&p.dailyDone!==g.o.daily){p.dailyDone=g.o.daily;saveProf();}if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
+  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(UI.rad&&(UI.screen||UI.phase!=='play'||!g||g.o.demo))radClose();if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);if(g.o.daily&&p.dailyDone!==g.o.daily){p.dailyDone=g.o.daily;saveProf();}if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
   if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=fitZoom(g)*1.5;if(g.over||g.tick>7000){startDemo();return;}}
   else if(!UI.screen){const K=UI.keys,s=dt*.55/cam.z;if(K.a||K.arrowleft)cam.tx-=s;if(K.d||K.arrowright)cam.tx+=s;if(K.w||K.arrowup)cam.ty-=s;if(K.s||K.arrowdown)cam.ty+=s;}
   if(g.started&&!g.over&&!g.o.mp&&(g.o.demo||(!UI.paused&&!UI.screen))){acc+=dt*(g.o.demo?2:UI.speed);let n=0;while(acc>=100&&n<10){tick(g);acc-=100;n++;}if(n===10)acc=0;}
