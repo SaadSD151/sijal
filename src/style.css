@@ -137,7 +137,8 @@ html,body,#app,#hud,.screen,#gToasts{touch-action:manipulation}
 @keyframes lgbg{0%,100%{filter:drop-shadow(0 0 3px rgba(200,140,255,.7))}50%{filter:drop-shadow(0 0 7px rgba(241,194,76,.95))}}
 .bdgrow{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}.bdgshow{font-size:20px;padding:6px 14px;border-radius:999px;background:rgba(109,40,217,.2);border:1px solid rgba(192,132,255,.45)}
 .bpbuy{flex:none;background:linear-gradient(180deg,#8a5cf0,#5b2bc4);border-color:#d6b8ff;color:#fff}
-.bpbuy:disabled{opacity:.45;filter:grayscale(.6);cursor:default}
+.bpbuy.low{opacity:.55;filter:grayscale(.5)}
+.bpc.cant .btn{cursor:pointer}
 .bpc.can,.bpc.cant{opacity:1}
 .bpc.can{background:linear-gradient(180deg,rgba(74,222,128,.22),rgba(22,101,52,.25));border-color:#6ee7a0;box-shadow:0 0 0 2px rgba(110,231,160,.35),0 0 18px rgba(74,222,128,.35)}
 .bpc.can .btn{background:linear-gradient(180deg,#86efac,#22c55e);border-color:#bbf7d0;color:#052e14;font-weight:800}

@@ -313,7 +313,7 @@ const passTier=p=>p.passT>0?Math.min(PASS.length,p.passT):0;
 // buying is the player's choice: open the season for 10,000, then claim each tier in order for 1,000
 function passBuy(){
   const p=UI.prof;if(p.passT==null)p.passT=-1;const on=p.passT>=0,cost=on?PASS_STEP:PASS_AT;
-  if(on&&p.passT>=PASS.length)return;if((p.xp|0)<cost)return err('bpXp');
+  if(on&&p.passT>=PASS.length)return;if((p.xp|0)<cost){sfx('err');toast(t('bpNeed',fmt(cost-(p.xp|0))),'bad',2600);return;}
   addStat('xp',-cost);p.passT=on?p.passT+1:0;saveProf();sfx('era');toast(on?t('bpGotTier',p.passT):t('bpOpened'),'prop',3500);cloudSync();
   // redraw without losing where the player had scrolled to
   const h=$('#help'),g0=$('#help .bpg'),hs=h?h.scrollTop:0,gs=g0?g0.scrollTop:0;renderPass();const g1=$('#help .bpg');if(h)h.scrollTop=hs;if(g1)g1.scrollTop=gs;
@@ -334,9 +334,9 @@ function skinPreview(t,k){
 function renderPass(){
   const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.passT>=0,xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
   const head=on?(n>=PASS.length?t('bpDone'):xp>=PASS_STEP?t('bpReady',n+1):t('bpNext',fmt(PASS_STEP-xp),n+1)):xp>=PASS_AT?t('bpCanOpen'):t('bpLock',fmt(PASS_AT-xp));
-  const openBtn=on?'':`<button class="btn big bpbuy" data-a="bpBuy"${xp>=PASS_AT?'':' disabled'}>🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
+  const openBtn=on?'':`<button class="btn big bpbuy${xp>=PASS_AT?'':' low'}" data-a="bpBuy">🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
   $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}
-  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}${on&&j===n?(xp>=PASS_STEP?' can':' cant'):''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy"${xp>=PASS_STEP?'':' disabled'}>${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
+  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}${on&&j===n?(xp>=PASS_STEP?' can':' cant'):''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy">${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 // customization: equip what you have unlocked
