@@ -25,8 +25,8 @@ function addNation(g,p){
 }
 function setupNations(g){
   const o=g.o,rng=g.rng,idx=shuffle([...NAT.ar.keys()],rng);
-  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';});g.human=(o.me|0)+1;}
-  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';}
+  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;});g.human=(o.me|0)+1;}
+  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;}
   const pc=o.demo||o.players?null:FAC[o.faction||'hawks'].c,pal=shuffle(PAL.filter((c,i)=>o.players?i>=o.players.length||o.players.length>=PAL.length:!pc||Math.abs(c[0]-pc[0])+Math.abs(c[1]-pc[1])+Math.abs(c[2]-pc[2])>90),rng);
   for(let b=0;b<o.bots;b++){
     const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);

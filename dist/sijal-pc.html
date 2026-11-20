@@ -144,6 +144,10 @@ html,body,#app,#hud,.screen,#gToasts{touch-action:manipulation}
 .mtabs button.on{background:linear-gradient(180deg,#f1cf6e,#c9952d);color:#1a1205}
 .mtsp{height:52px;flex:none}
 .mob .mtabs button{padding:7px 11px;font-size:13px}
+.lgb{display:inline-block;width:1.05em;height:1.15em;margin-inline-end:.3em;vertical-align:-.2em;background:linear-gradient(180deg,#c084ff,#6d28d9 55%,#2e1065);clip-path:polygon(50% 0,100% 15%,96% 60%,50% 100%,4% 60%,0 15%);filter:drop-shadow(0 0 4px rgba(200,140,255,.9));position:relative;animation:lgbg 2.4s ease-in-out infinite}
+.lgb::after{content:'★';position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;font-size:.62em;color:#f6d36b;line-height:1}
+@keyframes lgbg{0%,100%{filter:drop-shadow(0 0 3px rgba(200,140,255,.7))}50%{filter:drop-shadow(0 0 7px rgba(241,194,76,.95))}}
+.bdgrow{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}.bdgshow{font-size:20px;padding:6px 14px;border-radius:999px;background:rgba(109,40,217,.2);border:1px solid rgba(192,132,255,.45)}
 .bpc em.ok{color:#8fe3a8}.bpc .none{width:96px;height:64px;border-radius:8px;display:grid;place-items:center;font-size:26px;color:var(--dim);background:rgba(255,255,255,.05);border:1px dashed var(--line2)}
 .dlock{padding:8px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line2);font-weight:700}
 .bpbar{flex:none;position:relative;width:min(560px,100%);height:26px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line2);overflow:hidden}
@@ -432,7 +436,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='pc';(function(){"use strict";
-const BUILD_ID='cdbc5a5739';
+const BUILD_ID='c723ac7ab8';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -612,8 +616,8 @@ function addNation(g,p){
 }
 function setupNations(g){
   const o=g.o,rng=g.rng,idx=shuffle([...NAT.ar.keys()],rng);
-  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';});g.human=(o.me|0)+1;}
-  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';}
+  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;});g.human=(o.me|0)+1;}
+  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;}
   const pc=o.demo||o.players?null:FAC[o.faction||'hawks'].c,pal=shuffle(PAL.filter((c,i)=>o.players?i>=o.players.length||o.players.length>=PAL.length:!pc||Math.abs(c[0]-pc[0])+Math.abs(c[1]-pc[1])+Math.abs(c[2]-pc[2])>90),rng);
   for(let b=0;b<o.bots;b++){
     const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);
@@ -1556,6 +1560,16 @@ function drawSword(c,x,y,L,ang){
   const pr=L*.055;c.fillStyle=g1;c.beginPath();c.arc(0,gh+hl+pr*.8,pr,0,7);c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
   c.restore();
 }
+// Season Zero crest: a violet-and-gold shield with a star, slowly shimmering
+function drawBadge(c,x,y,s,ts){
+  const g=R.badge||(R.badge=(()=>{const k=mk(64,72),b=k.getContext('2d');b.translate(32,36);
+    const sh=()=>{b.beginPath();b.moveTo(0,-32);b.lineTo(26,-22);b.lineTo(24,8);b.quadraticCurveTo(18,26,0,34);b.quadraticCurveTo(-18,26,-24,8);b.lineTo(-26,-22);b.closePath();};
+    const gr=b.createLinearGradient(0,-32,0,34);gr.addColorStop(0,'#c084ff');gr.addColorStop(.55,'#6d28d9');gr.addColorStop(1,'#2e1065');sh();b.fillStyle=gr;b.fill();
+    const rim=b.createLinearGradient(-26,-32,26,34);rim.addColorStop(0,'#fff4c2');rim.addColorStop(.5,'#f1c24c');rim.addColorStop(1,'#a8741a');b.lineWidth=5;b.strokeStyle=rim;b.stroke();
+    b.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?6:15;b.lineTo(Math.cos(a)*r,Math.sin(a)*r);}b.closePath();b.fillStyle=rim;b.fill();return k;})());
+  const pulse=.55+.45*Math.sin(ts/420);c.save();if(R.q){c.shadowColor=`rgba(200,140,255,${.55+.4*pulse})`;c.shadowBlur=s*.9;}c.drawImage(g,x-s/2,y-s*.56,s,s*1.12);c.restore();
+  if(R.q){const sx=x-s*.3+((ts/9)%(s*1.6))-s*.2;c.save();c.globalAlpha=.35*pulse;c.fillStyle='#fff';c.beginPath();c.arc(sx,y-s*.15,s*.09,0,7);c.fill();c.restore();}
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -1667,6 +1681,7 @@ function draw(g,dt,ts){
     LB.push({x:p.x,hw,t:y-f*.75,b:y+f*1.65,id:n.id});
     const H=me?g.nations[me]:null,rel=H&&n.id!==me?(H.ally[n.id]?'#a6f0be':(g.tick-H.lastHit[n.id]<300||g.tick-n.lastHit[me]<300)?'#ffb3a8':'#f4e3b0'):'#f4e3b0';
     c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';txt(c,nm,p.x,y,'#fff');
+    if(n.badge){const q=Math.max(16,f*1.25);c.font=`700 ${f}px ${FONT}`;drawBadge(c,p.x+c.measureText(nm).width/2+q*.62,y,q,ts);c.font=`700 ${f}px ${FONT}`;c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';}
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
     if(H&&n.id!==me&&H.ally[n.id]){const q=Math.max(14,f*.95);c.font=`${q}px sans-serif`;c.fillText('🤝',p.x-hw-q*.75,y);c.font=`700 ${f}px ${FONT}`;}
@@ -1871,7 +1886,7 @@ Object.assign(TX.en,{d_fort:'Slows the enemy a lot and multiplies defense by 6. 
  dInfo:[['One world per day','Each day a new map is generated from the date and stays the same all day. You get one attempt; tomorrow brings a different world.'],['Fixed rules','Medium map, 14 rival realms and 60 tribes, on Hard. You cannot change them.'],['Goal: the fastest win','Hold 70% of the land as fast as you can. Your time is saved; the faster the better.'],['Tip','Since the world does not change, learn from each attempt: where to found your capital, which cities to take first, whom to ally with.']]});
 TX.en.help[4]=['Building','Every building takes 6 seconds to finish. Cities add troops and gold, forts slow the enemy and multiply defense by 6, ports send trade ships that bring gold.'];
 TX.en.help[8]=['The road to victory','Hold 70% of the land in single player, 99% online.'];
-Object.assign(TX.ar,{bp:'السيزون صفر',tMenu:'القائمة',tSkins:'تخصيص',bpGot:'مفتوح',skNone:'بدون',skNote:'اختر نقشة أرضك وشكل مبانيك من السكنات اللي فتحتها، والكل يشوفها',skEmpty:'ما فتحت سكنات للحين. افتح السيزون صفر لما توصل 10,000 خبرة',dDone:'خلّصت تحدي اليوم، تقدر تلعبه بكرة',sk_diamonds:'معيّنات',sk_zigzag:'متعرّج',sk_jade:'يشم',sk_crimson:'قرمزي',sk_silver:'فضّي',bpNote:'الخبرة تنصرف على السيزون: 10,000 تفتحه، وبعدها كل 1,000 تفتح مستوى تلقائياً فيه سكن يشوفه كل اللاعبين',bpOpened:'🎖️ فتحت السيزون صفر! انصرف 10,000 خبرة',bpGotTier:'🎖️ وصلت المستوى {0} في السيزون صفر، روح للتخصيص وجرّب السكن الجديد',bpLock:'باقي لك {0} خبرة وتفتح السيزون صفر',bpNext:'باقي {0} خبرة للمستوى {1}',bpDone:'خلّصت السيزون صفر كامل! 👑',bpTier:'المستوى {0} من {1}',bpPat:'نقشة الأرض',bpBld:'شكل المباني',bpWear:'البسه',bpOn:'لابسه',sk_stripes:'خطوط',sk_dots:'نقاط',sk_checker:'شطرنج',sk_grid:'شبكة',sk_waves:'أمواج',sk_chevron:'أسهم',sk_bricks:'طوب',sk_stars:'نجوم',sk_gold:'ذهبي',sk_stone:'حجري',sk_neon:'نيون',sk_royal:'ملكي',sk_ice:'جليدي',sk_obsidian:'أوبسيديان',sk_fire:'ناري',dXp:'خبرة ×1.5 في تحدي اليوم، و+50 لو فزت · محاولة وحدة كل يوم',neutral:'أرض فاضية',cheats:'وضع الغش (للتجربة)',ch_gold:'💰 ذهب لا نهائي',ch_troops:'⚔️ جنود لا نهائية',ch_build:'🏗️ بناء وتطوير فوري',ch_era:'🏛️ كل العصور مفتوحة',ch_msl:'🚀 صواريخ وقدرات بدون انتظار',cheatNote:'المعركة اللي فيها غش ما تنحسب في الانتصارات ولا الخبرة ولا المتصدرين',cheatOn:'🧪 وضع الغش شغّال: هالمعركة ما تنحسب',cheatEnd:'معركة غش، ما انحسبت في انتصاراتك ولا خبرتك',nameSave:'✓ حفظ الاسم',nameUndo:'↶ رجّع القديم',nameSaved:'تم حفظ اسمك: {0}',rl_land:'هجوم',rl_info:'البطاقة',rl_sea:'بحري',rl_more:'صواريخ',rl_all:'كل الحدود',m_enclave:'المنطقة اللي حاصرتها انضمت لك',m_peaceRejX:'{0} رفض السلام: {1}',m_rejX:'{0} رفض التحالف: {1}',
+Object.assign(TX.ar,{bdgT:'علامة السيزون صفر',bdgOn:'إظهار العلامة',bdgOff:'إخفاء العلامة',bdgNote:'تطلع جنب اسمك في القيم وفي المتصدرين وغرف الأونلاين',bp:'السيزون صفر',tMenu:'القائمة',tSkins:'تخصيص',bpGot:'مفتوح',skNone:'بدون',skNote:'اختر نقشة أرضك وشكل مبانيك من السكنات اللي فتحتها، والكل يشوفها',skEmpty:'ما فتحت سكنات للحين. افتح السيزون صفر لما توصل 10,000 خبرة',dDone:'خلّصت تحدي اليوم، تقدر تلعبه بكرة',sk_diamonds:'معيّنات',sk_zigzag:'متعرّج',sk_jade:'يشم',sk_crimson:'قرمزي',sk_silver:'فضّي',bpNote:'الخبرة تنصرف على السيزون: 10,000 تفتحه، وبعدها كل 1,000 تفتح مستوى تلقائياً فيه سكن يشوفه كل اللاعبين',bpOpened:'🎖️ فتحت السيزون صفر! انصرف 10,000 خبرة',bpGotTier:'🎖️ وصلت المستوى {0} في السيزون صفر، روح للتخصيص وجرّب السكن الجديد',bpLock:'باقي لك {0} خبرة وتفتح السيزون صفر',bpNext:'باقي {0} خبرة للمستوى {1}',bpDone:'خلّصت السيزون صفر كامل! 👑',bpTier:'المستوى {0} من {1}',bpPat:'نقشة الأرض',bpBld:'شكل المباني',bpWear:'البسه',bpOn:'لابسه',sk_stripes:'خطوط',sk_dots:'نقاط',sk_checker:'شطرنج',sk_grid:'شبكة',sk_waves:'أمواج',sk_chevron:'أسهم',sk_bricks:'طوب',sk_stars:'نجوم',sk_gold:'ذهبي',sk_stone:'حجري',sk_neon:'نيون',sk_royal:'ملكي',sk_ice:'جليدي',sk_obsidian:'أوبسيديان',sk_fire:'ناري',dXp:'خبرة ×1.5 في تحدي اليوم، و+50 لو فزت · محاولة وحدة كل يوم',neutral:'أرض فاضية',cheats:'وضع الغش (للتجربة)',ch_gold:'💰 ذهب لا نهائي',ch_troops:'⚔️ جنود لا نهائية',ch_build:'🏗️ بناء وتطوير فوري',ch_era:'🏛️ كل العصور مفتوحة',ch_msl:'🚀 صواريخ وقدرات بدون انتظار',cheatNote:'المعركة اللي فيها غش ما تنحسب في الانتصارات ولا الخبرة ولا المتصدرين',cheatOn:'🧪 وضع الغش شغّال: هالمعركة ما تنحسب',cheatEnd:'معركة غش، ما انحسبت في انتصاراتك ولا خبرتك',nameSave:'✓ حفظ الاسم',nameUndo:'↶ رجّع القديم',nameSaved:'تم حفظ اسمك: {0}',rl_land:'هجوم',rl_info:'البطاقة',rl_sea:'بحري',rl_more:'صواريخ',rl_all:'كل الحدود',m_enclave:'المنطقة اللي حاصرتها انضمت لك',m_peaceRejX:'{0} رفض السلام: {1}',m_rejX:'{0} رفض التحالف: {1}',
 pr_weak:['يشوف جيشه أقوى منك','يقول: «ليش أوقف وأنا الكسبان؟»','يحس إنه قريب يكسرك','جيشه أكبر ومعنوياته عالية','يقول: «تعال نتفاهم لما تصير قدّي»','يبي ياخذ أرض أكثر قبل لا يوقف'],
 pr_trust:['ما يثق فيك، جرّب تهديه ذهب','يقول: «كم مرة وعدت وخلفت؟»','يبي دليل إنك صادق، هدية ذهب تفرق','ما نسى هجماتك عليه','يقول: «كلامك حلو بس أفعالك غير»','يحس إنك تبي تلتقط أنفاسك وترجع تضرب','شعبه زعلان منك وما يقدر يسامح بسرعة'],
 pr_agg:['شخصيته محاربة وما يحب السلام','يقول: «السيف هو اللي يحكم»','يبي الحرب للآخر','قادته العسكريين رافضين الصلح','يقول: «السلام للضعفاء»'],
@@ -1887,7 +1902,7 @@ ar_trust:['ما يثق فيك كفاية للحين','يقول: «ورّني ن�
  w_dom:'{0} سيطرت على العالم كله',d_port:'يطلّع سفينة تتاجر مع موانئ الدول وترجع لك بذهب. حطّه قريب الساحل ويثبت لحاله'});
 TX.ar.help[8]=['طريق النصر','سيطر على 99% من أرض العالم. كل دولة لازم تطيح.'];
 TX.ar.dInfo[2]=['الهدف: أسرع نصر','سيطر على 99% من الأرض بأسرع وقت. ينحفظ زمنك، وكل ما كان أسرع أحسن.'];
-Object.assign(TX.en,{bp:'Season Zero',tMenu:'Menu',tSkins:'Customize',bpGot:'Unlocked',skNone:'None',skNote:'Pick your land pattern and building style from the skins you have unlocked; everyone sees them',skEmpty:'No skins unlocked yet. Season Zero opens at 10,000 experience',dDone:'You finished today\'s challenge. Come back tomorrow',sk_diamonds:'Diamonds',sk_zigzag:'Zigzag',sk_jade:'Jade',sk_crimson:'Crimson',sk_silver:'Silver',bpNote:'Experience is spent on the season: 10,000 opens it, then every 1,000 opens a tier automatically with a skin everyone sees',bpOpened:'🎖️ Season Zero opened! 10,000 experience spent',bpGotTier:'🎖️ You reached tier {0} of Season Zero; try the new skin in Customize',bpLock:'{0} more experience to open Season Zero',bpNext:'{0} more experience to tier {1}',bpDone:'You completed all of Season Zero! 👑',bpTier:'Tier {0} of {1}',bpPat:'Land pattern',bpBld:'Building style',bpWear:'Equip',bpOn:'Equipped',sk_stripes:'Stripes',sk_dots:'Dots',sk_checker:'Checker',sk_grid:'Grid',sk_waves:'Waves',sk_chevron:'Chevrons',sk_bricks:'Bricks',sk_stars:'Stars',sk_gold:'Golden',sk_stone:'Stone',sk_neon:'Neon',sk_royal:'Royal',sk_ice:'Ice',sk_obsidian:'Obsidian',sk_fire:'Fire',dXp:'×1.5 experience in the daily challenge, +50 if you win · one attempt a day',neutral:'Empty land',cheats:'Cheat mode (for testing)',ch_gold:'💰 Infinite gold',ch_troops:'⚔️ Infinite troops',ch_build:'🏗️ Instant build and upgrades',ch_era:'🏛️ All ages unlocked',ch_msl:'🚀 Missiles and powers without cooldown',cheatNote:'A battle with cheats does not count toward wins, experience or the leaderboard',cheatOn:'🧪 Cheat mode is on: this battle will not count',cheatEnd:'Cheat battle: not counted in your wins or experience',nameSave:'✓ Save name',nameUndo:'↶ Undo',nameSaved:'Name saved: {0}',rl_land:'Attack',rl_info:'Card',rl_sea:'By sea',rl_more:'Missiles',rl_all:'All borders',m_enclave:'The land you surrounded has joined you',m_peaceRejX:'{0} refused peace: {1}',m_rejX:'{0} refused the alliance: {1}',
+Object.assign(TX.en,{bdgT:'Season Zero badge',bdgOn:'Show badge',bdgOff:'Hide badge',bdgNote:'Shown beside your name in battle, on the leaderboard and in online rooms',bp:'Season Zero',tMenu:'Menu',tSkins:'Customize',bpGot:'Unlocked',skNone:'None',skNote:'Pick your land pattern and building style from the skins you have unlocked; everyone sees them',skEmpty:'No skins unlocked yet. Season Zero opens at 10,000 experience',dDone:'You finished today\'s challenge. Come back tomorrow',sk_diamonds:'Diamonds',sk_zigzag:'Zigzag',sk_jade:'Jade',sk_crimson:'Crimson',sk_silver:'Silver',bpNote:'Experience is spent on the season: 10,000 opens it, then every 1,000 opens a tier automatically with a skin everyone sees',bpOpened:'🎖️ Season Zero opened! 10,000 experience spent',bpGotTier:'🎖️ You reached tier {0} of Season Zero; try the new skin in Customize',bpLock:'{0} more experience to open Season Zero',bpNext:'{0} more experience to tier {1}',bpDone:'You completed all of Season Zero! 👑',bpTier:'Tier {0} of {1}',bpPat:'Land pattern',bpBld:'Building style',bpWear:'Equip',bpOn:'Equipped',sk_stripes:'Stripes',sk_dots:'Dots',sk_checker:'Checker',sk_grid:'Grid',sk_waves:'Waves',sk_chevron:'Chevrons',sk_bricks:'Bricks',sk_stars:'Stars',sk_gold:'Golden',sk_stone:'Stone',sk_neon:'Neon',sk_royal:'Royal',sk_ice:'Ice',sk_obsidian:'Obsidian',sk_fire:'Fire',dXp:'×1.5 experience in the daily challenge, +50 if you win · one attempt a day',neutral:'Empty land',cheats:'Cheat mode (for testing)',ch_gold:'💰 Infinite gold',ch_troops:'⚔️ Infinite troops',ch_build:'🏗️ Instant build and upgrades',ch_era:'🏛️ All ages unlocked',ch_msl:'🚀 Missiles and powers without cooldown',cheatNote:'A battle with cheats does not count toward wins, experience or the leaderboard',cheatOn:'🧪 Cheat mode is on: this battle will not count',cheatEnd:'Cheat battle: not counted in your wins or experience',nameSave:'✓ Save name',nameUndo:'↶ Undo',nameSaved:'Name saved: {0}',rl_land:'Attack',rl_info:'Card',rl_sea:'By sea',rl_more:'Missiles',rl_all:'All borders',m_enclave:'The land you surrounded has joined you',m_peaceRejX:'{0} refused peace: {1}',m_rejX:'{0} refused the alliance: {1}',
 pr_weak:['it thinks its army is stronger','"Why stop when I am winning?"','it feels close to breaking you','its army is bigger and its spirits high','"Come back when you are my equal"','it wants more land before it stops'],
 pr_trust:['it does not trust you; try a gift of gold','"How many times have you broken your word?"','it wants proof you mean it; gold helps','it has not forgotten your attacks','"Sweet words, but your deeds say otherwise"','it thinks you only want a breather before striking again','its people are angry and slow to forgive'],
 pr_agg:['it is warlike and has no taste for peace','"The sword decides"','it wants war to the end','its generals refuse any truce','"Peace is for the weak"'],
@@ -1905,7 +1920,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'4.2',d:'2026-11-20',ar:['💸 الخبرة صارت تنصرف على السيزون: 10,000 تفتحه، وكل 1,000 بعدها تفتح مستوى تلقائياً. اللي عنده خبرة قديمة تنصرف وياخذ مستوياته على طول','🎖️ الباتل باس صار اسمه «السيزون صفر» وفيه 20 مستوى، كل مستوى بـ1000 خبرة، و5 سكنات جديدة: معيّنات، متعرّج، يشم، قرمزي، فضّي','🗂️ فوق القائمة الرئيسية صار فيه خانات: القائمة، والسيزون صفر، والتخصيص اللي تغيّر منه سكناتك','🎯 الدائرة في الجوال صارت أصغر وأسرع، وبدون الشريط والأزرار الزيادة','📅 تحدي اليوم صار محاولة وحدة بس كل يوم، وأول ما تبدأه تنحسب. الخبرة فيه ×1.5 و+50 لو فزت'],en:['💸 Experience is now spent on the season: 10,000 opens it and every 1,000 after that opens a tier automatically; existing experience is spent right away for the tiers','🎖️ The Battle Pass is now Season Zero with 20 tiers at 1,000 experience each, and 5 new skins: diamonds, zigzag, jade, crimson, silver','🗂️ Tabs on top of the main menu: Menu, Season Zero, and Customize where you change your skins','🎯 The phone circle is smaller and quicker, without the extra bar and buttons','📅 The daily challenge is now one attempt a day, counted as soon as you start it; experience there is ×1.5 and +50 if you win']},
+ {v:'4.3',d:'2026-11-20',ar:['🛡️ علامة السيزون صفر الأسطورية: درع بنفسجي بنجمة ذهبية يلمع جنب اسمك في القيم والمتصدرين وغرف الأونلاين، وتقدر تخفيها من التخصيص','💸 الخبرة صارت تنصرف على السيزون: 10,000 تفتحه، وكل 1,000 بعدها تفتح مستوى تلقائياً. اللي عنده خبرة قديمة تنصرف وياخذ مستوياته على طول','🎖️ الباتل باس صار اسمه «السيزون صفر» وفيه 20 مستوى، كل مستوى بـ1000 خبرة، و5 سكنات جديدة: معيّنات، متعرّج، يشم، قرمزي، فضّي','🗂️ فوق القائمة الرئيسية صار فيه خانات: القائمة، والسيزون صفر، والتخصيص اللي تغيّر منه سكناتك','🎯 الدائرة في الجوال صارت أصغر وأسرع، وبدون الشريط والأزرار الزيادة','📅 تحدي اليوم صار محاولة وحدة بس كل يوم، وأول ما تبدأه تنحسب. الخبرة فيه ×1.5 و+50 لو فزت'],en:['🛡️ The legendary Season Zero badge: a glowing violet shield with a gold star beside your name in battle, on the leaderboard and in online rooms; hide it in Customize','💸 Experience is now spent on the season: 10,000 opens it and every 1,000 after that opens a tier automatically; existing experience is spent right away for the tiers','🎖️ The Battle Pass is now Season Zero with 20 tiers at 1,000 experience each, and 5 new skins: diamonds, zigzag, jade, crimson, silver','🗂️ Tabs on top of the main menu: Menu, Season Zero, and Customize where you change your skins','🎯 The phone circle is smaller and quicker, without the extra bar and buttons','📅 The daily challenge is now one attempt a day, counted as soon as you start it; experience there is ×1.5 and +50 if you win']},
  {v:'4.0',d:'2026-11-20',ar:['🎖️ الباتل باس وصل! يفتح لما توصل 10 آلاف خبرة، وكل 1000 خبرة بعدها تفتح مستوى جديد، والمجموع 15 مستوى','🎨 نقشات للأرض: خطوط، نقاط، شطرنج، شبكة، أمواج، أسهم، طوب، نجوم، تتلوّن فيها دولتك كاملة','🏰 أشكال للمباني: ذهبي، حجري، نيون، ملكي، جليدي، أوبسيديان، ناري','👀 السكنات يشوفها كل اللاعبين معك في الأونلاين، تلبسها من زر «الباتل باس» في القائمة'],en:['🎖️ The Battle Pass is here! It opens at 10,000 experience, and every 1,000 after that unlocks a new tier, 15 tiers in all','🎨 Land patterns: stripes, dots, checker, grid, waves, chevrons, bricks, stars, covering your whole realm','🏰 Building styles: golden, stone, neon, royal, ice, obsidian, fire','👀 Other players see your skins online; equip them from the Battle Pass button in the menu']},
  {v:'3.9',d:'2026-11-20',ar:['⭐ تحدي اليوم صار يعطيك خبرة ×3، و+150 خبرة لو فزت','🗺️ خريطة تحدي اليوم صارت بحجم المتوسطة الجديدة'],en:['⭐ The daily challenge now gives triple experience, plus 150 if you win','🗺️ The daily challenge map is now the new medium size']},
  {v:'3.8',d:'2026-11-20',ar:['🧪 وضع الغش في المعركة المخصصة: ذهب لا نهائي، جنود لا نهائية، بناء وتطوير فوري، كل العصور مفتوحة، وصواريخ بدون انتظار. تلقاه تحت إعدادات المعركة المخصصة، والمعركة اللي فيها غش ما تنحسب في الانتصارات ولا المتصدرين','🎯 الدائرة في الجوال صارت أكبر وتطلع فوق إصبعك، وفوقها تشوف مين بتهجم عليه وكم جنوده وكم بترسل','💪 تحت الدائرة أزرار سريعة لقوة الهجوم: 25٪ و50٪ و75٪ و100٪'],en:['🧪 Cheat mode in Custom Battle: infinite gold, infinite troops, instant build and upgrades, all ages unlocked, and missiles without cooldown. Find it under the custom battle settings; a battle with cheats does not count toward wins or the leaderboard','🎯 The phone circle is bigger and opens above your finger, showing who you are attacking, their troops and how many you will send','💪 Quick strength buttons under the circle: 25%, 50%, 75% and 100%']},
@@ -2025,14 +2040,14 @@ function netHost(tries){
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
           if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
           if(d.t==='ack'){k.ack=d.k;return;}
-          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
+          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
         k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
       ()=>{loading(false);Object.assign(NET,{on:true,host:true,started:false,pub:UI.prof.pub!==false,code,players:[Object.assign({name:myName(),fac:UI.prof.fac,conn:null,in:true},mySkin())],conns:[],q:[]});renderLobby();show('net');regStart();regSend();},
       e=>{if(e==='retry'&&(tries|0)<4){try{NET.peer.destroy();}catch(_){}return netHost((tries|0)+1);}netFail('net');});},netFail);
 }
-function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code,room:roomName()});});if(UI.screen==='net')renderLobby();}
+function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac,badge:p.badge?1:0}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code,room:roomName()});});if(UI.screen==='net')renderLobby();}
 function netJoin(code){
   code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4)return err('room');if(!BCMODE&&!rtcOk())return err('old');loading(true);
   const to=setTimeout(()=>{if(!NET.on)netFail('room');},15000);
@@ -2050,7 +2065,7 @@ function netJoin(code){
 }
 function hostStart(){
   if(!NET.host||NET.started)return;const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
-  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||''}))};
+  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||'',badge:x.badge?1:0}))};
   regUnreg();NET.waitAt=0;NET.waitShown=0;NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.ack=0;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
 }
 function netStart(opt,me){
@@ -2125,7 +2140,7 @@ function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
   $('#net').innerHTML=`<h2>${esc(NET.host?roomName():NET.room||t('lobby'))}</h2>${NET.host?'':`<p class="keys">${t('pingHost')}: ${pingTag(NET.ping,'myPing')}</p>`}<div class="code" dir="ltr">${NET.code}</div>${link?`<p class="keys" style="user-select:text;-webkit-user-select:text" dir="ltr">${esc(link)}</p>`:''}
   <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)} ${NET.host?'/ '+maxP():''}</h3>
-  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
+  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${p.badge?BADGE:''}${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
   <div class="row"><button class="btn" data-a="leave">${t('leave')}</button>${NET.host?`<button class="btn big" data-a="netStart">${t('startNet')}</button>`:''}</div>`;
 }
 setInterval(regTick,4000);
@@ -2237,7 +2252,7 @@ function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
   <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
-  <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
+  <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -2327,13 +2342,13 @@ function cloudSync(){
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{});let uid;
   return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}
-    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,t:{'.sv':'timestamp'}})});
+    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
       if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();if(passClaim())saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
-      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,t:{'.sv':'timestamp'}})});});})
+      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});});})
     .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
 }
 const lbPush=cloudSync;
@@ -2370,7 +2385,7 @@ function renderLB(){
   const rows=UI.lbRows;
   $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
     `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
-    rows.map((r,i)=>`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${esc(r.n||'')}</span><span>${t('ranks')[rankOf({wins:r.w})]}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
+    rows.map((r,i)=>`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${r.b?BADGE:''}${esc(r.n||'')}</span><span>${t('ranks')[rankOf({wins:r.w})]}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
     `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
 }
 function openLB(){
@@ -2456,7 +2471,9 @@ function passClaim(quiet){
   if(!opened&&!got)return false;saveProf();if(!quiet)toast(opened&&!got?t('bpOpened'):t('bpGotTier',p.passT),'prop',4000);return true;
 }
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
-function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:''};}
+const hasBadge=p=>(p.passT==null?-1:p.passT)>=0&&!p.hideBadge;
+const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
+function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0};}
 const SKP={};
 function skinPreview(t,k){
   const key=t+k;if(SKP[key])return SKP[key];const c=mk(96,64),x=c.getContext('2d'),col=FAC[UI.prof.fac||'hawks'].c,css=`rgb(${col[0]},${col[1]},${col[2]})`;
@@ -2475,7 +2492,8 @@ function renderPass(){
 // customization: equip what you have unlocked
 function renderSkins(){
   const p=UI.prof,k=p.skin||{},n=passTier(p),sec=(ty,lab)=>{const L=PASS.slice(0,n).filter(e=>e[0]===ty);return`<h3>${lab}</h3><div class="bpg free"><div class="bpc got${!k[ty]?' eq':''}"><div class="none">✕</div><b>${t('skNone')}</b><button class="btn sm${!k[ty]?'':' ok'}" data-a="skin:${ty}:">${!k[ty]?'✓ '+t('bpOn'):t('bpWear')}</button></div>${L.map(([,id])=>{const eq=k[ty]===id;return`<div class="bpc got${eq?' eq':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><button class="btn sm${eq?'':' ok'}" data-a="skin:${ty}:${eq?'':id}">${eq?'✓ '+t('bpOn'):t('bpWear')}</button></div>`;}).join('')}</div>`;};
-  $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  const bdg=(p.passT==null?-1:p.passT)>=0?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
+  $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
@@ -2758,6 +2776,7 @@ function act(a){
     case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
     case'pass':renderPass();show('help');break;
     case'skins':renderSkins();show('help');break;
+    case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
     case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderSkins();break;}
     case'closeCard':closeCard();break;
     case'radX':break;

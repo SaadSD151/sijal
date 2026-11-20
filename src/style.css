@@ -132,6 +132,10 @@ html,body,#app,#hud,.screen,#gToasts{touch-action:manipulation}
 .mtabs button.on{background:linear-gradient(180deg,#f1cf6e,#c9952d);color:#1a1205}
 .mtsp{height:52px;flex:none}
 .mob .mtabs button{padding:7px 11px;font-size:13px}
+.lgb{display:inline-block;width:1.05em;height:1.15em;margin-inline-end:.3em;vertical-align:-.2em;background:linear-gradient(180deg,#c084ff,#6d28d9 55%,#2e1065);clip-path:polygon(50% 0,100% 15%,96% 60%,50% 100%,4% 60%,0 15%);filter:drop-shadow(0 0 4px rgba(200,140,255,.9));position:relative;animation:lgbg 2.4s ease-in-out infinite}
+.lgb::after{content:'★';position:absolute;inset:0;display:grid;place-items:center;font-size:.62em;color:#f6d36b;line-height:1}
+@keyframes lgbg{0%,100%{filter:drop-shadow(0 0 3px rgba(200,140,255,.7))}50%{filter:drop-shadow(0 0 7px rgba(241,194,76,.95))}}
+.bdgrow{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}.bdgshow{font-size:20px;padding:6px 14px;border-radius:999px;background:rgba(109,40,217,.2);border:1px solid rgba(192,132,255,.45)}
 .bpc em.ok{color:#8fe3a8}.bpc .none{width:96px;height:64px;border-radius:8px;display:grid;place-items:center;font-size:26px;color:var(--dim);background:rgba(255,255,255,.05);border:1px dashed var(--line2)}
 .dlock{padding:8px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line2);font-weight:700}
 .bpbar{flex:none;position:relative;width:min(560px,100%);height:26px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line2);overflow:hidden}

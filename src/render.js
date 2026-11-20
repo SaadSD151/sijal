@@ -155,6 +155,16 @@ function drawSword(c,x,y,L,ang){
   const pr=L*.055;c.fillStyle=g1;c.beginPath();c.arc(0,gh+hl+pr*.8,pr,0,7);c.fill();c.strokeStyle='rgba(80,55,10,.9)';c.stroke();
   c.restore();
 }
+// Season Zero crest: a violet-and-gold shield with a star, slowly shimmering
+function drawBadge(c,x,y,s,ts){
+  const g=R.badge||(R.badge=(()=>{const k=mk(64,72),b=k.getContext('2d');b.translate(32,36);
+    const sh=()=>{b.beginPath();b.moveTo(0,-32);b.lineTo(26,-22);b.lineTo(24,8);b.quadraticCurveTo(18,26,0,34);b.quadraticCurveTo(-18,26,-24,8);b.lineTo(-26,-22);b.closePath();};
+    const gr=b.createLinearGradient(0,-32,0,34);gr.addColorStop(0,'#c084ff');gr.addColorStop(.55,'#6d28d9');gr.addColorStop(1,'#2e1065');sh();b.fillStyle=gr;b.fill();
+    const rim=b.createLinearGradient(-26,-32,26,34);rim.addColorStop(0,'#fff4c2');rim.addColorStop(.5,'#f1c24c');rim.addColorStop(1,'#a8741a');b.lineWidth=5;b.strokeStyle=rim;b.stroke();
+    b.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?6:15;b.lineTo(Math.cos(a)*r,Math.sin(a)*r);}b.closePath();b.fillStyle=rim;b.fill();return k;})());
+  const pulse=.55+.45*Math.sin(ts/420);c.save();if(R.q){c.shadowColor=`rgba(200,140,255,${.55+.4*pulse})`;c.shadowBlur=s*.9;}c.drawImage(g,x-s/2,y-s*.56,s,s*1.12);c.restore();
+  if(R.q){const sx=x-s*.3+((ts/9)%(s*1.6))-s*.2;c.save();c.globalAlpha=.35*pulse;c.fillStyle='#fff';c.beginPath();c.arc(sx,y-s*.15,s*.09,0,7);c.fill();c.restore();}
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -266,6 +276,7 @@ function draw(g,dt,ts){
     LB.push({x:p.x,hw,t:y-f*.75,b:y+f*1.65,id:n.id});
     const H=me?g.nations[me]:null,rel=H&&n.id!==me?(H.ally[n.id]?'#a6f0be':(g.tick-H.lastHit[n.id]<300||g.tick-n.lastHit[me]<300)?'#ffb3a8':'#f4e3b0'):'#f4e3b0';
     c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';txt(c,nm,p.x,y,'#fff');
+    if(n.badge){const q=Math.max(16,f*1.25);c.font=`700 ${f}px ${FONT}`;drawBadge(c,p.x+c.measureText(nm).width/2+q*.62,y,q,ts);c.font=`700 ${f}px ${FONT}`;c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';}
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
     if(H&&n.id!==me&&H.ally[n.id]){const q=Math.max(14,f*.95);c.font=`${q}px sans-serif`;c.fillText('🤝',p.x-hw-q*.75,y);c.font=`700 ${f}px ${FONT}`;}

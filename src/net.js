@@ -101,14 +101,14 @@ function netHost(tries){
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
           if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
           if(d.t==='ack'){k.ack=d.k;return;}
-          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
+          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
         k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
       ()=>{loading(false);Object.assign(NET,{on:true,host:true,started:false,pub:UI.prof.pub!==false,code,players:[Object.assign({name:myName(),fac:UI.prof.fac,conn:null,in:true},mySkin())],conns:[],q:[]});renderLobby();show('net');regStart();regSend();},
       e=>{if(e==='retry'&&(tries|0)<4){try{NET.peer.destroy();}catch(_){}return netHost((tries|0)+1);}netFail('net');});},netFail);
 }
-function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code,room:roomName()});});if(UI.screen==='net')renderLobby();}
+function lobbyOut(){const list=NET.players.map(p=>({name:p.name,fac:p.fac,badge:p.badge?1:0}));NET.players.forEach((p,i)=>{if(p.conn)p.conn.send({t:'lobby',players:list,you:i,code:NET.code,room:roomName()});});if(UI.screen==='net')renderLobby();}
 function netJoin(code){
   code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length<4)return err('room');if(!BCMODE&&!rtcOk())return err('old');loading(true);
   const to=setTimeout(()=>{if(!NET.on)netFail('room');},15000);
@@ -126,7 +126,7 @@ function netJoin(code){
 }
 function hostStart(){
   if(!NET.host||NET.started)return;const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
-  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||''}))};
+  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||'',badge:x.badge?1:0}))};
   regUnreg();NET.waitAt=0;NET.waitShown=0;NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.ack=0;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
 }
 function netStart(opt,me){
@@ -201,7 +201,7 @@ function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
   $('#net').innerHTML=`<h2>${esc(NET.host?roomName():NET.room||t('lobby'))}</h2>${NET.host?'':`<p class="keys">${t('pingHost')}: ${pingTag(NET.ping,'myPing')}</p>`}<div class="code" dir="ltr">${NET.code}</div>${link?`<p class="keys" style="user-select:text;-webkit-user-select:text" dir="ltr">${esc(link)}</p>`:''}
   <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)} ${NET.host?'/ '+maxP():''}</h3>
-  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
+  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${p.badge?BADGE:''}${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
   <div class="row"><button class="btn" data-a="leave">${t('leave')}</button>${NET.host?`<button class="btn big" data-a="netStart">${t('startNet')}</button>`:''}</div>`;
 }
 setInterval(regTick,4000);

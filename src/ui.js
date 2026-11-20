@@ -98,7 +98,7 @@ function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
   <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
-  <div class="mf"><span class="rk">${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
+  <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -188,13 +188,13 @@ function cloudSync(){
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{});let uid;
   return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}
-    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,t:{'.sv':'timestamp'}})});
+    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
       if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();if(passClaim())saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
-      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,t:{'.sv':'timestamp'}})});});})
+      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});});})
     .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
 }
 const lbPush=cloudSync;
@@ -231,7 +231,7 @@ function renderLB(){
   const rows=UI.lbRows;
   $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
     `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
-    rows.map((r,i)=>`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${esc(r.n||'')}</span><span>${t('ranks')[rankOf({wins:r.w})]}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
+    rows.map((r,i)=>`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${r.b?BADGE:''}${esc(r.n||'')}</span><span>${t('ranks')[rankOf({wins:r.w})]}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
     `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
 }
 function openLB(){
@@ -317,7 +317,9 @@ function passClaim(quiet){
   if(!opened&&!got)return false;saveProf();if(!quiet)toast(opened&&!got?t('bpOpened'):t('bpGotTier',p.passT),'prop',4000);return true;
 }
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
-function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:''};}
+const hasBadge=p=>(p.passT==null?-1:p.passT)>=0&&!p.hideBadge;
+const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
+function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0};}
 const SKP={};
 function skinPreview(t,k){
   const key=t+k;if(SKP[key])return SKP[key];const c=mk(96,64),x=c.getContext('2d'),col=FAC[UI.prof.fac||'hawks'].c,css=`rgb(${col[0]},${col[1]},${col[2]})`;
@@ -336,7 +338,8 @@ function renderPass(){
 // customization: equip what you have unlocked
 function renderSkins(){
   const p=UI.prof,k=p.skin||{},n=passTier(p),sec=(ty,lab)=>{const L=PASS.slice(0,n).filter(e=>e[0]===ty);return`<h3>${lab}</h3><div class="bpg free"><div class="bpc got${!k[ty]?' eq':''}"><div class="none">✕</div><b>${t('skNone')}</b><button class="btn sm${!k[ty]?'':' ok'}" data-a="skin:${ty}:">${!k[ty]?'✓ '+t('bpOn'):t('bpWear')}</button></div>${L.map(([,id])=>{const eq=k[ty]===id;return`<div class="bpc got${eq?' eq':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><button class="btn sm${eq?'':' ok'}" data-a="skin:${ty}:${eq?'':id}">${eq?'✓ '+t('bpOn'):t('bpWear')}</button></div>`;}).join('')}</div>`;};
-  $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  const bdg=(p.passT==null?-1:p.passT)>=0?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
+  $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
@@ -619,6 +622,7 @@ function act(a){
     case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
     case'pass':renderPass();show('help');break;
     case'skins':renderSkins();show('help');break;
+    case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
     case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderSkins();break;}
     case'closeCard':closeCard();break;
     case'radX':break;
