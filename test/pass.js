@@ -3,7 +3,7 @@ const {chromium,devices}=require('playwright'),path=require('path');const SH=pro
 (async()=>{const b=await chromium.launch(),c=await b.newContext({...devices['iPhone 13']}),p=await c.newPage(),e=[];p.on('pageerror',x=>e.push(x.message));
 await p.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await p.evaluate(()=>localStorage.setItem('sijal.v1',JSON.stringify({xp:4000,seen:'9.9'})));await p.reload();await p.waitForTimeout(800);
 const lock=await p.evaluate(()=>{__sijal.act('setBack');__sijal.act('pass');return{got:document.querySelectorAll('.bpc.got').length,head:document.querySelector('#help .keys:nth-of-type(2)').textContent};});
-await p.evaluate(()=>{__sijal.UI.prof.xp=16500;__sijal.act('pass');});await p.waitForTimeout(200);
+await p.evaluate(()=>{__sijal.UI.prof.xp=16500;__sijal.UI.prof.passT=7;__sijal.act('pass');});await p.waitForTimeout(200);
 const open=await p.evaluate(()=>{const got=document.querySelectorAll('.bpc.got').length;__sijal.act('skin:pat:checker');__sijal.act('skin:bld:gold');__sijal.act('skin:bld:fire');__sijal.act('skin:bld:gold');return{got,eq:document.querySelectorAll('.bpc.eq').length,skin:JSON.stringify(__sijal.UI.prof.skin)};});
 await p.screenshot({path:SH+'/pass.png'});
 await p.evaluate(()=>{__sijal.act('menu');__sijal.act('quick');__sijal.act('goQ');});await p.waitForTimeout(1500);

@@ -1,7 +1,7 @@
 // tabs on top of the menu, season zero 20 tiers, customize equips skins, daily: one attempt and less experience
 const {chromium,devices}=require('playwright'),path=require('path');const SH=process.argv[2];
 (async()=>{const b=await chromium.launch(),c=await b.newContext({...devices['iPhone 13']}),p=await c.newPage(),e=[];p.on('pageerror',x=>e.push(x.message));
-await p.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await p.evaluate(()=>localStorage.setItem('sijal.v1',JSON.stringify({xp:40000,seen:'9.9'})));await p.reload();await p.waitForTimeout(800);
+await p.goto('file://'+path.resolve(__dirname,'../dist/sijal.html'));await p.evaluate(()=>localStorage.setItem('sijal.v1',JSON.stringify({xp:40000,passT:20,seen:'9.9'})));await p.reload();await p.waitForTimeout(800);
 await p.evaluate(()=>__sijal.act('setBack'));await p.waitForTimeout(200);await p.screenshot({path:SH+'/s-menu.png'});
 const r1=await p.evaluate(()=>({tabs:[...document.querySelectorAll('#menu .mtabs button')].map(b=>b.textContent)}));
 await p.evaluate(()=>__sijal.act('pass'));const r2=await p.evaluate(()=>({tiers:document.querySelectorAll('.bpc').length,got:document.querySelectorAll('.bpc.got').length,title:document.querySelector('#help h2').textContent,equipBtns:document.querySelectorAll('#help [data-a^="skin:"]').length}));

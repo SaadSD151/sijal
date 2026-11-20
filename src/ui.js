@@ -192,7 +192,7 @@ function cloudSync(){
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
       if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
-      const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();if(passClaim())saveProf();
+      const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
       return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});});})
     .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
@@ -310,12 +310,13 @@ function startDemo(){G=newGame({w:200,h:128,seed:(Math.random()*2**31)|0,type:'c
 // ── battle pass ──
 // experience is spent on the season: 10,000 opens it, then each tier takes 1,000, claimed automatically as soon as you have it
 const passTier=p=>p.passT>0?Math.min(PASS.length,p.passT):0;
-function passClaim(quiet){
-  const p=UI.prof;if(p.passT==null)p.passT=-1;let got=0,opened=false;
-  if(p.passT<0&&p.xp>=PASS_AT){addStat('xp',-PASS_AT);p.passT=0;opened=true;}
-  while(p.passT>=0&&p.passT<PASS.length&&p.xp>=PASS_STEP){addStat('xp',-PASS_STEP);p.passT++;got++;}
-  if(!opened&&!got)return false;saveProf();if(!quiet)toast(opened&&!got?t('bpOpened'):t('bpGotTier',p.passT),'prop',4000);return true;
+// buying is the player's choice: open the season for 10,000, then claim each tier in order for 1,000
+function passBuy(){
+  const p=UI.prof;if(p.passT==null)p.passT=-1;const on=p.passT>=0,cost=on?PASS_STEP:PASS_AT;
+  if(on&&p.passT>=PASS.length)return;if((p.xp|0)<cost)return err('bpXp');
+  addStat('xp',-cost);p.passT=on?p.passT+1:0;saveProf();sfx('era');toast(on?t('bpGotTier',p.passT):t('bpOpened'),'prop',3500);cloudSync();renderPass();
 }
+const canBuy=p=>{const n=p.passT==null?-1:p.passT;return n<0?(p.xp|0)>=PASS_AT:n<PASS.length&&(p.xp|0)>=PASS_STEP;};
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
 const hasBadge=p=>(p.passT==null?-1:p.passT)>=0&&!p.hideBadge;
 const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
@@ -329,10 +330,11 @@ function skinPreview(t,k){
   return SKP[key]=c.toDataURL();
 }
 function renderPass(){
-  passClaim(true);const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.passT>=0,xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
-  const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(PASS_STEP-xp),n+1)):t('bpLock',fmt(PASS_AT-xp));
-  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>
-  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:`<em>🔒 ${fmt((j+1)*PASS_STEP)}</em>`}</div>`;}).join('')}</div>
+  const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.passT>=0,xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
+  const head=on?(n>=PASS.length?t('bpDone'):xp>=PASS_STEP?t('bpReady',n+1):t('bpNext',fmt(PASS_STEP-xp),n+1)):xp>=PASS_AT?t('bpCanOpen'):t('bpLock',fmt(PASS_AT-xp));
+  const openBtn=on?'':`<button class="btn big bpbuy" data-a="bpBuy"${xp>=PASS_AT?'':' disabled'}>🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
+  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}
+  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy"${xp>=PASS_STEP?'':' disabled'}>${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 // customization: equip what you have unlocked
@@ -354,12 +356,12 @@ function startMatch(o){
 }
 function quitXp(){
   const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone||g.o.cheats)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
-  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>passClaim(),3800);return xp;
+  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},3800);return xp;
 }
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>passClaim(),1500);lbPush();}
+  g.xpDone=true;const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
   let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
@@ -622,6 +624,7 @@ function act(a){
     case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
     case'pass':renderPass();show('help');break;
     case'skins':renderSkins();show('help');break;
+    case'bpBuy':passBuy();break;
     case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
     case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderSkins();break;}
     case'closeCard':closeCard();break;
@@ -801,7 +804,7 @@ function frame(ts){
   if(UI.screen==='end')repStep(dt);
 }
 function boot(){
-  cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();passClaim(true);
+  cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();
   {const c=mk(64,64),x=c.getContext('2d');x.translate(32,32);x.rotate(.8);x.drawImage(R.glyph.silo,-32,-32);R.glyph.rocket=c;R.url.rocket=c.toDataURL();}
   {const c=mk(64,64),x=c.getContext('2d');x.drawImage(R.glyph.nuke,8,8,48,48);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(32,32,29,0,7);x.stroke();R.glyph.doom=c;R.url.doom=c.toDataURL();}
   resize();addEventListener('resize',()=>{applyMode();resize();placeAmode();});
