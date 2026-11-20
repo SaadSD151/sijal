@@ -305,7 +305,7 @@ function prep(g){
 }
 function startDemo(){G=newGame({w:200,h:128,seed:(Math.random()*2**31)|0,type:'continents',bots:9,diff:1,demo:true});prep(G);startGame(G);}
 // ── battle pass ──
-const passTier=p=>p.xp<PASS_AT?0:Math.min(PASS.length,Math.floor((p.xp-PASS_AT)/PASS_STEP)+1);
+const passXp=p=>Math.max(0,(p.xp|0)-PASS_AT),passTier=p=>p.xp<PASS_AT?0:Math.min(PASS.length,Math.floor(passXp(p)/PASS_STEP));
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
 function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:''};}
 const SKP={};
@@ -317,10 +317,10 @@ function skinPreview(t,k){
   return SKP[key]=c.toDataURL();
 }
 function renderPass(){
-  const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.xp>=PASS_AT,next=on?PASS_AT+n*PASS_STEP:PASS_AT,prev=on?PASS_AT+(n-1)*PASS_STEP:0,pc=n>=PASS.length?100:clamp((p.xp-prev)/(next-prev)*100,0,100);
-  const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(next-p.xp),n+1)):t('bpLock',fmt(PASS_AT-p.xp));
-  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?t('bpTier',n,PASS.length):fmt(p.xp)+' / '+fmt(PASS_AT)}</span></div><p class="keys">${head}</p>
-  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:`<em>🔒 ${fmt(PASS_AT+j*PASS_STEP)}</em>`}</div>`;}).join('')}</div>
+  const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.xp>=PASS_AT,sx=passXp(p),next=(n+1)*PASS_STEP,pc=!on?clamp(p.xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp((sx-n*PASS_STEP)/PASS_STEP*100,0,100);
+  const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(next-sx),n+1)):t('bpLock',fmt(PASS_AT-p.xp));
+  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(sx-n*PASS_STEP)):fmt(PASS_AT)+' / '+fmt(p.xp)}</span></div><p class="keys">${head}</p>
+  <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:`<em>🔒 ${fmt((j+1)*PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 // customization: equip what you have unlocked
