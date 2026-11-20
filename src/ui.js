@@ -93,7 +93,7 @@ function show(name){
   $('#hud').hidden=!(G&&!G.o.demo&&(!name||name==='pause'));
 }
 function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
-const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins','tSkins']].map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="${k}">${k==='pass'?'🎖️ ':k==='skins'?'🎨 ':'🏠 '}${t(l)}</button>`).join('')}</div>`;
+const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins','tSkins']].map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="${k}">${k==='pass'?'🎖️ ':k==='skins'?'🎨 ':'🏠 '}${t(l)}</button>`).join('')}</div><div class="mtsp"></div>`;
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
@@ -319,7 +319,7 @@ function skinPreview(t,k){
 function renderPass(){
   const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.xp>=PASS_AT,next=on?PASS_AT+n*PASS_STEP:PASS_AT,prev=on?PASS_AT+(n-1)*PASS_STEP:0,pc=n>=PASS.length?100:clamp((p.xp-prev)/(next-prev)*100,0,100);
   const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(next-p.xp),n+1)):t('bpLock',fmt(PASS_AT-p.xp));
-  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span>${on?t('bpTier',n,PASS.length):fmt(p.xp)+' / '+fmt(PASS_AT)}</span></div><p class="keys">${head}</p>
+  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?t('bpTier',n,PASS.length):fmt(p.xp)+' / '+fmt(PASS_AT)}</span></div><p class="keys">${head}</p>
   <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:`<em>🔒 ${fmt(PASS_AT+j*PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
