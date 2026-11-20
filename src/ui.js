@@ -191,7 +191,9 @@ function cloudSync(){
     const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
-      if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}saveProf();
+      if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
+      const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();if(passClaim())saveProf();
+      if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
       return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,t:{'.sv':'timestamp'}})});});})
     .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
 }
@@ -210,6 +212,7 @@ function accEnter(j,F,okMsg){
   const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
     p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;
+    const gpt=p.passT==null?-1:p.passT;p.passT=Math.max(guest?gpt:-1,u&&u.pt!=null?u.pt|0:-1);
     for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
 }
 function accRegister(){
@@ -220,7 +223,7 @@ function accLogin(){
   const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);
   accReq('signInWithPassword',F).then(j=>j.idToken?accEnter(j,F,'in'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
-function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
+function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
 function renderLB(){
   const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
   const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
@@ -305,7 +308,14 @@ function prep(g){
 }
 function startDemo(){G=newGame({w:200,h:128,seed:(Math.random()*2**31)|0,type:'continents',bots:9,diff:1,demo:true});prep(G);startGame(G);}
 // ── battle pass ──
-const passXp=p=>Math.max(0,(p.xp|0)-PASS_AT),passTier=p=>p.xp<PASS_AT?0:Math.min(PASS.length,Math.floor(passXp(p)/PASS_STEP));
+// experience is spent on the season: 10,000 opens it, then each tier takes 1,000, claimed automatically as soon as you have it
+const passTier=p=>p.passT>0?Math.min(PASS.length,p.passT):0;
+function passClaim(quiet){
+  const p=UI.prof;if(p.passT==null)p.passT=-1;let got=0,opened=false;
+  if(p.passT<0&&p.xp>=PASS_AT){addStat('xp',-PASS_AT);p.passT=0;opened=true;}
+  while(p.passT>=0&&p.passT<PASS.length&&p.xp>=PASS_STEP){addStat('xp',-PASS_STEP);p.passT++;got++;}
+  if(!opened&&!got)return false;saveProf();if(!quiet)toast(opened&&!got?t('bpOpened'):t('bpGotTier',p.passT),'prop',4000);return true;
+}
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
 function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:''};}
 const SKP={};
@@ -317,9 +327,9 @@ function skinPreview(t,k){
   return SKP[key]=c.toDataURL();
 }
 function renderPass(){
-  const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.xp>=PASS_AT,sx=passXp(p),next=(n+1)*PASS_STEP,pc=!on?clamp(p.xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp((sx-n*PASS_STEP)/PASS_STEP*100,0,100);
-  const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(next-sx),n+1)):t('bpLock',fmt(PASS_AT-p.xp));
-  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(sx-n*PASS_STEP)):fmt(PASS_AT)+' / '+fmt(p.xp)}</span></div><p class="keys">${head}</p>
+  passClaim(true);const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.passT>=0,xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
+  const head=on?(n>=PASS.length?t('bpDone'):t('bpNext',fmt(PASS_STEP-xp),n+1)):t('bpLock',fmt(PASS_AT-xp));
+  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>
   <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:`<em>🔒 ${fmt((j+1)*PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
@@ -341,12 +351,12 @@ function startMatch(o){
 }
 function quitXp(){
   const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone||g.o.cheats)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
-  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();return xp;
+  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>passClaim(),3800);return xp;
 }
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();lbPush();}
+  g.xpDone=true;const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>passClaim(),1500);lbPush();}
   let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
@@ -787,7 +797,7 @@ function frame(ts){
   if(UI.screen==='end')repStep(dt);
 }
 function boot(){
-  cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();
+  cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();passClaim(true);
   {const c=mk(64,64),x=c.getContext('2d');x.translate(32,32);x.rotate(.8);x.drawImage(R.glyph.silo,-32,-32);R.glyph.rocket=c;R.url.rocket=c.toDataURL();}
   {const c=mk(64,64),x=c.getContext('2d');x.drawImage(R.glyph.nuke,8,8,48,48);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(32,32,29,0,7);x.stroke();R.glyph.doom=c;R.url.doom=c.toDataURL();}
   resize();addEventListener('resize',()=>{applyMode();resize();placeAmode();});
