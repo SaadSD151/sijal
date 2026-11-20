@@ -267,6 +267,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #radial .rb.off{opacity:.4;filter:grayscale(1);cursor:default;box-shadow:none}
 #radial .rb:not(.off):hover{transform:scale(1.08)}#radial .rb:not(.off):active{transform:scale(.93)}
 .namer{margin-top:8px}.namer .btn:disabled{opacity:.38;filter:grayscale(1);cursor:default}
+.dxp{margin:4px 0;padding:8px 14px;border-radius:999px;background:linear-gradient(180deg,rgba(241,207,110,.22),rgba(201,149,45,.18));border:1px solid rgba(255,233,168,.5);color:#ffe9a8;font-weight:800}
 .gfxd{display:flex;flex-direction:column;gap:4px;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line2);text-align:start;font-size:13px}
 .gfxd span{color:var(--dim)}
 .gfxp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
