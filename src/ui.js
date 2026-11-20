@@ -88,7 +88,7 @@ function musicTick(){
 }
 
 // ── screens ──
-function show(name){
+function show(name){if(name)radClose();
   UI.screen=name;for(const s of document.querySelectorAll('.screen'))s.hidden=s.id!==name;
   $('#hud').hidden=!(G&&!G.o.demo&&(!name||name==='pause'));
 }

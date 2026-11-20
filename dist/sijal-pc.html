@@ -432,7 +432,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='pc';(function(){"use strict";
-const BUILD_ID='ba408214d8';
+const BUILD_ID='e7972b9396';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2227,7 +2227,7 @@ function musicTick(){
 }
 
 // ── screens ──
-function show(name){
+function show(name){if(name)radClose();
   UI.screen=name;for(const s of document.querySelectorAll('.screen'))s.hidden=s.id!==name;
   $('#hud').hidden=!(G&&!G.o.demo&&(!name||name==='pause'));
 }
