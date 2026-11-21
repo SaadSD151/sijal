@@ -4,7 +4,7 @@ const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SH
 function newGame(o){
   const M=genMap(o),N=M.N;
   const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),structAt:new Int16Array(N),
-    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],fills:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
+    nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],fills:[],tanks:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
     q:new Int32Array(N),prev:new Int32Array(N),lab:new Int32Array(N),nb:null,diff:DIFF[o.diff==null?1:o.diff],ncity:[],ncDirty:true,used:M.used,grace:[1500,900,450,150][o.diff==null?1:o.diff]};
   for(const c of M.cities)addStruct(g,'city',c.i,0,c.level,c.name);
@@ -18,7 +18,7 @@ function addNation(g,p){
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
     att:new Float32Array(192),ally:new Uint8Array(192),allyAt:new Int32Array(192),allyUntil:new Int32Array(192),allyRen:new Uint8Array(192),allyWarn:new Uint8Array(192),truce:new Int32Array(192),lastHit:new Int32Array(192).fill(-9999),lastAtk:new Int32Array(192).fill(-9999),pg:new Float32Array(192),emb:new Uint8Array(192),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(192).fill(-9999),lastHitAny:-9999,
     blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
-    cnt:{city:0,fort:0,port:0,factory:0,coast:0,silo:0,shield:0,mon:0},bc:{},mon:null,
+    cnt:{city:0,fort:0,port:0,factory:0,camp:0,coast:0,silo:0,shield:0,mon:0},bc:{},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
     st:{conq:0,lost:0,cities:0,kills:0,peak:0,nukes:0}};
   g.nations.push(n);if(n.human)g.human=id;return n;
@@ -182,10 +182,10 @@ function tileCost(g,k,i,A,D){
   if(!D){let c=T_COST[t];const si=g.structAt[i];
     if(si&&g.structs[si-1].type==='city')c=600*g.structs[si-1].level+400;
     else for(const s of neutCities(g)){const dx=x-s.x,dy=y-s.y;if(dx*dx+dy*dy<=10){c*=3;break;}}
-    return c*g.sCost/A.mAtk;}
+    return c*g.sCost/(A.mAtk*(1+(k.tb||0)));}
   const dens=D.troops/Math.max(D.tiles,25),ds=defOf(g,D);let z=1;
   for(let j=0;j<ds.length;j+=4){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy>ds[j+2])continue;const m=ds[j+3]>=9?1+(4+ds[j+3]-9)*fortF(k,ds[j+3]-9):ds[j+3];if(m>z)z=m;}
-  return(T_COST[t]+dens*T_DEF[t]*z*D.mDef+garrison(g,i,D)*D.mDef)*g.sCost/A.mAtk;
+  return(T_COST[t]+dens*T_DEF[t]*z*D.mDef+garrison(g,i,D)*D.mDef)*g.sCost/(A.mAtk*(1+(k.tb||0)));
 }
 // a city is held by a share of its nation's whole army: sieges need real force
 function garrison(g,i,D){const si=g.structAt[i];if(!si||!D)return 0;const s=g.structs[si-1];return s.type==='city'?D.troops*(.07+.02*s.level)*(s.capital?2:1)*(s.ruin>g.tick?.4:1):0;}
@@ -598,6 +598,25 @@ function pocketPass(g){
     let cx=0,cy=0;for(const i of list){cx+=i%W;cy+=(i/W)|0;}g.fills.push({a:nbo,o,tiles:ord,p:0,step:Math.ceil(ord.length/15)});emit(g,'enclave',{a:nbo,d:o,n:qt,x:Math.round(cx/qt),y:Math.round(cy/qt)});
   }
 }
+// ── tank camps: each finished camp rolls out up to 5 tanks, one every 3 seconds. Idle tanks roam the realm;
+// when their realm attacks they race to the front, and every tank there makes the offensive cheaper to push ──
+const TANK_N=5;
+function tickTanks(g){
+  const now=g.tick,W=g.W,H=g.H,own=g.owner;
+  for(const s of g.structs){if(s.dead||s.type!=='camp'||s.build||!s.owner)continue;
+    if(s.tkOwner!==s.owner){s.tkOwner=s.owner;s.tk=0;s.tkAt=now+30;}
+    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({a:s.owner,c:s,x:s.x+.5,y:s.y+.5,tx:s.x+.5,ty:s.y+.5,vx:1,vy:0,k:0,next:now,fire:0});}}
+  for(const k of g.attacks)k.tb=0;
+  const fronts={};for(const k of g.attacks){if(k.naval||k.fx==null||k.troops<1)continue;(fronts[k.a]||(fronts[k.a]=[])).push(k);}
+  for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
+    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}
+    const F=fronts[T.a];let k=null,bd=1e18;if(F)for(const q of F){const d=(q.fx-T.x)**2+(q.fy-T.y)**2;if(d<bd){bd=d;k=q;}}
+    if(k){T.k=k.id;T.tx=k.fx+.5;T.ty=k.fy+.5;}
+    else{T.k=0;if(now>=T.next){T.next=now+40+((g.rng()*60)|0);for(let t=0;t<12;t++){const x=c.x+(((g.rng()*41)|0)-20),y=c.y+(((g.rng()*41)|0)-20);if(x<0||y<0||x>=W||y>=H)continue;const i=y*W+x;if(own[i]===T.a&&g.M.ter[i]>1){T.tx=x+.5;T.ty=y+.5;break;}}}}
+    const dx=T.tx-T.x,dy=T.ty-T.y,d=hyp(dx,dy),sp=k?.55:.12;
+    if(d>.3){const st=Math.min(sp,d);T.x+=dx/d*st;T.y+=dy/d*st;T.vx=dx/d;T.vy=dy/d;}
+    if(k&&d<4){const lv=c.level||1;k.tb=Math.min(2.5,(k.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}
+}
 function tickFills(g){
   for(let j=g.fills.length-1;j>=0;j--){const f=g.fills[j],K=g.nations[f.a];if(!K.alive){g.fills.splice(j,1);continue;}
     const end=Math.min(f.tiles.length,f.p+f.step);for(;f.p<end;f.p++){const i=f.tiles[f.p];if(g.owner[i]===f.o&&g.fall[i]<=g.tick)setOwner(g,i,f.a);}
@@ -634,7 +653,7 @@ function snapshot(g){
 }
 function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
-  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickMissiles(g);tickPending(g);
+  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickTanks(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
     structPass(g);allyPass(g);if(g.ruins.length&&now%100===0)g.ruins=g.ruins.filter(r=>r.until>now);if(now%50===0)for(const n of g.nations)if(n)n.defDirty=true;const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);
