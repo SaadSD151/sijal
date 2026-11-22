@@ -311,8 +311,13 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button.e67{grid-column:span 2;display:flex;align-items:center;justify-content:center;gap:2px;background:linear-gradient(180deg,rgba(241,207,110,.25),rgba(201,149,45,.2));border-color:#f1cf6e}
-.e67 b{font-weight:900;color:#ffd166;font-size:20px}.e67 span{font-size:18px;display:inline-block;animation:e67 .55s ease-in-out infinite alternate}.e67 span.r{transform:scaleX(-1);animation-delay:-.275s}
+.e67 b{font-weight:900;color:#ffd166;font-size:20px}.e67 span{font-size:18px;display:inline-block;transform:scaleX(-1);animation:e67 .55s ease-in-out infinite alternate}.e67 span.r{transform:none;animation-delay:-.275s}
 @keyframes e67{from{translate:0 4px}to{translate:0 -4px}}
+.e67.lock{opacity:.55;position:relative}.e67 i{position:absolute;top:2px;inset-inline-end:4px;font-style:normal;font-size:12px}
+.hp{width:min(520px,100%);margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line2);text-align:start}.hp h3{margin:0 0 6px}
+.hpr{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line2)}.hpr i{width:12px;height:12px;border-radius:50%;flex:none}.hpr b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hpr small{color:var(--dim)}
+.hp input{background:rgba(0,0,0,.3);color:inherit;border:1px solid var(--line2);border-radius:8px;padding:7px 9px;font:inherit}
+.admb{background:linear-gradient(180deg,#7a1f1f,#4a1010);border-color:#ff9a8a}.pl .kick{margin-inline-start:auto}
 .emg button:active{transform:scale(.92)}
 .auf{display:flex;flex-direction:column;gap:8px;padding:8px 0;border-top:1px solid var(--line2);margin-top:6px}
 .auf h3{margin:0;text-align:center}.auf>.keys{margin:0;text-align:center}
@@ -426,6 +431,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #card{right:var(--g)}
 .bpc small{right:8px}
 .mob #amode{left:var(--g)}
+.e67 i{left:4px}
 .mob #bHome{left:var(--g)}
 .mob #feed{right:var(--g)}
 .mob #atk{right:var(--g)}
@@ -447,7 +453,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='2ee05ec791';
+const BUILD_ID='36a765b1ef';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -627,8 +633,8 @@ function addNation(g,p){
 }
 function setupNations(g){
   const o=g.o,rng=g.rng,idx=shuffle([...NAT.ar.keys()],rng);
-  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;});g.human=(o.me|0)+1;}
-  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;}
+  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;n.pass=!!p.pass;});g.human=(o.me|0)+1;}
+  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;n.pass=!!k.pass;}
   const pc=o.demo||o.players?null:FAC[o.faction||'hawks'].c,pal=shuffle(PAL.filter((c,i)=>o.players?i>=o.players.length||o.players.length>=PAL.length:!pc||Math.abs(c[0]-pc[0])+Math.abs(c[1]-pc[1])+Math.abs(c[2]-pc[2])>90),rng);
   for(let b=0;b<o.bots;b++){
     const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);
@@ -953,7 +959,7 @@ function tradeOk(g,a,b){const A=g.nations[a],B=g.nations[b];return!A.embAll&&!B.
 function setEmb(g,a,d,v){const A=g.nations[a];if(!A)return;v=v?1:0;if(d){if(g.nations[d])A.emb[d]=v;}else{A.embAll=v;if(!v)A.emb.fill(0);}
   for(const L of[g.trades,g.trains])for(let j=L.length-1;j>=0;j--){const b=L[j],o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)){L[j]=L[L.length-1];L.pop();}}emit(g,'emb',{a,d,v});}
 // emoji over a realm for everyone to see (optionally aimed at one realm), at most one every 3 seconds
-function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
+function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';if(EMO[e-1]==='67'&&!A.pass)return'pass';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
 function launchTrade(g,s){
   const A=g.nations[s.owner],now=g.tick,c=[];
   for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&tradeOk(g,s.owner,p.owner)&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
@@ -1026,7 +1032,8 @@ function tickMissiles(g){
     let hit=true;
     for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
       s.cd=g.tick+SH_CD(s.level);if(g.rng()<SH_P[m.type][s.level]){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
-    if(hit){const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+    if(hit){const R2=MSL[m.type].r**2;for(const T of g.tanks)if(T.a!==m.a&&!g.nations[T.a].ally[m.a]&&(T.x-.5-m.tx)**2+(T.y-.5-m.ty)**2<=R2)T.hp=0;
+      const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 // missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;
 // an atom bomb erases a small city, and the doomsday bomb erases every building it touches
@@ -1211,9 +1218,10 @@ function ownPath(g,a,s,e,cap){
   if(prev[e]<0)return null;const P=[e];let k=e;while(k!==s){k=prev[k];P.push(k);}return P.reverse();
 }
 // own tiles touching the enemy land an offensive is eating, ordered along the front
-function frontLine(g,k){
+// side 'a': the attacker's tiles behind the front; side 'd': the defender's tiles being hit
+function frontLine(g,k,side){
   const W=g.W,H=g.H,own=g.owner,T=k.heap.v,seen=new Set(),L=[];
-  for(let m=0;m<T.length&&L.length<400;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;
+  for(let m=0;m<T.length&&L.length<400;m++){const i=T[m];if(own[i]!==k.d)continue;if(side==='d'){if(!seen.has(i)){seen.add(i);L.push(i);}continue;}const x=i%W,y=(i/W)|0;
     for(let d=0;d<8;d++){const X=x+DX8[d],Y=y+DY8[d];if(X<0||Y<0||X>=W||Y>=H)continue;const j=Y*W+X;if(own[j]===k.a&&!seen.has(j)){seen.add(j);L.push(j);}}}
   if(L.length<2)return L;let mx=0,my=0;for(const i of L){mx+=i%W;my+=(i/W)|0;}mx/=L.length;my/=L.length;
   let sxx=0,syy=0,sxy=0;for(const i of L){const dx=i%W-mx,dy=((i/W)|0)-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy;}
@@ -1229,12 +1237,13 @@ function tickTanks(g){
   const now=g.tick,W=g.W,own=g.owner;
   for(const s of g.structs){if(s.dead||s.type!=='camp'||s.build||!s.owner)continue;
     if(s.tkOwner!==s.owner){s.tkOwner=s.owner;s.tk=0;s.tkAt=now+30;}
-    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({id:++g.aid,a:s.owner,c:s,x:s.x+.5,y:s.y+.5,vx:1,vy:0,k:0,path:null,pi:0,re:now,fire:0});}}
+    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({id:++g.aid,a:s.owner,c:s,x:s.x+.5,y:s.y+.5,vx:1,vy:0,k:0,path:null,pi:0,re:now,fire:0,hp:100});}}
   for(const k of g.attacks)k.tb=0;
   // fronts per realm, refreshed when tanks re-plan
-  const byA={};for(const k of g.attacks){if(k.naval||k.troops<1)continue;(byA[k.a]||(byA[k.a]=[])).push(k);}
+  // each realm's tanks answer its own offensives and any land offensive another realm makes against it
+  const byA={};for(const k of g.attacks){if(k.naval||k.troops<1)continue;(byA[k.a]||(byA[k.a]=[])).push(k);if(k.d&&k.a)(byA[k.d]||(byA[k.d]=[])).push(k);}
   const live=[];for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
-    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}live.push(T);}
+    const killed=T.hp<=0;if(killed||c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a){c.tk--;if(killed&&!c.dead)c.tkAt=Math.max(c.tkAt,now+200);}if(killed)emit(g,'tankDown',{a:T.a,x:T.x,y:T.y});g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}live.push(T);}
   live.sort((p,q)=>p.id-q.id);const slot={};
   for(const T of live){const ti=Math.floor(T.y)*W+Math.floor(T.x),F=byA[T.a];
     // nearest offensive of this realm
@@ -1243,7 +1252,7 @@ function tickTanks(g){
     const lost=own[ti]!==T.a;
     if(lost||now>=T.re||(k?T.k!==k.id:T.k)){
       T.re=now+(k?20:60+((g.rng()*40)|0));let tgt=-1;
-      if(k){if(!k._fl||now-k._flT>=20){k._fl=frontLine(g,k);k._flT=now;}const L=k._fl;
+      if(k){const sd=k.a===T.a?'a':'d',fk='_fl'+sd;if(!k[fk]||now-k[fk+'T']>=20){k[fk]=frontLine(g,k,sd);k[fk+'T']=now;}const L=k[fk];
         if(L.length){const n=live.filter(o=>o.a===T.a).length;tgt=L[Math.min(L.length-1,Math.floor((T.slot+.5)/Math.max(1,n)*L.length))];}}
       for(const R of k?[6,20]:[10,25,50]){if(tgt>=0)break;tgt=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}
       T.k=k?k.id:0;let start=ti;if(own[start]!==T.a){let b=-1;for(const R of[2,5,10,20]){if(b>=0)break;b=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}if(b<0){b=T.c.i;}start=b;T.x=b%W+.5;T.y=((b/W)|0)+.5;}
@@ -1252,7 +1261,10 @@ function tickTanks(g){
     const sp=T.k?.55:.14;let left=sp;
     while(T.path&&T.pi<T.path.length&&left>0){const n=T.path[T.pi];if(own[n]!==T.a){T.path=null;T.re=now;break;}const nx=n%W+.5,ny=((n/W)|0)+.5,dx=nx-T.x,dy=ny-T.y,d=hyp(dx,dy);
       if(d<=left){T.x=nx;T.y=ny;left-=d;T.pi++;}else{T.x+=dx/d*left;T.y+=dy/d*left;T.vx=dx/d;T.vy=dy/d;left=0;}}
-    if(T.k&&(!T.path||T.pi>=T.path.length)){const kk=F&&F.find(q=>q.id===T.k);if(kk){const lv=T.c.level||1;kk.tb=Math.min(2.5,(kk.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}}
+    if(T.k&&(!T.path||T.pi>=T.path.length)){const kk=F&&F.find(q=>q.id===T.k&&q.a===T.a);if(kk){const lv=T.c.level||1;kk.tb=Math.min(2.5,(kk.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}}
+  // enemy tanks that meet fight: each one in reach knocks 4 hit points a tick off the other (about 2.5 s one on one)
+  for(let i=0;i<live.length;i++){const P=live[i];for(let j=i+1;j<live.length;j++){const Q=live[j];if(P.a===Q.a||(P.x-Q.x)**2+(P.y-Q.y)**2>16)continue;
+    const A=g.nations[P.a];if(A.ally[Q.a]||!atWar(g,P.a,Q.a))continue;P.hp-=4;Q.hp-=4;P.fire=Q.fire=now;}}
 }
 function tickFills(g){
   for(let j=g.fills.length-1;j>=0;j--){const f=g.fills[j],K=g.nations[f.a];if(!K.alive){g.fills.splice(j,1);continue;}
@@ -1640,7 +1652,7 @@ function drawBadge(c,x,y,s,ts){
 function drawEmo(c,e,x,y,q,ts){
   if(e!=='67'){c.font=`${q}px sans-serif`;c.fillText(e,x,y);return;}
   const b=Math.sin(ts/140)*q*.28;c.font=`900 ${q*.95}px ${FONT}`;c.lineWidth=Math.max(3,q*.16);c.strokeStyle='rgba(6,12,20,.9)';c.save();c.direction='ltr';txt(c,'67',x,y,'#ffd166');c.restore();
-  c.font=`${q*.78}px sans-serif`;c.fillText('🫴',x-q*1.05,y-b);c.save();c.translate(x+q*1.05,y+b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();
+  c.font=`${q*.78}px sans-serif`;c.save();c.translate(x-q*1.05,y-b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();c.fillText('🫴',x+q*1.05,y+b);
 }
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
@@ -1781,6 +1793,7 @@ function draw(g,dt,ts){
     const hull=c.createLinearGradient(0,-s*.5,0,s*.5);hull.addColorStop(0,'#5a6570');hull.addColorStop(1,'#232a31');c.fillStyle=hull;c.strokeStyle='#ffd166';c.lineWidth=Math.max(1.2,s*.14);c.beginPath();c.rect(-s*.9,-s*.5,s*1.8,s);c.fill();c.stroke();c.shadowBlur=0;
     c.fillStyle='#14181c';c.fillRect(s*.25,-s*.12,s*1.2,s*.24);c.fillStyle='#ffd166';c.fillRect(s*1.3,-s*.16,s*.18,s*.32);c.beginPath();c.arc(0,0,s*.44,0,7);c.fillStyle=n.css;c.fill();c.strokeStyle='#ffd166';c.stroke();c.restore();
     // light, sparse blasts at the front
+    if(T.hp<100){c.fillStyle='rgba(0,0,0,.6)';c.fillRect(p.x-s,p.y-s*1.25,s*2,Math.max(2,s*.22));c.fillStyle=T.hp>50?'#6ee7a0':T.hp>25?'#ffd166':'#ff6b5a';c.fillRect(p.x-s,p.y-s*1.25,s*2*T.hp/100,Math.max(2,s*.22));}
     if(T.k&&g.tick-T.fire<3&&R.q!==0&&Math.random()<.05)addFx('ring',T.x-.5+T.vx*3,T.y-.5+T.vy*3,{r:1.6,dur:500,col:'rgba(255,170,80,.9)'});}}
   // effects
   for(let i=R.fx.length-1;i>=0;i--){
@@ -1967,7 +1980,7 @@ Object.assign(TX.en,{d_fort:'Slows the enemy a lot and multiplies defense by 6. 
  dInfo:[['One world per day','Each day a new map is generated from the date and stays the same all day. You get one attempt; tomorrow brings a different world.'],['Fixed rules','Medium map, 14 rival realms and 60 tribes, on Hard. You cannot change them.'],['Goal: the fastest win','Hold 70% of the land as fast as you can. Your time is saved; the faster the better.'],['Tip','Since the world does not change, learn from each attempt: where to found your capital, which cities to take first, whom to ally with.']]});
 TX.en.help[4]=['Building','Every building takes 6 seconds to finish. Cities add troops and gold, forts slow the enemy and multiply defense by 6, ports send trade ships that bring gold.'];
 TX.en.help[8]=['The road to victory','Hold 70% of the land in single player, 99% online.'];
-Object.assign(TX.ar,{s_camp:'معسكر دبابات',d_camp:'يطلّع 5 دبابات، وحدة كل 3 ثواني. تتجول في دولتك، ولما تهجم تروح بسرعة للجبهة وتقوّي الهجوم بشكل كبير',ef_camp:'{0} دبابات · كل دبابة على الجبهة +{1}٪ قوة هجوم',bdgT:'علامة السيزون صفر',bdgOn:'إظهار العلامة',bdgOff:'إخفاء العلامة',bdgNote:'تطلع جنب اسمك في القيم وفي المتصدرين وغرف الأونلاين',bp:'السيزون صفر',tMenu:'القائمة',tSkins:'تخصيص',bpGot:'مفتوح',skNone:'بدون',skNote:'اختر نقشة أرضك وشكل مبانيك من السكنات اللي فتحتها، والكل يشوفها',skEmpty:'ما فتحت سكنات للحين. افتح السيزون صفر لما توصل 10,000 خبرة',dDone:'خلّصت تحدي اليوم، تقدر تلعبه بكرة',sk_diamonds:'معيّنات',sk_zigzag:'متعرّج',sk_jade:'يشم',sk_crimson:'قرمزي',sk_silver:'فضّي',bpNote:'أنت تختار متى تصرف خبرتك: 10,000 تفتح السيزون، وبعدها كل مستوى بـ1,000 وفيه سكن يشوفه كل اللاعبين',bpOpened:'🎖️ فتحت السيزون صفر! انصرف 10,000 خبرة',bpGotTier:'🎖️ فتحت المستوى {0}، روح للتخصيص وجرّب السكن الجديد',bpOpen:'افتح السيزون صفر',bpClaim:'افتح',bpNeed:'نقاط خبرتك غير كافية، باقي لك {0} خبرة',bpXp:'خبرتك ما تكفي',e_bpXp:'خبرتك ما تكفي',bpReady:'عندك خبرة كفاية، اضغط «افتح» على المستوى {0}',bpCanOpen:'عندك 10,000 خبرة، تقدر تفتح السيزون صفر الحين',bpHint:'🎖️ عندك خبرة كفاية تفتح شي في السيزون صفر',bpLock:'باقي لك {0} خبرة وتفتح السيزون صفر',bpNext:'باقي {0} خبرة للمستوى {1}',bpDone:'خلّصت السيزون صفر كامل! 👑',bpTier:'المستوى {0} من {1}',bpPat:'نقشة الأرض',bpBld:'شكل المباني',bpWear:'البسه',bpOn:'لابسه',sk_stripes:'خطوط',sk_dots:'نقاط',sk_checker:'شطرنج',sk_grid:'شبكة',sk_waves:'أمواج',sk_chevron:'أسهم',sk_bricks:'طوب',sk_stars:'نجوم',sk_gold:'ذهبي',sk_stone:'حجري',sk_neon:'نيون',sk_royal:'ملكي',sk_ice:'جليدي',sk_obsidian:'أوبسيديان',sk_fire:'ناري',dXp:'خبرة ×1.5 في تحدي اليوم، و+50 لو فزت · محاولة وحدة كل يوم',neutral:'أرض فاضية',cheats:'وضع الغش (للتجربة)',ch_gold:'💰 ذهب لا نهائي',ch_troops:'⚔️ جنود لا نهائية',ch_build:'🏗️ بناء وتطوير فوري',ch_era:'🏛️ كل العصور مفتوحة',ch_msl:'🚀 صواريخ وقدرات بدون انتظار',cheatNote:'المعركة اللي فيها غش ما تنحسب في الانتصارات ولا الخبرة ولا المتصدرين',cheatOn:'🧪 وضع الغش شغّال: هالمعركة ما تنحسب',cheatEnd:'معركة غش، ما انحسبت في انتصاراتك ولا خبرتك',nameSave:'✓ حفظ الاسم',nameUndo:'↶ رجّع القديم',nameSaved:'تم حفظ اسمك: {0}',rl_land:'هجوم',rl_info:'البطاقة',rl_sea:'بحري',rl_more:'صواريخ',rl_all:'كل الحدود',m_enclave:'المنطقة اللي حاصرتها انضمت لك',m_peaceRejX:'{0} رفض السلام: {1}',m_rejX:'{0} رفض التحالف: {1}',
+Object.assign(TX.ar,{kick:'اطرده',kicked:'طردت {0}',e_kicked:'صاحب الغرفة طردك',inGame:'اللاعبين في القيم',wasKicked:'مطرود',left:'طلع',out:'خسر',e67:'ميم 67 لأصحاب السيزون صفر بس',admin:'لوحة الأدمن',admGame:'أدوات الأدمن',admEra:'آخر عصر',admMsl:'صواريخ بدون انتظار',admWin:'فوز الحين',admNote:'استخدام أدوات الأدمن يخلي المعركة ما تنحسب',admDone:'تم',admAdmins:'الأدمنية',admGive:'اعطه أدمن',admRemove:'شيل الأدمن',admNone:'ما فيه أدمنية',admRules:'ما قدرنا نجيب القائمة، تأكد إن قواعد قاعدة البيانات محدّثة',admMsgT:'رسالة لكل اللاعبين',admMsgPh:'تطلع لكل واحد يفتح اللعبة',admSend:'أرسل',admSent:'انرسلت الرسالة',admMeT:'حسابي',bpTierL:'مستوى السيزون',admSave:'احفظ',admDelRow:'احذف',admSure:'متأكد تحذف هالصف من المتصدرين؟',admGiven:'صار {0} أدمن',you:'أنت',e_admUser:'اكتب اسم مستخدم صحيح',e_admNoUser:'ما فيه حساب بهالاسم، لازم يدخل حسابه مرة وحدة على الأقل',e_admFail:'ما ضبط، تأكد إنك أدمن وإن قواعد قاعدة البيانات محدّثة',s_camp:'معسكر دبابات',d_camp:'يطلّع 5 دبابات، وحدة كل 3 ثواني. تتجول في دولتك، ولما تهجم تروح بسرعة للجبهة وتقوّي الهجوم بشكل كبير',ef_camp:'{0} دبابات · كل دبابة على الجبهة +{1}٪ قوة هجوم',bdgT:'علامة السيزون صفر',bdgOn:'إظهار العلامة',bdgOff:'إخفاء العلامة',bdgNote:'تطلع جنب اسمك في القيم وفي المتصدرين وغرف الأونلاين',bp:'السيزون صفر',tMenu:'القائمة',tSkins:'تخصيص',bpGot:'مفتوح',skNone:'بدون',skNote:'اختر نقشة أرضك وشكل مبانيك من السكنات اللي فتحتها، والكل يشوفها',skEmpty:'ما فتحت سكنات للحين. افتح السيزون صفر لما توصل 10,000 خبرة',dDone:'خلّصت تحدي اليوم، تقدر تلعبه بكرة',sk_diamonds:'معيّنات',sk_zigzag:'متعرّج',sk_jade:'يشم',sk_crimson:'قرمزي',sk_silver:'فضّي',bpNote:'أنت تختار متى تصرف خبرتك: 10,000 تفتح السيزون، وبعدها كل مستوى بـ1,000 وفيه سكن يشوفه كل اللاعبين',bpOpened:'🎖️ فتحت السيزون صفر! انصرف 10,000 خبرة',bpGotTier:'🎖️ فتحت المستوى {0}، روح للتخصيص وجرّب السكن الجديد',bpOpen:'افتح السيزون صفر',bpClaim:'افتح',bpNeed:'نقاط خبرتك غير كافية، باقي لك {0} خبرة',bpXp:'خبرتك ما تكفي',e_bpXp:'خبرتك ما تكفي',bpReady:'عندك خبرة كفاية، اضغط «افتح» على المستوى {0}',bpCanOpen:'عندك 10,000 خبرة، تقدر تفتح السيزون صفر الحين',bpHint:'🎖️ عندك خبرة كفاية تفتح شي في السيزون صفر',bpLock:'باقي لك {0} خبرة وتفتح السيزون صفر',bpNext:'باقي {0} خبرة للمستوى {1}',bpDone:'خلّصت السيزون صفر كامل! 👑',bpTier:'المستوى {0} من {1}',bpPat:'نقشة الأرض',bpBld:'شكل المباني',bpWear:'البسه',bpOn:'لابسه',sk_stripes:'خطوط',sk_dots:'نقاط',sk_checker:'شطرنج',sk_grid:'شبكة',sk_waves:'أمواج',sk_chevron:'أسهم',sk_bricks:'طوب',sk_stars:'نجوم',sk_gold:'ذهبي',sk_stone:'حجري',sk_neon:'نيون',sk_royal:'ملكي',sk_ice:'جليدي',sk_obsidian:'أوبسيديان',sk_fire:'ناري',dXp:'خبرة ×1.5 في تحدي اليوم، و+50 لو فزت · محاولة وحدة كل يوم',neutral:'أرض فاضية',cheats:'وضع الغش (للتجربة)',ch_gold:'💰 ذهب لا نهائي',ch_troops:'⚔️ جنود لا نهائية',ch_build:'🏗️ بناء وتطوير فوري',ch_era:'🏛️ كل العصور مفتوحة',ch_msl:'🚀 صواريخ وقدرات بدون انتظار',cheatNote:'المعركة اللي فيها غش ما تنحسب في الانتصارات ولا الخبرة ولا المتصدرين',cheatOn:'🧪 وضع الغش شغّال: هالمعركة ما تنحسب',cheatEnd:'معركة غش، ما انحسبت في انتصاراتك ولا خبرتك',nameSave:'✓ حفظ الاسم',nameUndo:'↶ رجّع القديم',nameSaved:'تم حفظ اسمك: {0}',rl_land:'هجوم',rl_info:'البطاقة',rl_sea:'بحري',rl_more:'صواريخ',rl_all:'كل الحدود',m_enclave:'المنطقة اللي حاصرتها انضمت لك',m_peaceRejX:'{0} رفض السلام: {1}',m_rejX:'{0} رفض التحالف: {1}',
 pr_weak:['يشوف جيشه أقوى منك','يقول: «ليش أوقف وأنا الكسبان؟»','يحس إنه قريب يكسرك','جيشه أكبر ومعنوياته عالية','يقول: «تعال نتفاهم لما تصير قدّي»','يبي ياخذ أرض أكثر قبل لا يوقف'],
 pr_trust:['ما يثق فيك، جرّب تهديه ذهب','يقول: «كم مرة وعدت وخلفت؟»','يبي دليل إنك صادق، هدية ذهب تفرق','ما نسى هجماتك عليه','يقول: «كلامك حلو بس أفعالك غير»','يحس إنك تبي تلتقط أنفاسك وترجع تضرب','شعبه زعلان منك وما يقدر يسامح بسرعة'],
 pr_agg:['شخصيته محاربة وما يحب السلام','يقول: «السيف هو اللي يحكم»','يبي الحرب للآخر','قادته العسكريين رافضين الصلح','يقول: «السلام للضعفاء»'],
@@ -1983,7 +1996,7 @@ ar_trust:['ما يثق فيك كفاية للحين','يقول: «ورّني ن�
  w_dom:'{0} سيطرت على العالم كله',d_port:'يطلّع سفينة تتاجر مع موانئ الدول وترجع لك بذهب. حطّه قريب الساحل ويثبت لحاله'});
 TX.ar.help[8]=['طريق النصر','سيطر على 99% من أرض العالم. كل دولة لازم تطيح.'];
 TX.ar.dInfo[2]=['الهدف: أسرع نصر','سيطر على 99% من الأرض بأسرع وقت. ينحفظ زمنك، وكل ما كان أسرع أحسن.'];
-Object.assign(TX.en,{s_camp:'Tank camp',d_camp:'Rolls out 5 tanks, one every 3 seconds. They roam your realm and race to the front when you attack, making the offensive much stronger',ef_camp:'{0} tanks · each tank at the front +{1}% attack power',bdgT:'Season Zero badge',bdgOn:'Show badge',bdgOff:'Hide badge',bdgNote:'Shown beside your name in battle, on the leaderboard and in online rooms',bp:'Season Zero',tMenu:'Menu',tSkins:'Customize',bpGot:'Unlocked',skNone:'None',skNote:'Pick your land pattern and building style from the skins you have unlocked; everyone sees them',skEmpty:'No skins unlocked yet. Season Zero opens at 10,000 experience',dDone:'You finished today\'s challenge. Come back tomorrow',sk_diamonds:'Diamonds',sk_zigzag:'Zigzag',sk_jade:'Jade',sk_crimson:'Crimson',sk_silver:'Silver',bpNote:'You choose when to spend: 10,000 opens the season, then each tier costs 1,000 and holds a skin everyone sees',bpOpened:'🎖️ Season Zero opened! 10,000 experience spent',bpGotTier:'🎖️ Tier {0} unlocked; try the new skin in Customize',bpOpen:'Open Season Zero',bpClaim:'Claim',bpNeed:'Not enough experience: {0} more needed',bpXp:'Not enough experience',e_bpXp:'Not enough experience',bpReady:'You have enough experience: claim tier {0}',bpCanOpen:'You have 10,000 experience: you can open Season Zero now',bpHint:'🎖️ You have enough experience to unlock something in Season Zero',bpLock:'{0} more experience to open Season Zero',bpNext:'{0} more experience to tier {1}',bpDone:'You completed all of Season Zero! 👑',bpTier:'Tier {0} of {1}',bpPat:'Land pattern',bpBld:'Building style',bpWear:'Equip',bpOn:'Equipped',sk_stripes:'Stripes',sk_dots:'Dots',sk_checker:'Checker',sk_grid:'Grid',sk_waves:'Waves',sk_chevron:'Chevrons',sk_bricks:'Bricks',sk_stars:'Stars',sk_gold:'Golden',sk_stone:'Stone',sk_neon:'Neon',sk_royal:'Royal',sk_ice:'Ice',sk_obsidian:'Obsidian',sk_fire:'Fire',dXp:'×1.5 experience in the daily challenge, +50 if you win · one attempt a day',neutral:'Empty land',cheats:'Cheat mode (for testing)',ch_gold:'💰 Infinite gold',ch_troops:'⚔️ Infinite troops',ch_build:'🏗️ Instant build and upgrades',ch_era:'🏛️ All ages unlocked',ch_msl:'🚀 Missiles and powers without cooldown',cheatNote:'A battle with cheats does not count toward wins, experience or the leaderboard',cheatOn:'🧪 Cheat mode is on: this battle will not count',cheatEnd:'Cheat battle: not counted in your wins or experience',nameSave:'✓ Save name',nameUndo:'↶ Undo',nameSaved:'Name saved: {0}',rl_land:'Attack',rl_info:'Card',rl_sea:'By sea',rl_more:'Missiles',rl_all:'All borders',m_enclave:'The land you surrounded has joined you',m_peaceRejX:'{0} refused peace: {1}',m_rejX:'{0} refused the alliance: {1}',
+Object.assign(TX.en,{kick:'Kick',kicked:'You kicked {0}',e_kicked:'The host removed you from the room',inGame:'Players in this match',wasKicked:'Kicked',left:'Left',out:'Out',e67:'The 67 meme is for Season Zero holders only',admin:'Admin panel',admGame:'Admin tools',admEra:'Last age',admMsl:'No missile cooldown',admWin:'Win now',admNote:'Using admin tools means this battle will not count',admDone:'Done',admAdmins:'Admins',admGive:'Make admin',admRemove:'Remove admin',admNone:'No admins',admRules:'Could not load the list; make sure the database rules are updated',admMsgT:'Message to all players',admMsgPh:'Shown to everyone who opens the game',admSend:'Send',admSent:'Message sent',admMeT:'My account',bpTierL:'Season tier',admSave:'Save',admDelRow:'Delete',admSure:'Delete this leaderboard row?',admGiven:'{0} is now an admin',you:'You',e_admUser:'Enter a valid username',e_admNoUser:'No account with that username; they must sign in at least once',e_admFail:'That did not work; make sure you are an admin and the database rules are updated',s_camp:'Tank camp',d_camp:'Rolls out 5 tanks, one every 3 seconds. They roam your realm and race to the front when you attack, making the offensive much stronger',ef_camp:'{0} tanks · each tank at the front +{1}% attack power',bdgT:'Season Zero badge',bdgOn:'Show badge',bdgOff:'Hide badge',bdgNote:'Shown beside your name in battle, on the leaderboard and in online rooms',bp:'Season Zero',tMenu:'Menu',tSkins:'Customize',bpGot:'Unlocked',skNone:'None',skNote:'Pick your land pattern and building style from the skins you have unlocked; everyone sees them',skEmpty:'No skins unlocked yet. Season Zero opens at 10,000 experience',dDone:'You finished today\'s challenge. Come back tomorrow',sk_diamonds:'Diamonds',sk_zigzag:'Zigzag',sk_jade:'Jade',sk_crimson:'Crimson',sk_silver:'Silver',bpNote:'You choose when to spend: 10,000 opens the season, then each tier costs 1,000 and holds a skin everyone sees',bpOpened:'🎖️ Season Zero opened! 10,000 experience spent',bpGotTier:'🎖️ Tier {0} unlocked; try the new skin in Customize',bpOpen:'Open Season Zero',bpClaim:'Claim',bpNeed:'Not enough experience: {0} more needed',bpXp:'Not enough experience',e_bpXp:'Not enough experience',bpReady:'You have enough experience: claim tier {0}',bpCanOpen:'You have 10,000 experience: you can open Season Zero now',bpHint:'🎖️ You have enough experience to unlock something in Season Zero',bpLock:'{0} more experience to open Season Zero',bpNext:'{0} more experience to tier {1}',bpDone:'You completed all of Season Zero! 👑',bpTier:'Tier {0} of {1}',bpPat:'Land pattern',bpBld:'Building style',bpWear:'Equip',bpOn:'Equipped',sk_stripes:'Stripes',sk_dots:'Dots',sk_checker:'Checker',sk_grid:'Grid',sk_waves:'Waves',sk_chevron:'Chevrons',sk_bricks:'Bricks',sk_stars:'Stars',sk_gold:'Golden',sk_stone:'Stone',sk_neon:'Neon',sk_royal:'Royal',sk_ice:'Ice',sk_obsidian:'Obsidian',sk_fire:'Fire',dXp:'×1.5 experience in the daily challenge, +50 if you win · one attempt a day',neutral:'Empty land',cheats:'Cheat mode (for testing)',ch_gold:'💰 Infinite gold',ch_troops:'⚔️ Infinite troops',ch_build:'🏗️ Instant build and upgrades',ch_era:'🏛️ All ages unlocked',ch_msl:'🚀 Missiles and powers without cooldown',cheatNote:'A battle with cheats does not count toward wins, experience or the leaderboard',cheatOn:'🧪 Cheat mode is on: this battle will not count',cheatEnd:'Cheat battle: not counted in your wins or experience',nameSave:'✓ Save name',nameUndo:'↶ Undo',nameSaved:'Name saved: {0}',rl_land:'Attack',rl_info:'Card',rl_sea:'By sea',rl_more:'Missiles',rl_all:'All borders',m_enclave:'The land you surrounded has joined you',m_peaceRejX:'{0} refused peace: {1}',m_rejX:'{0} refused the alliance: {1}',
 pr_weak:['it thinks its army is stronger','"Why stop when I am winning?"','it feels close to breaking you','its army is bigger and its spirits high','"Come back when you are my equal"','it wants more land before it stops'],
 pr_trust:['it does not trust you; try a gift of gold','"How many times have you broken your word?"','it wants proof you mean it; gold helps','it has not forgotten your attacks','"Sweet words, but your deeds say otherwise"','it thinks you only want a breather before striking again','its people are angry and slow to forgive'],
 pr_agg:['it is warlike and has no taste for peace','"The sword decides"','it wants war to the end','its generals refuse any truce','"Peace is for the weak"'],
@@ -2001,6 +2014,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'4.7',d:'2026-11-22',ar:['💥 الصواريخ صارت تدمّر دبابات العدو، والدبابات تتقاتل لما تتقابل، وكل دبابة لها شريط صحة','🛡️ دباباتك صارت تدافع: لما أحد يهاجمك تروح للجبهة وتواجه دباباته','🫴 ميم 67 صار لأصحاب السيزون صفر، واليدين انعكست','🚪 صاحب الغرفة يقدر يطرد أي لاعب من غرفة الانتظار، وداخل القيم من قائمة اللاعبين في قائمة الإيقاف'],en:['💥 Missiles now destroy enemy tanks, tanks fight when they meet, and each tank has a health bar','🛡️ Your tanks now defend: when you are attacked they head to the front and face the enemy tanks','🫴 The 67 meme is now for Season Zero holders, with the hands flipped','🚪 The host can kick any player from the waiting room, and during the match from the player list in the pause menu']},
  {v:'4.6',d:'2026-11-22',ar:['🪖 صلّحنا الدبابات: ما عاد تمشي في البحر ولا أراضي الأعداء، تمشي بس داخل دولتك','🛡️ وقت السلم تقعد عند حدودك بدل ما ترجع للمعسكر، ووقت الهجوم تتوزع على طول خط الجبهة بدل ما تتكوّم في نقطة وحدة','🫴 ميم 67 الجديد في الإيموجي: يطلع فوق دولتك واليدين تتحرك، ويشوفه الكل'],en:['🪖 Tanks fixed: they no longer cross the sea or enemy land, only your own realm','🛡️ At peace they wait at your border instead of returning to camp, and in an attack they spread along the whole front instead of bunching up','🫴 New 67 meme in the emojis: shown over your realm with moving hands, for everyone to see']},
  {v:'4.5',d:'2026-11-21',ar:['🪖 مبنى جديد: معسكر الدبابات (عصر البارود). يطلّع 5 دبابات، وحدة كل 3 ثواني','🛡️ الدبابات تتجول في دولتك، ولما تهجم تروح بسرعة للجبهة وتقوّي الهجوم كثير، ومعها تفجيرات خفيفة','🎨 شكل الدبابة: هيكل حديدي بإطار ذهبي وبرج بلون دولتك، ولما تبعّد تصير نقطة تتحرك'],en:['🪖 New building: the Tank Camp (Age of Gunpowder). It rolls out 5 tanks, one every 3 seconds','🛡️ Tanks roam your realm and race to the front when you attack, making it much stronger, with light blasts','🎨 Tanks have a steel hull with a gold rim and a turret in your colour, and turn into moving dots when zoomed out']},
  {v:'4.4',d:'2026-11-20',ar:['🛡️ علامة السيزون صفر الأسطورية: درع بنفسجي بنجمة ذهبية يلمع جنب اسمك في القيم والمتصدرين وغرف الأونلاين، وتقدر تخفيها من التخصيص','💸 أنت تختار تصرف خبرتك: زر «افتح السيزون صفر» بـ10,000، وبعدها زر «افتح» على كل مستوى بـ1,000','🎖️ الباتل باس صار اسمه «السيزون صفر» وفيه 20 مستوى، كل مستوى بـ1000 خبرة، و5 سكنات جديدة: معيّنات، متعرّج، يشم، قرمزي، فضّي','🗂️ فوق القائمة الرئيسية صار فيه خانات: القائمة، والسيزون صفر، والتخصيص اللي تغيّر منه سكناتك','🎯 الدائرة في الجوال صارت أصغر وأسرع، وبدون الشريط والأزرار الزيادة','📅 تحدي اليوم صار محاولة وحدة بس كل يوم، وأول ما تبدأه تنحسب. الخبرة فيه ×1.5 و+50 لو فزت'],en:['🛡️ The legendary Season Zero badge: a glowing violet shield with a gold star beside your name in battle, on the leaderboard and in online rooms; hide it in Customize','💸 You choose when to spend: Open Season Zero for 10,000, then Claim each tier for 1,000','🎖️ The Battle Pass is now Season Zero with 20 tiers at 1,000 experience each, and 5 new skins: diamonds, zigzag, jade, crimson, silver','🗂️ Tabs on top of the main menu: Menu, Season Zero, and Customize where you change your skins','🎯 The phone circle is smaller and quicker, without the extra bar and buttons','📅 The daily challenge is now one attempt a day, counted as soon as you start it; experience there is ×1.5 and +50 if you win']},
@@ -2009,8 +2023,7 @@ const LOG=[
  {v:'3.8',d:'2026-11-20',ar:['🧪 وضع الغش في المعركة المخصصة: ذهب لا نهائي، جنود لا نهائية، بناء وتطوير فوري، كل العصور مفتوحة، وصواريخ بدون انتظار. تلقاه تحت إعدادات المعركة المخصصة، والمعركة اللي فيها غش ما تنحسب في الانتصارات ولا المتصدرين','🎯 الدائرة في الجوال صارت أكبر وتطلع فوق إصبعك، وفوقها تشوف مين بتهجم عليه وكم جنوده وكم بترسل','💪 تحت الدائرة أزرار سريعة لقوة الهجوم: 25٪ و50٪ و75٪ و100٪'],en:['🧪 Cheat mode in Custom Battle: infinite gold, infinite troops, instant build and upgrades, all ages unlocked, and missiles without cooldown. Find it under the custom battle settings; a battle with cheats does not count toward wins or the leaderboard','🎯 The phone circle is bigger and opens above your finger, showing who you are attacking, their troops and how many you will send','💪 Quick strength buttons under the circle: 25%, 50%, 75% and 100%']},
  {v:'3.7',d:'2026-11-19',ar:['🛠️ صلّحنا قلتش أسعار المباني: سعر المدينة كان يوصل ملايين لما تحتل مدن كثير. الحين السعر يتحسب بس من المباني اللي بنيتها بنفسك، والمدن اللي تحتلها ما ترفعه','💰 نفس الإصلاح على كل المباني: منصة الصواريخ والقبة والمصنع والميناء والحصن. بعد سادس مبنى من نفس النوع السعر يزيد بشوي بس، فما عاد يطير','✏️ اسمك في صفحة الحساب صار له زر «حفظ» وزر «رجّع القديم»','🏆 قائمة المتصدرين تنظفت من الأسماء المكررة اللي ما لعبت ولا معركة'],en:['🛠️ Fixed the building price glitch: a city could cost millions after you captured many. Now the price only counts buildings you built yourself, so captured cities no longer raise it','💰 The same fix for every building: silos, domes, factories, ports and forts. After the 6th of a kind the price only rises a little, so it never runs away','✏️ Your name on the Account page now has Save and Undo buttons','🏆 The leaderboard no longer lists repeated names that never played a battle']},
  {v:'3.5',d:'2026-11-19',ar:['⚖️ توازن جديد للعبة: الجنود يزيدون بشكل واقعي (حوالي 30 ألف بعد دقيقتين بدل ما توصل مليون)، والقيم يطول 15 لين 25 دقيقة','💰 المباني صارت أغلى: كل مبنى جديد من نفس النوع أغلى من اللي قبله بحوالي 40٪، والعصور أغلى','🏙️ المدن المحايدة في الخرائط صارت أقل، وأيقونات المدن والمباني صارت أكبر بكثير','🛡️ دائرة الحصن والقبة والدفاع البحري صارت ما تتعدى حدودك، ولها خط واضح على طرفها','🤝 علامة التحالف تطلع جنب اسم أي دولة متحالف معها','🗺️ كل الخرائط صارت أكبر بحوالي 30٪ والبحر أقل','🖼️ في إعدادات الجرافيكس صورة لكل مستوى توريك الفرق','📏 مدى كل المباني صار أكبر، والمسافة بين المباني أكبر عشان ما تتراكب، وأرضك أول ما تبدأ صارت تقريباً 3 أضعاف','🏕️ القبائل الصغيرة صارت تهجم على طول بكل جنودها وتخلي 2000 بس، فتكبر بسرعة من أول القيم'],en:['⚖️ New balance: troops grow realistically (about 30K after two minutes instead of reaching a million), and a match lasts 15 to 25 minutes','💰 Buildings cost more: each new one of a kind costs about 40% more than the last, and ages cost more','🏙️ Fewer neutral cities on the maps, and bigger city and building icons','🛡️ Fort, dome and coastal gun areas stop at your border, with a clear outline on their edge','🤝 A handshake shows next to the name of every realm you are allied with','🗺️ Every map is about 30% bigger with less sea','🖼️ The graphics settings show a picture of each level so you can see the difference','📏 Every building has a larger range, buildings sit further apart so they do not overlap, and your starting land is about three times bigger','🏕️ Small tribes now attack right away with everything above a 2000-man reserve, so they grow fast from the start']},
- {v:'3.4',d:'2026-11-19',ar:['🔢 رقم الجنود صار يمشي ورا خط الهجوم ويتحرك مع الجبهة كاملة، يميل مع الحدود ويكبر لما الجبهة تكبر','🌾 رقم الجنود ما يطلع لما تهجم على أرض فاضية، بس لما تهجم على دولة'],en:['🔢 The troop count now rides behind the attack line and moves with the whole front, tilting along the border and growing with it','🌾 No troop count when you attack empty land, only against realms']},
- {v:'3.3',d:'2026-11-19',ar:['🟢 أي أرض فاضية تحاصرها بأرضك من كل الجهات تنضم لك تلقائياً مهما كان حجمها، وتتعبّى من الأطراف للنص بأنميشن','🎯 القائمة الدائرية صارت أوضح وأجمل: تحت كل زر كلمة تشرحه (هجوم، بحري، البطاقة، صواريخ، كل الحدود)','🖱️ كلك يمين في الكمبيوتر ما يطلّع قائمة المتصفح فوق الدائرة','🗡️ السيفين لما تقضي على دولة صاروا أصغر'],en:['🟢 Any empty land you ring on every side joins you automatically whatever its size, filling from the edges inward','🎯 A clearer, nicer radial menu: a word under each button (Attack, By sea, Card, Missiles, All borders)','🖱️ Right click on PC no longer opens the browser menu over the circle','🗡️ Smaller crossed swords when you wipe out a realm']}];
+ {v:'3.4',d:'2026-11-19',ar:['🔢 رقم الجنود صار يمشي ورا خط الهجوم ويتحرك مع الجبهة كاملة، يميل مع الحدود ويكبر لما الجبهة تكبر','🌾 رقم الجنود ما يطلع لما تهجم على أرض فاضية، بس لما تهجم على دولة'],en:['🔢 The troop count now rides behind the attack line and moves with the whole front, tilting along the border and growing with it','🌾 No troop count when you attack empty land, only against realms']}];
 function t(k,...a){let s=TX[UI.lang][k];if(s==null)s=TX.ar[k];if(s==null)return k;if(typeof s!=='string')return s;a.forEach((v,i)=>{s=s.split('{'+i+'}').join(v);});return s;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function natName(n){return n.minor?tribeName(n.tribe,UI.lang):n.pname?n.pname:n.human||n.nameIdx<0?(UI.prof&&UI.prof.name)||t('defName'):NAT[UI.lang][n.nameIdx][0];}
@@ -2106,9 +2119,17 @@ function clientOpen(code,onOpen,fail){
   try{const p=NET.peer=new Peer();p.on('open',()=>{const k=wrap(p.connect('sijal-'+code,{reliable:true,serialization:'json'}));k.onOpen=()=>onOpen(k);});
     p.on('error',e=>fail(e.type==='peer-unavailable'?'room':'net'));}catch(e){fail('net');}
 }
+// host only: remove a player from the room (lobby or running match); they cannot come back to this room under the same name
+function netKick(i){
+  const pl=NET.players[i],k=pl&&pl.conn;if(!NET.host||!k||i===0)return;(NET.ban||(NET.ban=new Set())).add(pl.name);
+  k.send({t:'kicked'});k.kicked=true;pl.in=false;pl.kicked=true;
+  if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);k.ok=false;NET.conns=NET.conns.filter(x=>x!==k);}
+  else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}
+  setTimeout(()=>{try{k.c&&k.c.close();}catch(e){}},400);toast(t('kicked',esc(pl.name)),'prop',2500);
+}
 function netClose(){
   regUnreg();try{if(NET.up&&NET.up.bye)NET.up.bye();if(NET.peer)(NET.peer.destroy||NET.peer.close).call(NET.peer);}catch(e){}
-  Object.assign(NET,{on:false,host:false,started:false,conns:[],players:[],q:[],code:'',peer:null,up:null,sums:{},warned:false});
+  Object.assign(NET,{on:false,host:false,started:false,conns:[],players:[],q:[],code:'',peer:null,up:null,sums:{},warned:false,ban:new Set()});
 }
 function netFail(code){const was=NET.started;netClose();loading(false);if(was)toMenu();else{renderNet();show('net');}err(code);}
 // ── lobby ──
@@ -2117,11 +2138,11 @@ function netHost(tries){
   if(!BCMODE&&!rtcOk())return err('old');loading(true);
   loadPeer(()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<5;i++)code+=A[(Math.random()*A.length)|0];if(BCMODE&&window.SIJAL_CODE)code=window.SIJAL_CODE;
     hostOpen(code,k=>{const pl={name:'?',fac:'hawks',conn:k,in:false};
-        k.onData=d=>{if(!d)return;
+        k.onData=d=>{if(!d||k.kicked)return;
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
           if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
           if(d.t==='ack'){k.ack=d.k;return;}
-          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
+          if(d.t==='hi'){if(NET.ban&&NET.ban.has(String(d.name||'').slice(0,18)))return k.send({t:'kicked'});if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.pass=d.pass?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
         k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
@@ -2138,6 +2159,7 @@ function netJoin(code){
         else if(d.t==='start')netStart(d.opt,d.me);
         else if(d.t==='f')applyFrame(d);
         else if(d.t==='full')netFail('full');
+        else if(d.t==='kicked')netFail('kicked');
         else if(d.t==='ver')netFail('ver');
         else if(d.t==='pong'){NET.ping=Math.round(performance.now()-d.ts);const e=$('#myPing');if(e)e.outerHTML=pingTag(NET.ping,'myPing');}
         else if(d.t==='desync'&&!NET.warned){NET.warned=true;toast(t('mpDesync'),'bad',6000);}};
@@ -2146,7 +2168,7 @@ function netJoin(code){
 }
 function hostStart(){
   if(!NET.host||NET.started)return;const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
-  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||'',badge:x.badge?1:0}))};
+  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||'',badge:x.badge?1:0,pass:x.pass?1:0}))};
   regUnreg();NET.waitAt=0;NET.waitShown=0;NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.ack=0;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
 }
 function netStart(opt,me){
@@ -2221,7 +2243,7 @@ function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
   $('#net').innerHTML=`<h2>${esc(NET.host?roomName():NET.room||t('lobby'))}</h2>${NET.host?'':`<p class="keys">${t('pingHost')}: ${pingTag(NET.ping,'myPing')}</p>`}<div class="code" dir="ltr">${NET.code}</div>${link?`<p class="keys" style="user-select:text;-webkit-user-select:text" dir="ltr">${esc(link)}</p>`:''}
   <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)} ${NET.host?'/ '+maxP():''}</h3>
-  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${p.badge?BADGE:''}${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
+  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${p.badge?BADGE:''}${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small>${NET.host&&i>0?`<button class="btn sm warn kick" data-a="kick:${i}">${t('kick')}</button>`:''}</div>`).join('')}</div>
   <div class="row"><button class="btn" data-a="leave">${t('leave')}</button>${NET.host?`<button class="btn big" data-a="netStart">${t('startNet')}</button>`:''}</div>`;
 }
 setInterval(regTick,4000);
@@ -2332,7 +2354,7 @@ const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins',
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div>${UI.admin?`<button class="btn admb" data-a="admin">🛠️ ${t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
   <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
@@ -2446,7 +2468,7 @@ function accEnter(j,F,okMsg){
   const guest=!old.user&&old.uid?{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}:null,gTok=old.tok,gUid=old.uid;
   const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
-    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;
+    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;setTimeout(adminCheck,500);
     const gpt=p.passT==null?-1:p.passT;p.passT=Math.max(guest?gpt:-1,u&&u.pt!=null?u.pt|0:-1);
     for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
 }
@@ -2533,8 +2555,10 @@ function renderFac(){
 }
 function renderPause(){
   const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="how">${t('how')}</button>
-  <button class="btn" data-a="toMenu">${t('quit')}</button></div>`;
+  <button class="btn" data-a="toMenu">${t('quit')}</button></div>${NET.on&&NET.host&&NET.started?hostPanel():''}${UI.admin&&G&&!G.o.mp&&!G.o.demo?adminGame():''}`;
 }
+function hostPanel(){const g=G;return`<div class="hp"><h3>👥 ${t('inGame')}</h3>${NET.players.map((pl,i)=>{const n=g&&g.nations[i+1];return`<div class="hpr"><i style="background:${n?n.css:'#888'}"></i><b>${pl.badge?BADGE:''}${esc(pl.name)}</b><small>${i===0?t('hostTag'):pl.kicked?t('wasKicked'):!pl.in?t('left'):n&&!n.alive?t('out'):''}</small>${i>0&&pl.in?`<button class="btn sm warn" data-a="kick:${i}">${t('kick')}</button>`:''}</div>`;}).join('')}</div>`;}
+function adminGame(){const C=(G.o.cheats||{});return`<div class="hp adm"><h3>🛠️ ${t('admGame')}</h3><div class="chips"><button class="chip" data-a="adm:gold">+100K 💰</button><button class="chip" data-a="adm:troops">+100K ⚔️</button><button class="chip" data-a="adm:era">🏛️ ${t('admEra')}</button><button class="chip${C.build?' on':''}" data-a="adm:build">🏗️ ${t('ch_build')}</button><button class="chip${C.msl?' on':''}" data-a="adm:msl">🚀 ${t('admMsl')}</button><button class="chip" data-a="adm:win">👑 ${t('admWin')}</button></div><p class="keys">${t('admNote')}</p></div>`;}
 
 // ── match lifecycle ──
 function prep(g){
@@ -2557,7 +2581,7 @@ const canBuy=p=>{const n=p.passT==null?-1:p.passT;return n<0?(p.xp|0)>=PASS_AT:n
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
 const hasBadge=p=>(p.passT==null?-1:p.passT)>=0&&!p.hideBadge;
 const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
-function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0};}
+function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0,pass:(p.passT==null?-1:p.passT)>=0?1:0};}
 const SKP={};
 function skinPreview(t,k){
   const key=t+k;if(SKP[key])return SKP[key];const c=mk(96,64),x=c.getContext('2d'),col=FAC[UI.prof.fac||'hawks'].c,css=`rgb(${col[0]},${col[1]},${col[2]})`;
@@ -2580,6 +2604,37 @@ function renderSkins(){
   const bdg=(p.passT==null?-1:p.passT)>=0?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
   $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
+// ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
+const ADMIN_ROOT='';
+function adminCheck(){
+  const p=UI.prof,f=p.fb||{};if(!cloudOn()||!f.user)return;const was=UI.admin;
+  lbAuth().then(f=>{fetch(LB_DB+'/names/'+encodeURIComponent(f.user.toLowerCase())+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).catch(()=>{});
+    if(ADMIN_ROOT&&f.user.toLowerCase()===ADMIN_ROOT)return true;return fetch(LB_DB+'/admins/'+f.uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(v=>!!v);})
+  .then(a=>{UI.admin=!!a;if(UI.admin!==!!was)renderMenu();}).catch(()=>{});
+}
+function admReq(path,o){return lbAuth().then(f=>fetch(LB_DB+path+(path.includes('?')?'&':'?')+'auth='+f.tok,o||{}).then(r=>{if(!r.ok)throw 0;return r.json();}));}
+function openAdmin(){if(!UI.admin)return;UI.admLb=null;UI.admList=null;renderAdmin();show('help');
+  admReq('/admins.json').then(j=>{UI.admList=j||{};renderAdmin();}).catch(()=>{UI.admList='err';renderAdmin();});
+  fetch(LB_DB+'/lb.json').then(r=>r.json()).then(j=>{UI.admLb=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).sort((a,b)=>(b.w|0)-(a.w|0));renderAdmin();}).catch(()=>{});}
+function renderAdmin(){
+  const L=UI.admList,B=UI.admLb,p=UI.prof;
+  $('#help').innerHTML=`<h2>🛠️ ${t('admin')}</h2>
+  <div class="hp"><h3>${t('admAdmins')}</h3><div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>
+  ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
+  <div class="hp"><h3>${t('admMsgT')}</h3><div class="row"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn sm ok" data-a="admMsg">${t('admSend')}</button></div></div>
+  <div class="hp"><h3>${t('admMeT')}</h3><div class="row"><label>${t('x_xp')} <input id="admXp" type="number" min="0" value="${p.xp|0}" style="width:7em"></label><label>${t('bpTierL')} <input id="admPt" type="number" min="-1" max="${PASS.length}" value="${p.passT==null?-1:p.passT}" style="width:4em"></label><button class="btn sm ok" data-a="admMe">${t('admSave')}</button></div></div>
+  <div class="hp"><h3>${t('lb')}</h3>${B==null?`<p class="keys">${t('lbLoad')}</p>`:B.map(r=>`<div class="hpr"><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${r.w|0} ${t('wins')} · ${r.g|0}</small><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">${t('admDelRow')}</button></div>`).join('')}</div>
+  <div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+}
+function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
+  admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/admins/'+uid+'.json',{method:'PUT',body:JSON.stringify(u)});}).then(()=>{toast('🛠️ '+t('admGiven',u),'prop',2500);openAdmin();}).catch(e=>err(e===1?'admNoUser':'admFail'));}
+function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
+function admLbDel(uid){if(!confirm(t('admSure')))return;admReq('/lb/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
+function admMe(){const p=UI.prof,x=Math.max(0,+(($('#admXp')||{}).value)|0),pt=clamp(+(($('#admPt')||{}).value)|0,-1,PASS.length);addStat('xp',x-(p.xp|0));p.passT=pt;saveProf();
+  lbAuth().then(f=>fetch(LB_DB+'/users/'+f.uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt})})).catch(()=>{});cloudSync();toast('🛠️ '+t('admDone'),'prop',1500);renderAdmin();}
+function admMsg(){const m=(($('#admMsgIn')||{}).value||'').trim().slice(0,140);if(!m)return;admReq('/msg.json',{method:'PUT',body:JSON.stringify({m,ts:{'.sv':'timestamp'}})}).then(()=>toast('🛠️ '+t('admSent'),'prop',2000)).catch(()=>err('admFail'));}
+// an announcement from the admins shows once to everyone opening the game
+function newsCheck(){if(!cloudOn())return;fetch(LB_DB+'/msg.json').then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.m||!j.ts||UI.prof.msgSeen===j.ts)return;UI.prof.msgSeen=j.ts;saveProf();toast('📣 '+esc(j.m),'prop',9000);}).catch(()=>{});}
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
@@ -2865,6 +2920,13 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
     case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderSkins();break;}
+    case'kick':netKick(+v);if(UI.screen==='pause')renderPause();break;
+    case'adm':{if(!UI.admin||!g||g.o.mp||g.o.demo)break;const me2=g.nations[g.human],C=g.o.cheats||(g.o.cheats={});
+      if(v==='gold')me2.gold+=1e5;else if(v==='troops')me2.troops+=1e5;else if(v==='era')me2.era=4;else if(v==='build'||v==='msl')C[v]=!C[v];
+      else if(v==='win'&&!g.over){g.over={w:me2.id,win:true,why:'dom'};g.ev.push({t:'over',win:true,w:me2.id});show(null);}
+      if(v!=='win'){renderPause();toast('🛠️ '+t('admDone'),'prop',1500);}break;}
+    case'admin':openAdmin();break;
+    case'admGive':admGive();break;case'admDel':admDel(v);break;case'lbDel':admLbDel(v);break;case'admMe':admMe();break;case'admMsg':admMsg();break;
     case'closeCard':closeCard();break;
     case'radX':break;
     case'radAtk':if(UI.rad){send({k:'atk',i:UI.rad.i,r:UI.ratio,m:UI.prof.amode||'pt'});}radClose();break;
@@ -2875,8 +2937,8 @@ function act(a){
     case'radBack':if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,false);break;
     case'radAll':if(UI.rad)send({k:'atk',i:UI.rad.i,r:UI.ratio,m:'all'});radClose();break;
     case'radMsl':if(UI.rad)send({k:'msl',s:v,i:UI.rad.i});radClose();break;
-    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?' class="e67"':''}>${e==='67'?'<span>🫴</span><b>67</b><span class="r">🫴</span>':e}</button>`).join('')}</div>`;break;}
-    case'emoS':send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
+    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?` class="e67${(UI.prof.passT==null?-1:UI.prof.passT)>=0?'':' lock'}"`:''}>${e==='67'?`<span>🫴</span><b>67</b><span class="r">🫴</span>${(UI.prof.passT==null?-1:UI.prof.passT)>=0?'':'<i>🔒</i>'}`:e}</button>`).join('')}</div>`;break;}
+    case'emoS':if(EMO[+v-1]==='67'&&!((p.passT==null?-1:p.passT)>=0)){sfx('err');toast(t('e67'),'bad',2600);break;}send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
     case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
     case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;
     case'auOpen':if($('#cAmt .auf'))$('#cAmt').innerHTML='';else auOpen();break;
@@ -3051,7 +3113,7 @@ function boot(){
   for(const ev of['gesturestart','gesturechange','gestureend'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
   {let lastT=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-lastT<320&&!(e.target.closest&&e.target.closest('button,input,textarea,select,a')))e.preventDefault();lastT=n;},{passive:false});}
   document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1&&!(e.target.closest&&e.target.closest('#cv')))e.preventDefault();},{passive:false});
-  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
+  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);setTimeout(adminCheck,3500);setTimeout(newsCheck,4500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};

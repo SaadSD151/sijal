@@ -97,7 +97,7 @@ const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins',
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div>${UI.admin?`<button class="btn admb" data-a="admin">🛠️ ${t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
   <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
@@ -211,7 +211,7 @@ function accEnter(j,F,okMsg){
   const guest=!old.user&&old.uid?{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}:null,gTok=old.tok,gUid=old.uid;
   const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
-    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;
+    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;setTimeout(adminCheck,500);
     const gpt=p.passT==null?-1:p.passT;p.passT=Math.max(guest?gpt:-1,u&&u.pt!=null?u.pt|0:-1);
     for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
 }
@@ -298,8 +298,10 @@ function renderFac(){
 }
 function renderPause(){
   const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="how">${t('how')}</button>
-  <button class="btn" data-a="toMenu">${t('quit')}</button></div>`;
+  <button class="btn" data-a="toMenu">${t('quit')}</button></div>${NET.on&&NET.host&&NET.started?hostPanel():''}${UI.admin&&G&&!G.o.mp&&!G.o.demo?adminGame():''}`;
 }
+function hostPanel(){const g=G;return`<div class="hp"><h3>👥 ${t('inGame')}</h3>${NET.players.map((pl,i)=>{const n=g&&g.nations[i+1];return`<div class="hpr"><i style="background:${n?n.css:'#888'}"></i><b>${pl.badge?BADGE:''}${esc(pl.name)}</b><small>${i===0?t('hostTag'):pl.kicked?t('wasKicked'):!pl.in?t('left'):n&&!n.alive?t('out'):''}</small>${i>0&&pl.in?`<button class="btn sm warn" data-a="kick:${i}">${t('kick')}</button>`:''}</div>`;}).join('')}</div>`;}
+function adminGame(){const C=(G.o.cheats||{});return`<div class="hp adm"><h3>🛠️ ${t('admGame')}</h3><div class="chips"><button class="chip" data-a="adm:gold">+100K 💰</button><button class="chip" data-a="adm:troops">+100K ⚔️</button><button class="chip" data-a="adm:era">🏛️ ${t('admEra')}</button><button class="chip${C.build?' on':''}" data-a="adm:build">🏗️ ${t('ch_build')}</button><button class="chip${C.msl?' on':''}" data-a="adm:msl">🚀 ${t('admMsl')}</button><button class="chip" data-a="adm:win">👑 ${t('admWin')}</button></div><p class="keys">${t('admNote')}</p></div>`;}
 
 // ── match lifecycle ──
 function prep(g){
@@ -322,7 +324,7 @@ const canBuy=p=>{const n=p.passT==null?-1:p.passT;return n<0?(p.xp|0)>=PASS_AT:n
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
 const hasBadge=p=>(p.passT==null?-1:p.passT)>=0&&!p.hideBadge;
 const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
-function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0};}
+function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0,pass:(p.passT==null?-1:p.passT)>=0?1:0};}
 const SKP={};
 function skinPreview(t,k){
   const key=t+k;if(SKP[key])return SKP[key];const c=mk(96,64),x=c.getContext('2d'),col=FAC[UI.prof.fac||'hawks'].c,css=`rgb(${col[0]},${col[1]},${col[2]})`;
@@ -345,6 +347,37 @@ function renderSkins(){
   const bdg=(p.passT==null?-1:p.passT)>=0?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
   $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
+// ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
+const ADMIN_ROOT='';
+function adminCheck(){
+  const p=UI.prof,f=p.fb||{};if(!cloudOn()||!f.user)return;const was=UI.admin;
+  lbAuth().then(f=>{fetch(LB_DB+'/names/'+encodeURIComponent(f.user.toLowerCase())+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).catch(()=>{});
+    if(ADMIN_ROOT&&f.user.toLowerCase()===ADMIN_ROOT)return true;return fetch(LB_DB+'/admins/'+f.uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(v=>!!v);})
+  .then(a=>{UI.admin=!!a;if(UI.admin!==!!was)renderMenu();}).catch(()=>{});
+}
+function admReq(path,o){return lbAuth().then(f=>fetch(LB_DB+path+(path.includes('?')?'&':'?')+'auth='+f.tok,o||{}).then(r=>{if(!r.ok)throw 0;return r.json();}));}
+function openAdmin(){if(!UI.admin)return;UI.admLb=null;UI.admList=null;renderAdmin();show('help');
+  admReq('/admins.json').then(j=>{UI.admList=j||{};renderAdmin();}).catch(()=>{UI.admList='err';renderAdmin();});
+  fetch(LB_DB+'/lb.json').then(r=>r.json()).then(j=>{UI.admLb=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).sort((a,b)=>(b.w|0)-(a.w|0));renderAdmin();}).catch(()=>{});}
+function renderAdmin(){
+  const L=UI.admList,B=UI.admLb,p=UI.prof;
+  $('#help').innerHTML=`<h2>🛠️ ${t('admin')}</h2>
+  <div class="hp"><h3>${t('admAdmins')}</h3><div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>
+  ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
+  <div class="hp"><h3>${t('admMsgT')}</h3><div class="row"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn sm ok" data-a="admMsg">${t('admSend')}</button></div></div>
+  <div class="hp"><h3>${t('admMeT')}</h3><div class="row"><label>${t('x_xp')} <input id="admXp" type="number" min="0" value="${p.xp|0}" style="width:7em"></label><label>${t('bpTierL')} <input id="admPt" type="number" min="-1" max="${PASS.length}" value="${p.passT==null?-1:p.passT}" style="width:4em"></label><button class="btn sm ok" data-a="admMe">${t('admSave')}</button></div></div>
+  <div class="hp"><h3>${t('lb')}</h3>${B==null?`<p class="keys">${t('lbLoad')}</p>`:B.map(r=>`<div class="hpr"><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${r.w|0} ${t('wins')} · ${r.g|0}</small><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">${t('admDelRow')}</button></div>`).join('')}</div>
+  <div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+}
+function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
+  admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/admins/'+uid+'.json',{method:'PUT',body:JSON.stringify(u)});}).then(()=>{toast('🛠️ '+t('admGiven',u),'prop',2500);openAdmin();}).catch(e=>err(e===1?'admNoUser':'admFail'));}
+function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
+function admLbDel(uid){if(!confirm(t('admSure')))return;admReq('/lb/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
+function admMe(){const p=UI.prof,x=Math.max(0,+(($('#admXp')||{}).value)|0),pt=clamp(+(($('#admPt')||{}).value)|0,-1,PASS.length);addStat('xp',x-(p.xp|0));p.passT=pt;saveProf();
+  lbAuth().then(f=>fetch(LB_DB+'/users/'+f.uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt})})).catch(()=>{});cloudSync();toast('🛠️ '+t('admDone'),'prop',1500);renderAdmin();}
+function admMsg(){const m=(($('#admMsgIn')||{}).value||'').trim().slice(0,140);if(!m)return;admReq('/msg.json',{method:'PUT',body:JSON.stringify({m,ts:{'.sv':'timestamp'}})}).then(()=>toast('🛠️ '+t('admSent'),'prop',2000)).catch(()=>err('admFail'));}
+// an announcement from the admins shows once to everyone opening the game
+function newsCheck(){if(!cloudOn())return;fetch(LB_DB+'/msg.json').then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.m||!j.ts||UI.prof.msgSeen===j.ts)return;UI.prof.msgSeen=j.ts;saveProf();toast('📣 '+esc(j.m),'prop',9000);}).catch(()=>{});}
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
@@ -630,6 +663,13 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
     case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderSkins();break;}
+    case'kick':netKick(+v);if(UI.screen==='pause')renderPause();break;
+    case'adm':{if(!UI.admin||!g||g.o.mp||g.o.demo)break;const me2=g.nations[g.human],C=g.o.cheats||(g.o.cheats={});
+      if(v==='gold')me2.gold+=1e5;else if(v==='troops')me2.troops+=1e5;else if(v==='era')me2.era=4;else if(v==='build'||v==='msl')C[v]=!C[v];
+      else if(v==='win'&&!g.over){g.over={w:me2.id,win:true,why:'dom'};g.ev.push({t:'over',win:true,w:me2.id});show(null);}
+      if(v!=='win'){renderPause();toast('🛠️ '+t('admDone'),'prop',1500);}break;}
+    case'admin':openAdmin();break;
+    case'admGive':admGive();break;case'admDel':admDel(v);break;case'lbDel':admLbDel(v);break;case'admMe':admMe();break;case'admMsg':admMsg();break;
     case'closeCard':closeCard();break;
     case'radX':break;
     case'radAtk':if(UI.rad){send({k:'atk',i:UI.rad.i,r:UI.ratio,m:UI.prof.amode||'pt'});}radClose();break;
@@ -640,8 +680,8 @@ function act(a){
     case'radBack':if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,false);break;
     case'radAll':if(UI.rad)send({k:'atk',i:UI.rad.i,r:UI.ratio,m:'all'});radClose();break;
     case'radMsl':if(UI.rad)send({k:'msl',s:v,i:UI.rad.i});radClose();break;
-    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?' class="e67"':''}>${e==='67'?'<span>🫴</span><b>67</b><span class="r">🫴</span>':e}</button>`).join('')}</div>`;break;}
-    case'emoS':send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
+    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?` class="e67${(UI.prof.passT==null?-1:UI.prof.passT)>=0?'':' lock'}"`:''}>${e==='67'?`<span>🫴</span><b>67</b><span class="r">🫴</span>${(UI.prof.passT==null?-1:UI.prof.passT)>=0?'':'<i>🔒</i>'}`:e}</button>`).join('')}</div>`;break;}
+    case'emoS':if(EMO[+v-1]==='67'&&!((p.passT==null?-1:p.passT)>=0)){sfx('err');toast(t('e67'),'bad',2600);break;}send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
     case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
     case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;
     case'auOpen':if($('#cAmt .auf'))$('#cAmt').innerHTML='';else auOpen();break;
@@ -816,7 +856,7 @@ function boot(){
   for(const ev of['gesturestart','gesturechange','gestureend'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
   {let lastT=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-lastT<320&&!(e.target.closest&&e.target.closest('button,input,textarea,select,a')))e.preventDefault();lastT=n;},{passive:false});}
   document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1&&!(e.target.closest&&e.target.closest('#cv')))e.preventDefault();},{passive:false});
-  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
+  bindInput();renderMenu();show('menu');startDemo();setTimeout(lbPush,2500);setTimeout(adminCheck,3500);setTimeout(newsCheck,4500);requestAnimationFrame(frame);setInterval(musicTick,215);for(const ev of['touchend','pointerup','click','keydown'])document.addEventListener(ev,auInit,{passive:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};

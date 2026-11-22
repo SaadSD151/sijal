@@ -25,8 +25,8 @@ function addNation(g,p){
 }
 function setupNations(g){
   const o=g.o,rng=g.rng,idx=shuffle([...NAT.ar.keys()],rng);
-  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;});g.human=(o.me|0)+1;}
-  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;}
+  if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;n.pass=!!p.pass;});g.human=(o.me|0)+1;}
+  else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;n.pass=!!k.pass;}
   const pc=o.demo||o.players?null:FAC[o.faction||'hawks'].c,pal=shuffle(PAL.filter((c,i)=>o.players?i>=o.players.length||o.players.length>=PAL.length:!pc||Math.abs(c[0]-pc[0])+Math.abs(c[1]-pc[1])+Math.abs(c[2]-pc[2])>90),rng);
   for(let b=0;b<o.bots;b++){
     const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);
@@ -351,7 +351,7 @@ function tradeOk(g,a,b){const A=g.nations[a],B=g.nations[b];return!A.embAll&&!B.
 function setEmb(g,a,d,v){const A=g.nations[a];if(!A)return;v=v?1:0;if(d){if(g.nations[d])A.emb[d]=v;}else{A.embAll=v;if(!v)A.emb.fill(0);}
   for(const L of[g.trades,g.trains])for(let j=L.length-1;j>=0;j--){const b=L[j],o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)){L[j]=L[L.length-1];L.pop();}}emit(g,'emb',{a,d,v});}
 // emoji over a realm for everyone to see (optionally aimed at one realm), at most one every 3 seconds
-function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
+function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';if(EMO[e-1]==='67'&&!A.pass)return'pass';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
 function launchTrade(g,s){
   const A=g.nations[s.owner],now=g.tick,c=[];
   for(const p of g.structs)if(!p.dead&&!p.build&&p.type==='port'&&p.owner&&p.owner!==s.owner&&tradeOk(g,s.owner,p.owner)&&now-A.lastHit[p.owner]>300&&now-g.nations[p.owner].lastHit[s.owner]>300)c.push(p);
@@ -424,7 +424,8 @@ function tickMissiles(g){
     let hit=true;
     for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
       s.cd=g.tick+SH_CD(s.level);if(g.rng()<SH_P[m.type][s.level]){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
-    if(hit){const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+    if(hit){const R2=MSL[m.type].r**2;for(const T of g.tanks)if(T.a!==m.a&&!g.nations[T.a].ally[m.a]&&(T.x-.5-m.tx)**2+(T.y-.5-m.ty)**2<=R2)T.hp=0;
+      const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 // missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;
 // an atom bomb erases a small city, and the doomsday bomb erases every building it touches
@@ -609,9 +610,10 @@ function ownPath(g,a,s,e,cap){
   if(prev[e]<0)return null;const P=[e];let k=e;while(k!==s){k=prev[k];P.push(k);}return P.reverse();
 }
 // own tiles touching the enemy land an offensive is eating, ordered along the front
-function frontLine(g,k){
+// side 'a': the attacker's tiles behind the front; side 'd': the defender's tiles being hit
+function frontLine(g,k,side){
   const W=g.W,H=g.H,own=g.owner,T=k.heap.v,seen=new Set(),L=[];
-  for(let m=0;m<T.length&&L.length<400;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;
+  for(let m=0;m<T.length&&L.length<400;m++){const i=T[m];if(own[i]!==k.d)continue;if(side==='d'){if(!seen.has(i)){seen.add(i);L.push(i);}continue;}const x=i%W,y=(i/W)|0;
     for(let d=0;d<8;d++){const X=x+DX8[d],Y=y+DY8[d];if(X<0||Y<0||X>=W||Y>=H)continue;const j=Y*W+X;if(own[j]===k.a&&!seen.has(j)){seen.add(j);L.push(j);}}}
   if(L.length<2)return L;let mx=0,my=0;for(const i of L){mx+=i%W;my+=(i/W)|0;}mx/=L.length;my/=L.length;
   let sxx=0,syy=0,sxy=0;for(const i of L){const dx=i%W-mx,dy=((i/W)|0)-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy;}
@@ -627,12 +629,13 @@ function tickTanks(g){
   const now=g.tick,W=g.W,own=g.owner;
   for(const s of g.structs){if(s.dead||s.type!=='camp'||s.build||!s.owner)continue;
     if(s.tkOwner!==s.owner){s.tkOwner=s.owner;s.tk=0;s.tkAt=now+30;}
-    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({id:++g.aid,a:s.owner,c:s,x:s.x+.5,y:s.y+.5,vx:1,vy:0,k:0,path:null,pi:0,re:now,fire:0});}}
+    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({id:++g.aid,a:s.owner,c:s,x:s.x+.5,y:s.y+.5,vx:1,vy:0,k:0,path:null,pi:0,re:now,fire:0,hp:100});}}
   for(const k of g.attacks)k.tb=0;
   // fronts per realm, refreshed when tanks re-plan
-  const byA={};for(const k of g.attacks){if(k.naval||k.troops<1)continue;(byA[k.a]||(byA[k.a]=[])).push(k);}
+  // each realm's tanks answer its own offensives and any land offensive another realm makes against it
+  const byA={};for(const k of g.attacks){if(k.naval||k.troops<1)continue;(byA[k.a]||(byA[k.a]=[])).push(k);if(k.d&&k.a)(byA[k.d]||(byA[k.d]=[])).push(k);}
   const live=[];for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
-    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}live.push(T);}
+    const killed=T.hp<=0;if(killed||c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a){c.tk--;if(killed&&!c.dead)c.tkAt=Math.max(c.tkAt,now+200);}if(killed)emit(g,'tankDown',{a:T.a,x:T.x,y:T.y});g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}live.push(T);}
   live.sort((p,q)=>p.id-q.id);const slot={};
   for(const T of live){const ti=Math.floor(T.y)*W+Math.floor(T.x),F=byA[T.a];
     // nearest offensive of this realm
@@ -641,7 +644,7 @@ function tickTanks(g){
     const lost=own[ti]!==T.a;
     if(lost||now>=T.re||(k?T.k!==k.id:T.k)){
       T.re=now+(k?20:60+((g.rng()*40)|0));let tgt=-1;
-      if(k){if(!k._fl||now-k._flT>=20){k._fl=frontLine(g,k);k._flT=now;}const L=k._fl;
+      if(k){const sd=k.a===T.a?'a':'d',fk='_fl'+sd;if(!k[fk]||now-k[fk+'T']>=20){k[fk]=frontLine(g,k,sd);k[fk+'T']=now;}const L=k[fk];
         if(L.length){const n=live.filter(o=>o.a===T.a).length;tgt=L[Math.min(L.length-1,Math.floor((T.slot+.5)/Math.max(1,n)*L.length))];}}
       for(const R of k?[6,20]:[10,25,50]){if(tgt>=0)break;tgt=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}
       T.k=k?k.id:0;let start=ti;if(own[start]!==T.a){let b=-1;for(const R of[2,5,10,20]){if(b>=0)break;b=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}if(b<0){b=T.c.i;}start=b;T.x=b%W+.5;T.y=((b/W)|0)+.5;}
@@ -650,7 +653,10 @@ function tickTanks(g){
     const sp=T.k?.55:.14;let left=sp;
     while(T.path&&T.pi<T.path.length&&left>0){const n=T.path[T.pi];if(own[n]!==T.a){T.path=null;T.re=now;break;}const nx=n%W+.5,ny=((n/W)|0)+.5,dx=nx-T.x,dy=ny-T.y,d=hyp(dx,dy);
       if(d<=left){T.x=nx;T.y=ny;left-=d;T.pi++;}else{T.x+=dx/d*left;T.y+=dy/d*left;T.vx=dx/d;T.vy=dy/d;left=0;}}
-    if(T.k&&(!T.path||T.pi>=T.path.length)){const kk=F&&F.find(q=>q.id===T.k);if(kk){const lv=T.c.level||1;kk.tb=Math.min(2.5,(kk.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}}
+    if(T.k&&(!T.path||T.pi>=T.path.length)){const kk=F&&F.find(q=>q.id===T.k&&q.a===T.a);if(kk){const lv=T.c.level||1;kk.tb=Math.min(2.5,(kk.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}}
+  // enemy tanks that meet fight: each one in reach knocks 4 hit points a tick off the other (about 2.5 s one on one)
+  for(let i=0;i<live.length;i++){const P=live[i];for(let j=i+1;j<live.length;j++){const Q=live[j];if(P.a===Q.a||(P.x-Q.x)**2+(P.y-Q.y)**2>16)continue;
+    const A=g.nations[P.a];if(A.ally[Q.a]||!atWar(g,P.a,Q.a))continue;P.hp-=4;Q.hp-=4;P.fire=Q.fire=now;}}
 }
 function tickFills(g){
   for(let j=g.fills.length-1;j>=0;j--){const f=g.fills[j],K=g.nations[f.a];if(!K.alive){g.fills.splice(j,1);continue;}

@@ -169,7 +169,7 @@ function drawBadge(c,x,y,s,ts){
 function drawEmo(c,e,x,y,q,ts){
   if(e!=='67'){c.font=`${q}px sans-serif`;c.fillText(e,x,y);return;}
   const b=Math.sin(ts/140)*q*.28;c.font=`900 ${q*.95}px ${FONT}`;c.lineWidth=Math.max(3,q*.16);c.strokeStyle='rgba(6,12,20,.9)';c.save();c.direction='ltr';txt(c,'67',x,y,'#ffd166');c.restore();
-  c.font=`${q*.78}px sans-serif`;c.fillText('🫴',x-q*1.05,y-b);c.save();c.translate(x+q*1.05,y+b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();
+  c.font=`${q*.78}px sans-serif`;c.save();c.translate(x-q*1.05,y-b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();c.fillText('🫴',x+q*1.05,y+b);
 }
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
@@ -310,6 +310,7 @@ function draw(g,dt,ts){
     const hull=c.createLinearGradient(0,-s*.5,0,s*.5);hull.addColorStop(0,'#5a6570');hull.addColorStop(1,'#232a31');c.fillStyle=hull;c.strokeStyle='#ffd166';c.lineWidth=Math.max(1.2,s*.14);c.beginPath();c.rect(-s*.9,-s*.5,s*1.8,s);c.fill();c.stroke();c.shadowBlur=0;
     c.fillStyle='#14181c';c.fillRect(s*.25,-s*.12,s*1.2,s*.24);c.fillStyle='#ffd166';c.fillRect(s*1.3,-s*.16,s*.18,s*.32);c.beginPath();c.arc(0,0,s*.44,0,7);c.fillStyle=n.css;c.fill();c.strokeStyle='#ffd166';c.stroke();c.restore();
     // light, sparse blasts at the front
+    if(T.hp<100){c.fillStyle='rgba(0,0,0,.6)';c.fillRect(p.x-s,p.y-s*1.25,s*2,Math.max(2,s*.22));c.fillStyle=T.hp>50?'#6ee7a0':T.hp>25?'#ffd166':'#ff6b5a';c.fillRect(p.x-s,p.y-s*1.25,s*2*T.hp/100,Math.max(2,s*.22));}
     if(T.k&&g.tick-T.fire<3&&R.q!==0&&Math.random()<.05)addFx('ring',T.x-.5+T.vx*3,T.y-.5+T.vy*3,{r:1.6,dur:500,col:'rgba(255,170,80,.9)'});}}
   // effects
   for(let i=R.fx.length-1;i>=0;i--){

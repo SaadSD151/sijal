@@ -299,8 +299,13 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
 .emg button.e67{grid-column:span 2;display:flex;align-items:center;justify-content:center;gap:2px;background:linear-gradient(180deg,rgba(241,207,110,.25),rgba(201,149,45,.2));border-color:#f1cf6e}
-.e67 b{font-weight:900;color:#ffd166;font-size:20px}.e67 span{font-size:18px;display:inline-block;animation:e67 .55s ease-in-out infinite alternate}.e67 span.r{transform:scaleX(-1);animation-delay:-.275s}
+.e67 b{font-weight:900;color:#ffd166;font-size:20px}.e67 span{font-size:18px;display:inline-block;transform:scaleX(-1);animation:e67 .55s ease-in-out infinite alternate}.e67 span.r{transform:none;animation-delay:-.275s}
 @keyframes e67{from{translate:0 4px}to{translate:0 -4px}}
+.e67.lock{opacity:.55;position:relative}.e67 i{position:absolute;top:2px;inset-inline-end:4px;font-style:normal;font-size:12px}
+.hp{width:min(520px,100%);margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line2);text-align:start}.hp h3{margin:0 0 6px}
+.hpr{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line2)}.hpr i{width:12px;height:12px;border-radius:50%;flex:none}.hpr b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hpr small{color:var(--dim)}
+.hp input{background:rgba(0,0,0,.3);color:inherit;border:1px solid var(--line2);border-radius:8px;padding:7px 9px;font:inherit}
+.admb{background:linear-gradient(180deg,#7a1f1f,#4a1010);border-color:#ff9a8a}.pl .kick{margin-inline-start:auto}
 .emg button:active{transform:scale(.92)}
 .auf{display:flex;flex-direction:column;gap:8px;padding:8px 0;border-top:1px solid var(--line2);margin-top:6px}
 .auf h3{margin:0;text-align:center}.auf>.keys{margin:0;text-align:center}

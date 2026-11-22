@@ -86,9 +86,17 @@ function clientOpen(code,onOpen,fail){
   try{const p=NET.peer=new Peer();p.on('open',()=>{const k=wrap(p.connect('sijal-'+code,{reliable:true,serialization:'json'}));k.onOpen=()=>onOpen(k);});
     p.on('error',e=>fail(e.type==='peer-unavailable'?'room':'net'));}catch(e){fail('net');}
 }
+// host only: remove a player from the room (lobby or running match); they cannot come back to this room under the same name
+function netKick(i){
+  const pl=NET.players[i],k=pl&&pl.conn;if(!NET.host||!k||i===0)return;(NET.ban||(NET.ban=new Set())).add(pl.name);
+  k.send({t:'kicked'});k.kicked=true;pl.in=false;pl.kicked=true;
+  if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);k.ok=false;NET.conns=NET.conns.filter(x=>x!==k);}
+  else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}
+  setTimeout(()=>{try{k.c&&k.c.close();}catch(e){}},400);toast(t('kicked',esc(pl.name)),'prop',2500);
+}
 function netClose(){
   regUnreg();try{if(NET.up&&NET.up.bye)NET.up.bye();if(NET.peer)(NET.peer.destroy||NET.peer.close).call(NET.peer);}catch(e){}
-  Object.assign(NET,{on:false,host:false,started:false,conns:[],players:[],q:[],code:'',peer:null,up:null,sums:{},warned:false});
+  Object.assign(NET,{on:false,host:false,started:false,conns:[],players:[],q:[],code:'',peer:null,up:null,sums:{},warned:false,ban:new Set()});
 }
 function netFail(code){const was=NET.started;netClose();loading(false);if(was)toMenu();else{renderNet();show('net');}err(code);}
 // ── lobby ──
@@ -97,11 +105,11 @@ function netHost(tries){
   if(!BCMODE&&!rtcOk())return err('old');loading(true);
   loadPeer(()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<5;i++)code+=A[(Math.random()*A.length)|0];if(BCMODE&&window.SIJAL_CODE)code=window.SIJAL_CODE;
     hostOpen(code,k=>{const pl={name:'?',fac:'hawks',conn:k,in:false};
-        k.onData=d=>{if(!d)return;
+        k.onData=d=>{if(!d||k.kicked)return;
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
           if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
           if(d.t==='ack'){k.ack=d.k;return;}
-          if(d.t==='hi'){if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
+          if(d.t==='hi'){if(NET.ban&&NET.ban.has(String(d.name||'').slice(0,18)))return k.send({t:'kicked'});if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.pass=d.pass?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
         k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
@@ -118,6 +126,7 @@ function netJoin(code){
         else if(d.t==='start')netStart(d.opt,d.me);
         else if(d.t==='f')applyFrame(d);
         else if(d.t==='full')netFail('full');
+        else if(d.t==='kicked')netFail('kicked');
         else if(d.t==='ver')netFail('ver');
         else if(d.t==='pong'){NET.ping=Math.round(performance.now()-d.ts);const e=$('#myPing');if(e)e.outerHTML=pingTag(NET.ping,'myPing');}
         else if(d.t==='desync'&&!NET.warned){NET.warned=true;toast(t('mpDesync'),'bad',6000);}};
@@ -126,7 +135,7 @@ function netJoin(code){
 }
 function hostStart(){
   if(!NET.host||NET.started)return;const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
-  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||'',badge:x.badge?1:0}))};
+  const opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:clamp(p.botsN|0,6,30),minors:tribesN(),diff:p.diff,mp:true,players:NET.players.map(x=>({name:x.name,fac:x.fac,pat:x.pat||'',bld:x.bld||'',badge:x.badge?1:0,pass:x.pass?1:0}))};
   regUnreg();NET.waitAt=0;NET.waitShown=0;NET.players.forEach((x,i)=>{if(x.conn){x.conn.pid=i+1;x.conn.ack=0;x.conn.send({t:'start',opt,me:i});}});netStart(opt,0);
 }
 function netStart(opt,me){
@@ -201,7 +210,7 @@ function renderLobby(){
   const web=/^https?:/.test(location.protocol),link=web?location.href.split('#')[0]+'#'+NET.code:'';
   $('#net').innerHTML=`<h2>${esc(NET.host?roomName():NET.room||t('lobby'))}</h2>${NET.host?'':`<p class="keys">${t('pingHost')}: ${pingTag(NET.ping,'myPing')}</p>`}<div class="code" dir="ltr">${NET.code}</div>${link?`<p class="keys" style="user-select:text;-webkit-user-select:text" dir="ltr">${esc(link)}</p>`:''}
   <p class="keys">${t(NET.host?'lobbyHost':'lobbyWait')}</p>${NET.host?`<p class="keys"><b>${t(NET.pub?'roomPub':'roomPriv')}</b></p>`:''}<h3>${t('players',NET.players.length)} ${NET.host?'/ '+maxP():''}</h3>
-  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${p.badge?BADGE:''}${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small></div>`).join('')}</div>
+  <div class="pls">${NET.players.map((p,i)=>`<div class="pl"><i style="background:rgb(${PAL[i%PAL.length]})"></i><b>${p.badge?BADGE:''}${esc(p.name)}</b><small>${i===0?t('hostTag'):''}</small>${NET.host&&i>0?`<button class="btn sm warn kick" data-a="kick:${i}">${t('kick')}</button>`:''}</div>`).join('')}</div>
   <div class="row"><button class="btn" data-a="leave">${t('leave')}</button>${NET.host?`<button class="btn big" data-a="netStart">${t('startNet')}</button>`:''}</div>`;
 }
 setInterval(regTick,4000);
