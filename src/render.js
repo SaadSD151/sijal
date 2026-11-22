@@ -76,7 +76,7 @@ function tileWrite(g,i){
   const W=g.W,W2=W*2,o32=R.o32,ter=g.M.ter,own=g.owner,N=g.nations,x=i%W,y=(i/W)|0,p=y*2*W2+x*2;
   if(ter[i]<2){o32[p]=o32[p+1]=o32[p+W2]=o32[p+W2+1]=0;return;}
   const P=own[i],A=y>0&&ter[i-W]>1?own[i-W]:-1,B=x<W-1&&ter[i+1]>1?own[i+1]:-1,C=x>0&&ter[i-1]>1?own[i-1]:-1,D=y<g.H-1&&ter[i+W]>1?own[i+W]:-1;
-  const bd=(A>=0&&A!==P)||(B>=0&&B!==P)||(C>=0&&C!==P)||(D>=0&&D!==P),base=P?(bd?N[P].pB:N[P].pat&&patOn(N[P].pat,x,y)?N[P].pP:N[P].pF):g.fall[i]>g.tick?0x8830c858:0;
+  const bd=(A>=0&&A!==P)||(B>=0&&B!==P)||(C>=0&&C!==P)||(D>=0&&D!==P),base=P?(bd?N[P].pB:N[P].pat&&patOn(N[P].pat,x,y)?N[P].pP:N[P].pF):g.fall[i]>g.tick?0xe0101418:0;
   let p1=base,p2=base,p3=base,p4=base;
   if(bd){
     if(C===A&&C>=0&&C!==P&&C!==D&&A!==B)p1=A?N[A].pB:0;
@@ -171,6 +171,26 @@ function drawEmo(c,e,x,y,q,ts){
   const b=Math.sin(ts/140)*q*.28;c.font=`900 ${q*.95}px ${FONT}`;c.lineWidth=Math.max(3,q*.16);c.strokeStyle='rgba(6,12,20,.9)';c.save();c.direction='ltr';txt(c,'67',x,y,'#ffd166');c.restore();
   c.font=`${q*.78}px sans-serif`;c.save();c.translate(x-q*1.05,y-b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();c.fillText('🫴',x+q*1.05,y+b);
 }
+// burning ground after a blast: embers on Low, flickering flames on Medium, layered flames with smoke on High
+function fireSprite(){if(R.flame)return R.flame;const k=mk(32,48),x=k.getContext('2d'),gr=x.createRadialGradient(16,34,1,16,30,22);
+  gr.addColorStop(0,'rgba(255,250,210,1)');gr.addColorStop(.25,'rgba(255,200,70,.95)');gr.addColorStop(.55,'rgba(255,110,20,.75)');gr.addColorStop(1,'rgba(160,20,0,0)');
+  x.fillStyle=gr;x.beginPath();x.moveTo(16,2);x.bezierCurveTo(26,18,30,30,26,40);x.quadraticCurveTo(16,48,6,40);x.bezierCurveTo(2,30,6,18,16,2);x.fill();return R.flame=k;}
+function drawFire(c,g,z,cw,ch,ts){
+  const W=g.W,now=g.tick,q=R.q==null?2:R.q,fl=g.fallList,hz=z/2,ox=cw/2-cam.x*z,oy=ch/2-cam.y*z,sp=fireSprite();
+  let drawn=0;const cap=q===2?4000:q===1?2500:1500;
+  for(let j=0;j<fl.length&&drawn<cap;j++){const i=fl[j],rem=g.fall[i]-now;if(rem<=0)continue;const x=i%W,y=(i/W)|0,sx=x*z+ox+hz,sy=y*z+oy+hz;
+    if(sx<-z*2||sy<-z*3||sx>cw+z*2||sy>ch+z*2)continue;const h=((x*73856093)^(y*19349663))>>>0,inten=Math.min(1,rem/160),ph=(h%997)/997;
+    if(q===0){if(h%3)continue;c.fillStyle=`rgba(255,${90+(h%60)},20,${.35*inten})`;c.fillRect(sx-z*.35,sy-z*.35,z*.7,z*.7);drawn++;continue;}
+    const fl1=.65+.35*Math.sin(ts/(90+(h%60))+ph*6.28);
+    if(q===1){if(h%2)continue;c.globalCompositeOperation='lighter';c.globalAlpha=.55*inten*fl1;const s=z*(.9+.5*fl1);c.drawImage(sp,sx-s/2,sy-s*1.1,s,s*1.5);c.globalAlpha=1;c.globalCompositeOperation='source-over';drawn++;continue;}
+    // High: glow under the flame, two flame tongues and a little rising smoke
+    c.globalCompositeOperation='lighter';c.globalAlpha=.18*inten;c.fillStyle='#ff5a14';c.beginPath();c.arc(sx,sy,z*.9,0,7);c.fill();
+    c.globalAlpha=.7*inten*fl1;let s=z*(1+.6*fl1);c.drawImage(sp,sx-s/2+Math.sin(ts/170+ph*9)*z*.12,sy-s*1.15,s,s*1.5);
+    if(h%3===0){const f2=.6+.4*Math.sin(ts/70+ph*4);c.globalAlpha=.55*inten*f2;s=z*(.6+.4*f2);c.drawImage(sp,sx-s/2+z*.25,sy-s*1.2,s,s*1.5);}
+    c.globalCompositeOperation='source-over';
+    if(h%9===0){const t=((ts/2200+ph)%1);c.globalAlpha=.22*inten*(1-t);c.fillStyle='#3a3530';c.beginPath();c.arc(sx+Math.sin(t*5+ph*6)*z*.4,sy-z*(1+t*3.5),z*(.4+t*.9),0,7);c.fill();}
+    c.globalAlpha=1;drawn++;}
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -186,6 +206,7 @@ function draw(g,dt,ts){
   if(R.autumn>.01){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
   c.drawImage(R.own,0,0,g.W,g.H);c.drawImage(R.water,0,0,g.W,g.H);
   c.setTransform(dpr,0,0,dpr,0,0);c.lineCap=c.lineJoin='round';c.textAlign='center';c.textBaseline='middle';
+  if(g.fallList.length)drawFire(c,g,z,cw,ch,ts);
   // offensives that involve the player: where they start and where they are headed
   if(me)for(const k of g.attacks){
     const mine=k.a===me;if((!mine&&k.d!==me)||k.tx<0||Math.hypot(k.tx-k.ox,k.ty-k.oy)<4)continue;

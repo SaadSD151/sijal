@@ -448,7 +448,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='2492dba395';
+const BUILD_ID='d18cafae52';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1555,7 +1555,7 @@ function tileWrite(g,i){
   const W=g.W,W2=W*2,o32=R.o32,ter=g.M.ter,own=g.owner,N=g.nations,x=i%W,y=(i/W)|0,p=y*2*W2+x*2;
   if(ter[i]<2){o32[p]=o32[p+1]=o32[p+W2]=o32[p+W2+1]=0;return;}
   const P=own[i],A=y>0&&ter[i-W]>1?own[i-W]:-1,B=x<W-1&&ter[i+1]>1?own[i+1]:-1,C=x>0&&ter[i-1]>1?own[i-1]:-1,D=y<g.H-1&&ter[i+W]>1?own[i+W]:-1;
-  const bd=(A>=0&&A!==P)||(B>=0&&B!==P)||(C>=0&&C!==P)||(D>=0&&D!==P),base=P?(bd?N[P].pB:N[P].pat&&patOn(N[P].pat,x,y)?N[P].pP:N[P].pF):g.fall[i]>g.tick?0x8830c858:0;
+  const bd=(A>=0&&A!==P)||(B>=0&&B!==P)||(C>=0&&C!==P)||(D>=0&&D!==P),base=P?(bd?N[P].pB:N[P].pat&&patOn(N[P].pat,x,y)?N[P].pP:N[P].pF):g.fall[i]>g.tick?0xe0101418:0;
   let p1=base,p2=base,p3=base,p4=base;
   if(bd){
     if(C===A&&C>=0&&C!==P&&C!==D&&A!==B)p1=A?N[A].pB:0;
@@ -1650,6 +1650,26 @@ function drawEmo(c,e,x,y,q,ts){
   const b=Math.sin(ts/140)*q*.28;c.font=`900 ${q*.95}px ${FONT}`;c.lineWidth=Math.max(3,q*.16);c.strokeStyle='rgba(6,12,20,.9)';c.save();c.direction='ltr';txt(c,'67',x,y,'#ffd166');c.restore();
   c.font=`${q*.78}px sans-serif`;c.save();c.translate(x-q*1.05,y-b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();c.fillText('🫴',x+q*1.05,y+b);
 }
+// burning ground after a blast: embers on Low, flickering flames on Medium, layered flames with smoke on High
+function fireSprite(){if(R.flame)return R.flame;const k=mk(32,48),x=k.getContext('2d'),gr=x.createRadialGradient(16,34,1,16,30,22);
+  gr.addColorStop(0,'rgba(255,250,210,1)');gr.addColorStop(.25,'rgba(255,200,70,.95)');gr.addColorStop(.55,'rgba(255,110,20,.75)');gr.addColorStop(1,'rgba(160,20,0,0)');
+  x.fillStyle=gr;x.beginPath();x.moveTo(16,2);x.bezierCurveTo(26,18,30,30,26,40);x.quadraticCurveTo(16,48,6,40);x.bezierCurveTo(2,30,6,18,16,2);x.fill();return R.flame=k;}
+function drawFire(c,g,z,cw,ch,ts){
+  const W=g.W,now=g.tick,q=R.q==null?2:R.q,fl=g.fallList,hz=z/2,ox=cw/2-cam.x*z,oy=ch/2-cam.y*z,sp=fireSprite();
+  let drawn=0;const cap=q===2?4000:q===1?2500:1500;
+  for(let j=0;j<fl.length&&drawn<cap;j++){const i=fl[j],rem=g.fall[i]-now;if(rem<=0)continue;const x=i%W,y=(i/W)|0,sx=x*z+ox+hz,sy=y*z+oy+hz;
+    if(sx<-z*2||sy<-z*3||sx>cw+z*2||sy>ch+z*2)continue;const h=((x*73856093)^(y*19349663))>>>0,inten=Math.min(1,rem/160),ph=(h%997)/997;
+    if(q===0){if(h%3)continue;c.fillStyle=`rgba(255,${90+(h%60)},20,${.35*inten})`;c.fillRect(sx-z*.35,sy-z*.35,z*.7,z*.7);drawn++;continue;}
+    const fl1=.65+.35*Math.sin(ts/(90+(h%60))+ph*6.28);
+    if(q===1){if(h%2)continue;c.globalCompositeOperation='lighter';c.globalAlpha=.55*inten*fl1;const s=z*(.9+.5*fl1);c.drawImage(sp,sx-s/2,sy-s*1.1,s,s*1.5);c.globalAlpha=1;c.globalCompositeOperation='source-over';drawn++;continue;}
+    // High: glow under the flame, two flame tongues and a little rising smoke
+    c.globalCompositeOperation='lighter';c.globalAlpha=.18*inten;c.fillStyle='#ff5a14';c.beginPath();c.arc(sx,sy,z*.9,0,7);c.fill();
+    c.globalAlpha=.7*inten*fl1;let s=z*(1+.6*fl1);c.drawImage(sp,sx-s/2+Math.sin(ts/170+ph*9)*z*.12,sy-s*1.15,s,s*1.5);
+    if(h%3===0){const f2=.6+.4*Math.sin(ts/70+ph*4);c.globalAlpha=.55*inten*f2;s=z*(.6+.4*f2);c.drawImage(sp,sx-s/2+z*.25,sy-s*1.2,s,s*1.5);}
+    c.globalCompositeOperation='source-over';
+    if(h%9===0){const t=((ts/2200+ph)%1);c.globalAlpha=.22*inten*(1-t);c.fillStyle='#3a3530';c.beginPath();c.arc(sx+Math.sin(t*5+ph*6)*z*.4,sy-z*(1+t*3.5),z*(.4+t*.9),0,7);c.fill();}
+    c.globalAlpha=1;drawn++;}
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -1665,6 +1685,7 @@ function draw(g,dt,ts){
   if(R.autumn>.01){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
   c.drawImage(R.own,0,0,g.W,g.H);c.drawImage(R.water,0,0,g.W,g.H);
   c.setTransform(dpr,0,0,dpr,0,0);c.lineCap=c.lineJoin='round';c.textAlign='center';c.textBaseline='middle';
+  if(g.fallList.length)drawFire(c,g,z,cw,ch,ts);
   // offensives that involve the player: where they start and where they are headed
   if(me)for(const k of g.attacks){
     const mine=k.a===me;if((!mine&&k.d!==me)||k.tx<0||Math.hypot(k.tx-k.ox,k.ty-k.oy)<4)continue;
@@ -2010,6 +2031,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'4.9',d:'2026-11-22',ar:['🔥 الأرض اللي تنضرب بنيزك أو صاروخ أو نووي تصير محروقة وتولّع فيها نار، وكل ما رفعت الجرافيكس صارت النار والدخان أوضح','🗺️ المعركة السريعة صارت تختار شكل خريطة مختلف كل مرة','🏛️ زر العصر صار يوضح عصرك الحالي والعصر اللي بتشتريه'],en:['🔥 Ground hit by a meteor, missile or nuke turns scorched and burns, with richer flames and smoke on higher graphics','🗺️ Quick Battle now picks a different world shape every time','🏛️ The age button now shows your current age and the one you are buying']},
  {v:'4.8',d:'2026-11-22',ar:['💜 تقدر تدعم المطوّر بـ10 ريال عن طريق STC Pay وتاخذ السيزون صفر كامل، من صفحة السيزون صفر'],en:['💜 Support the developer with 10 riyals by STC Pay and get all of Season Zero, from the Season Zero page']},
  {v:'4.7',d:'2026-11-22',ar:['💥 الصواريخ صارت تدمّر دبابات العدو، والدبابات تتقاتل لما تتقابل، وكل دبابة لها شريط صحة','🛡️ دباباتك صارت تدافع: لما أحد يهاجمك تروح للجبهة وتواجه دباباته','🫴 ميم 67 صار لأصحاب السيزون صفر، واليدين انعكست','🚪 صاحب الغرفة يقدر يطرد أي لاعب من غرفة الانتظار، وداخل القيم من قائمة اللاعبين في قائمة الإيقاف'],en:['💥 Missiles now destroy enemy tanks, tanks fight when they meet, and each tank has a health bar','🛡️ Your tanks now defend: when you are attacked they head to the front and face the enemy tanks','🫴 The 67 meme is now for Season Zero holders, with the hands flipped','🚪 The host can kick any player from the waiting room, and during the match from the player list in the pause menu']},
  {v:'4.6',d:'2026-11-22',ar:['🪖 صلّحنا الدبابات: ما عاد تمشي في البحر ولا أراضي الأعداء، تمشي بس داخل دولتك','🛡️ وقت السلم تقعد عند حدودك بدل ما ترجع للمعسكر، ووقت الهجوم تتوزع على طول خط الجبهة بدل ما تتكوّم في نقطة وحدة','🫴 ميم 67 الجديد في الإيموجي: يطلع فوق دولتك واليدين تتحرك، ويشوفه الكل'],en:['🪖 Tanks fixed: they no longer cross the sea or enemy land, only your own realm','🛡️ At peace they wait at your border instead of returning to camp, and in an attack they spread along the whole front instead of bunching up','🫴 New 67 meme in the emojis: shown over your realm with moving hands, for everyone to see']},
@@ -2018,8 +2040,7 @@ const LOG=[
  {v:'4.0',d:'2026-11-20',ar:['🎖️ الباتل باس وصل! يفتح لما توصل 10 آلاف خبرة، وكل 1000 خبرة بعدها تفتح مستوى جديد، والمجموع 15 مستوى','🎨 نقشات للأرض: خطوط، نقاط، شطرنج، شبكة، أمواج، أسهم، طوب، نجوم، تتلوّن فيها دولتك كاملة','🏰 أشكال للمباني: ذهبي، حجري، نيون، ملكي، جليدي، أوبسيديان، ناري','👀 السكنات يشوفها كل اللاعبين معك في الأونلاين، تلبسها من زر «الباتل باس» في القائمة'],en:['🎖️ The Battle Pass is here! It opens at 10,000 experience, and every 1,000 after that unlocks a new tier, 15 tiers in all','🎨 Land patterns: stripes, dots, checker, grid, waves, chevrons, bricks, stars, covering your whole realm','🏰 Building styles: golden, stone, neon, royal, ice, obsidian, fire','👀 Other players see your skins online; equip them from the Battle Pass button in the menu']},
  {v:'3.9',d:'2026-11-20',ar:['⭐ تحدي اليوم صار يعطيك خبرة ×3، و+150 خبرة لو فزت','🗺️ خريطة تحدي اليوم صارت بحجم المتوسطة الجديدة'],en:['⭐ The daily challenge now gives triple experience, plus 150 if you win','🗺️ The daily challenge map is now the new medium size']},
  {v:'3.8',d:'2026-11-20',ar:['🧪 وضع الغش في المعركة المخصصة: ذهب لا نهائي، جنود لا نهائية، بناء وتطوير فوري، كل العصور مفتوحة، وصواريخ بدون انتظار. تلقاه تحت إعدادات المعركة المخصصة، والمعركة اللي فيها غش ما تنحسب في الانتصارات ولا المتصدرين','🎯 الدائرة في الجوال صارت أكبر وتطلع فوق إصبعك، وفوقها تشوف مين بتهجم عليه وكم جنوده وكم بترسل','💪 تحت الدائرة أزرار سريعة لقوة الهجوم: 25٪ و50٪ و75٪ و100٪'],en:['🧪 Cheat mode in Custom Battle: infinite gold, infinite troops, instant build and upgrades, all ages unlocked, and missiles without cooldown. Find it under the custom battle settings; a battle with cheats does not count toward wins or the leaderboard','🎯 The phone circle is bigger and opens above your finger, showing who you are attacking, their troops and how many you will send','💪 Quick strength buttons under the circle: 25%, 50%, 75% and 100%']},
- {v:'3.7',d:'2026-11-19',ar:['🛠️ صلّحنا قلتش أسعار المباني: سعر المدينة كان يوصل ملايين لما تحتل مدن كثير. الحين السعر يتحسب بس من المباني اللي بنيتها بنفسك، والمدن اللي تحتلها ما ترفعه','💰 نفس الإصلاح على كل المباني: منصة الصواريخ والقبة والمصنع والميناء والحصن. بعد سادس مبنى من نفس النوع السعر يزيد بشوي بس، فما عاد يطير','✏️ اسمك في صفحة الحساب صار له زر «حفظ» وزر «رجّع القديم»','🏆 قائمة المتصدرين تنظفت من الأسماء المكررة اللي ما لعبت ولا معركة'],en:['🛠️ Fixed the building price glitch: a city could cost millions after you captured many. Now the price only counts buildings you built yourself, so captured cities no longer raise it','💰 The same fix for every building: silos, domes, factories, ports and forts. After the 6th of a kind the price only rises a little, so it never runs away','✏️ Your name on the Account page now has Save and Undo buttons','🏆 The leaderboard no longer lists repeated names that never played a battle']},
- {v:'3.5',d:'2026-11-19',ar:['⚖️ توازن جديد للعبة: الجنود يزيدون بشكل واقعي (حوالي 30 ألف بعد دقيقتين بدل ما توصل مليون)، والقيم يطول 15 لين 25 دقيقة','💰 المباني صارت أغلى: كل مبنى جديد من نفس النوع أغلى من اللي قبله بحوالي 40٪، والعصور أغلى','🏙️ المدن المحايدة في الخرائط صارت أقل، وأيقونات المدن والمباني صارت أكبر بكثير','🛡️ دائرة الحصن والقبة والدفاع البحري صارت ما تتعدى حدودك، ولها خط واضح على طرفها','🤝 علامة التحالف تطلع جنب اسم أي دولة متحالف معها','🗺️ كل الخرائط صارت أكبر بحوالي 30٪ والبحر أقل','🖼️ في إعدادات الجرافيكس صورة لكل مستوى توريك الفرق','📏 مدى كل المباني صار أكبر، والمسافة بين المباني أكبر عشان ما تتراكب، وأرضك أول ما تبدأ صارت تقريباً 3 أضعاف','🏕️ القبائل الصغيرة صارت تهجم على طول بكل جنودها وتخلي 2000 بس، فتكبر بسرعة من أول القيم'],en:['⚖️ New balance: troops grow realistically (about 30K after two minutes instead of reaching a million), and a match lasts 15 to 25 minutes','💰 Buildings cost more: each new one of a kind costs about 40% more than the last, and ages cost more','🏙️ Fewer neutral cities on the maps, and bigger city and building icons','🛡️ Fort, dome and coastal gun areas stop at your border, with a clear outline on their edge','🤝 A handshake shows next to the name of every realm you are allied with','🗺️ Every map is about 30% bigger with less sea','🖼️ The graphics settings show a picture of each level so you can see the difference','📏 Every building has a larger range, buildings sit further apart so they do not overlap, and your starting land is about three times bigger','🏕️ Small tribes now attack right away with everything above a 2000-man reserve, so they grow fast from the start']}];
+ {v:'3.7',d:'2026-11-19',ar:['🛠️ صلّحنا قلتش أسعار المباني: سعر المدينة كان يوصل ملايين لما تحتل مدن كثير. الحين السعر يتحسب بس من المباني اللي بنيتها بنفسك، والمدن اللي تحتلها ما ترفعه','💰 نفس الإصلاح على كل المباني: منصة الصواريخ والقبة والمصنع والميناء والحصن. بعد سادس مبنى من نفس النوع السعر يزيد بشوي بس، فما عاد يطير','✏️ اسمك في صفحة الحساب صار له زر «حفظ» وزر «رجّع القديم»','🏆 قائمة المتصدرين تنظفت من الأسماء المكررة اللي ما لعبت ولا معركة'],en:['🛠️ Fixed the building price glitch: a city could cost millions after you captured many. Now the price only counts buildings you built yourself, so captured cities no longer raise it','💰 The same fix for every building: silos, domes, factories, ports and forts. After the 6th of a kind the price only rises a little, so it never runs away','✏️ Your name on the Account page now has Save and Undo buttons','🏆 The leaderboard no longer lists repeated names that never played a battle']}];
 function t(k,...a){let s=TX[UI.lang][k];if(s==null)s=TX.ar[k];if(s==null)return k;if(typeof s!=='string')return s;a.forEach((v,i)=>{s=s.split('{'+i+'}').join(v);});return s;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function natName(n){return n.minor?tribeName(n.tribe,UI.lang):n.pname?n.pname:n.human||n.nameIdx<0?(UI.prof&&UI.prof.name)||t('defName'):NAT[UI.lang][n.nameIdx][0];}
@@ -2657,7 +2678,9 @@ function newsCheck(){if(!cloudOn())return;fetch(LB_DB+'/msg.json').then(r=>r.ok?
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
-  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:p.type,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
+  // quick battle: a different world shape every time
+  const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
+  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
   opt.skin=mySkin();const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
   if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
