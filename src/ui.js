@@ -192,6 +192,7 @@ function cloudSync(){
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
       if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
+      fetch(LB_DB+'/grants/'+uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(gr=>{if(gr&&(p.passT==null?-1:p.passT)<PASS.length){p.passT=PASS.length;p.supporter=1;saveProf();toast(t('supOn'),'prop',6000);fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:PASS.length})}).catch(()=>{});}}).catch(()=>{});
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
       return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});});})
@@ -337,7 +338,7 @@ function renderPass(){
   const p=UI.prof,n=passTier(p),k=p.skin||{},on=hasPass(p),xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
   const head=on?(n>=PASS.length?t('bpDone'):xp>=PASS_STEP?t('bpReady',n+1):t('bpNext',fmt(PASS_STEP-xp),n+1)):xp>=PASS_AT?t('bpCanOpen'):t('bpLock',fmt(PASS_AT-xp));
   const openBtn=on?'':`<button class="btn big bpbuy${xp>=PASS_AT?'':' low'}" data-a="bpBuy">🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
-  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}
+  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}${n<PASS.length&&!UI.owner?`<div class="sup"><b>💜 ${t('supT',SUPPORT_SAR)}</b><span>${t('supD')}</span><button class="btn ok" data-a="supOpen">${t('supBtn',SUPPORT_SAR)}</button></div>`:''}
   <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}${on&&j===n?(xp>=PASS_STEP?' can':' cant'):''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy">${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
@@ -349,6 +350,8 @@ function renderSkins(){
 }
 // ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
 const ADMIN_ROOT='saadsd';
+// supporting the developer: 10 riyals by STC Pay unlocks the whole season once the owner confirms it
+const STC_PAY='0538053242',SUPPORT_SAR=10;
 function adminCheck(){
   const p=UI.prof,f=p.fb||{};if(!cloudOn()||!f.user)return;const was=UI.admin;
   lbAuth().then(f=>{fetch(LB_DB+'/names/'+encodeURIComponent(f.user.toLowerCase())+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).catch(()=>{});
@@ -364,6 +367,7 @@ function renderAdmin(){
   $('#help').innerHTML=`<h2>${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2>
   <div class="hp"><h3>${t('admAdmins')}</h3>${UI.owner?`<div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>`:''}
   ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:UI.owner?`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`:''}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
+  ${UI.owner?`<div class="hp"><h3>💜 ${t('supAdm')}</h3><div class="row"><input id="grUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGrant">${t('supGrant')}</button></div><p class="keys">${t('supAdmNote')}</p></div>`:''}
   <div class="hp"><h3>${t('admMsgT')}</h3><div class="row"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn sm ok" data-a="admMsg">${t('admSend')}</button></div></div>
   <div class="hp"><h3>${t('admMeT')}</h3><div class="row"><label>${t('x_xp')} <input id="admXp" type="number" min="0" value="${p.xp|0}" style="width:7em"></label><label>${t('bpTierL')} <input id="admPt" type="number" min="-1" max="${PASS.length}" value="${p.passT==null?-1:p.passT}" style="width:4em"></label><button class="btn sm ok" data-a="admMe">${t('admSave')}</button></div></div>
   <div class="hp"><h3>${t('lb')}</h3>${B==null?`<p class="keys">${t('lbLoad')}</p>`:B.map(r=>`<div class="hpr"><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${r.w|0} ${t('wins')} · ${r.g|0}</small><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">${t('admDelRow')}</button></div>`).join('')}</div>
@@ -371,6 +375,24 @@ function renderAdmin(){
 }
 function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/admins/'+uid+'.json',{method:'PUT',body:JSON.stringify(u)});}).then(()=>{toast('🛠️ '+t('admGiven',u),'prop',2500);openAdmin();}).catch(e=>err(e===1?'admNoUser':'admFail'));}
+function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
+  admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/grants/'+uid+'.json',{method:'PUT',body:JSON.stringify({by:'owner',ts:{'.sv':'timestamp'}})});}).then(()=>{toast('💜 '+t('supGranted',u),'prop',3000);$('#grUser').value='';}).catch(e=>err(e===1?'admNoUser':'admFail'));}
+function renderSupport(){
+  const p=UI.prof,f=p.fb||{};
+  $('#help').innerHTML=`<h2>💜 ${t('supT',SUPPORT_SAR)}</h2><p class="keys">${t('supD')}</p>
+  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:!STC_PAY?`<div class="hp"><p>${t('supSoon')}</p></div>`:`<div class="hp sups">
+    <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><div class="stc" dir="ltr"><b>${esc(STC_PAY)}</b><button class="btn sm" data-a="supCopy">${t('supCopy')}</button></div>
+    <p><b>2.</b> ${t('supStep2')}</p><input id="supRef" maxlength="40" dir="ltr" placeholder="${t('supRefPh')}">
+    <p><b>3.</b> ${t('supStep3')}</p><p class="keys">${t('supUser')}: <b dir="ltr">${esc(f.user)}</b></p>
+    <button class="btn big ok" data-a="supSend">${t('supSend')}</button><p class="keys">${t('supNote')}</p></div>`}
+  <div class="row"><button class="btn" data-a="pass">${t('back')}</button></div>`;
+}
+function supSend(){
+  const p=UI.prof,f=p.fb||{},ref=(($('#supRef')||{}).value||'').trim();if(!f.user)return;if(ref.length<3)return err('supRef');if(!/^https?:/.test(location.protocol))return err('sgSite');
+  if(Date.now()-(p.supAt||0)<6e4)return err('supWait');loading(true);
+  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (STC Pay)',reference:ref,message:'Support claim from '+f.user+' · ref: '+ref})})
+  .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="pass">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
+}
 function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
 function admLbDel(uid){if(!confirm(t('admSure')))return;admReq('/lb/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
 function admMe(){const p=UI.prof,x=Math.max(0,+(($('#admXp')||{}).value)|0),pt=clamp(+(($('#admPt')||{}).value)|0,-1,PASS.length);addStat('xp',x-(p.xp|0));p.passT=pt;saveProf();
@@ -661,6 +683,10 @@ function act(a){
     case'pass':renderPass();show('help');break;
     case'skins':renderSkins();show('help');break;
     case'bpBuy':passBuy();break;
+    case'supOpen':renderSupport();show('help');break;
+    case'supCopy':try{navigator.clipboard.writeText(STC_PAY);toast(t('supCopied'),'prop',1500);}catch(e){}break;
+    case'supSend':supSend();break;
+    case'admGrant':admGrant();break;
     case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
     case'skin':{const s=p.skin||(p.skin={});if(w&&!owns(p,v,w))break;s[v]=w||'';saveProf();renderSkins();break;}
     case'kick':netKick(+v);if(UI.screen==='pause')renderPause();break;
