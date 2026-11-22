@@ -191,6 +191,37 @@ function drawFire(c,g,z,cw,ch,ts){
     if(h%9===0){const t=((ts/2200+ph)%1);c.globalAlpha=.22*inten*(1-t);c.fillStyle='#3a3530';c.beginPath();c.arc(sx+Math.sin(t*5+ph*6)*z*.4,sy-z*(1+t*3.5),z*(.4+t*.9),0,7);c.fill();}
     c.globalAlpha=1;drawn++;}
 }
+// top-down main battle tank, drawn once per realm (4 tread frames): hull in the realm colour with shading and camouflage, rubber tracks with
+// road wheels, a turret with hatch and periscope, and a long gun with fume extractor and muzzle brake
+function tankSprite(n,od){
+  const C=R.tk||(R.tk={}),fr=Math.floor(od*6)&3,key=n.id+':'+fr;if(C[key])return C[key];
+  const W=96,H=68,k=mk(W,H),x=k.getContext('2d'),[r,gc,b]=n.color,sh=(f)=>`rgb(${Math.round(r*f)},${Math.round(gc*f)},${Math.round(b*f)})`;
+  x.translate(W*.42,H/2);
+  // tracks
+  for(const sy of[-1,1]){const ty=sy*21-7;x.fillStyle='#1d1f22';x.fillRect(-38,ty,72,14);x.fillStyle='#2c2f33';x.fillRect(-38,ty+2,72,10);
+    x.fillStyle='#121315';for(let t=-38+((fr*3)%6);t<34;t+=6)x.fillRect(t,ty,2.4,14);
+    x.fillStyle='#3a3e44';for(let w=-30;w<=28;w+=11.5){x.beginPath();x.arc(w,ty+7,4.2,0,7);x.fill();}}
+  // hull
+  const hg=x.createLinearGradient(0,-17,0,17);hg.addColorStop(0,sh(1.15));hg.addColorStop(.5,sh(.95));hg.addColorStop(1,sh(.7));
+  x.fillStyle=hg;x.beginPath();x.moveTo(-36,-16);x.lineTo(30,-16);x.lineTo(38,-9);x.lineTo(38,9);x.lineTo(30,16);x.lineTo(-36,16);x.closePath();x.fill();
+  x.strokeStyle='rgba(0,0,0,.55)';x.lineWidth=1.5;x.stroke();
+  // camouflage blotches
+  x.save();x.clip();x.fillStyle=sh(.62);for(const[cx,cy,rr]of[[-22,-8,6],[8,9,7],[22,-10,5],[-8,12,5]]){x.beginPath();x.ellipse(cx,cy,rr*1.4,rr,0.4,0,7);x.fill();}x.restore();
+  // engine deck grilles and front glacis line
+  x.fillStyle='rgba(0,0,0,.35)';for(let gy=-9;gy<=7;gy+=4)x.fillRect(-33,gy,10,2);x.strokeStyle='rgba(255,255,255,.18)';x.beginPath();x.moveTo(30,-15);x.lineTo(30,15);x.stroke();
+  // gun: barrel, fume extractor, muzzle brake
+  x.fillStyle='#24272b';x.fillRect(8,-2.6,46,5.2);x.fillStyle='#30343a';x.fillRect(26,-3.6,8,7.2);x.fillStyle='#1a1c1f';x.fillRect(52,-4,6,8);
+  x.fillStyle='rgba(255,255,255,.14)';x.fillRect(8,-2.6,46,1.4);
+  // turret
+  const tg=x.createRadialGradient(-2,-5,2,0,0,17);tg.addColorStop(0,sh(1.25));tg.addColorStop(1,sh(.72));x.fillStyle=tg;
+  x.beginPath();x.moveTo(-14,-12);x.lineTo(8,-12);x.lineTo(16,-6);x.lineTo(16,6);x.lineTo(8,12);x.lineTo(-14,12);x.lineTo(-18,6);x.lineTo(-18,-6);x.closePath();x.fill();x.strokeStyle='rgba(0,0,0,.6)';x.lineWidth=1.4;x.stroke();
+  // commander hatch, periscope, antenna
+  x.fillStyle=sh(.55);x.beginPath();x.arc(-6,-4,4.2,0,7);x.fill();x.strokeStyle='rgba(0,0,0,.5)';x.stroke();x.fillStyle='#bfe3ff';x.fillRect(3,4,4,2.4);
+  x.strokeStyle='#15171a';x.lineWidth=1;x.beginPath();x.moveTo(-12,8);x.lineTo(-22,15);x.stroke();
+  // realm marker on the turret roof
+  x.fillStyle='rgba(255,233,168,.9)';x.beginPath();x.arc(-8,6,2,0,7);x.fill();
+  return C[key]=k;
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -253,9 +284,9 @@ function draw(g,dt,ts){
   // protected area of my forts, shield domes and coastal guns (and every dome while aiming a missile): filled only over the owner's land, outlined along its edge
   {const aimM=UI.mode&&UI.mode[0]==='m',RC=R.rng||(R.rng={});for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'&&s.type!=='coast'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
     const rr=s.type==='fort'?R_FORT+s.level-1:s.type==='coast'?COAST_R+2*(s.level-1):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
-    const key=s.i+':'+s.type,col=!mine?[255,90,70]:s.type==='shield'?[120,190,255]:s.type==='coast'?[90,220,200]:[255,233,168];let E=RC[key];
+    const sel=!!(UI.bs===s||(UI.mode&&UI.mode[0]==='b')||aimM),key=s.i+':'+s.type+(sel?'s':''),col=!mine?[255,90,70]:s.type==='shield'?[120,190,255]:s.type==='coast'?[90,220,200]:[255,233,168];let E=RC[key];
     if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&own[Y*W+X]===o;
-      for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge?205:(s.type==='shield'?48:38);}
+      for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge&&sel?205:(s.type==='shield'?44:34);}
       x2.putImageData(im,0,0);E=RC[key]={cv:cv2,rr,o:s.owner,t:ts};}
     const sm=c.imageSmoothingEnabled;c.imageSmoothingEnabled=false;c.drawImage(E.cv,p0.x,p0.y,D*z,D*z);c.imageSmoothingEnabled=sm;}}
   // structures
@@ -323,16 +354,19 @@ function draw(g,dt,ts){
     if(p.type==='meteor'){const d=(1-k)*260;c.strokeStyle='rgba(255,190,110,.9)';c.lineWidth=5;c.beginPath();c.moveTo(q.x+d,q.y-d*1.6);c.lineTo(q.x+d+26,q.y-d*1.6-42);c.stroke();c.fillStyle='#fff3d0';c.beginPath();c.arc(q.x+d,q.y-d*1.6,5,0,7);c.fill();}
     if(p.type==='beam'){c.strokeStyle=`rgba(190,150,255,${.3+k*.6})`;c.lineWidth=2+k*7;c.beginPath();c.moveTo(q.x,0);c.lineTo(q.x,q.y);c.stroke();}
   }
-  // tanks: small enough not to rival cities, never smaller than a dot that can be seen moving from far away
-  if(g.tanks.length){const s=Math.max(3.6,Math.min(z*1.5,13));for(const T of g.tanks){const p=w2s(T.x,T.y);if(p.x<-20||p.y<-20||p.x>cw+20||p.y>ch+20)continue;const n=g.nations[T.a];
-    if(s<5.5){c.fillStyle='#2b3138';c.strokeStyle='#ffd166';c.lineWidth=1.6;c.beginPath();c.arc(p.x,p.y,s*.85,0,7);c.fill();c.stroke();c.fillStyle=n.css;c.beginPath();c.arc(p.x,p.y,s*.4,0,7);c.fill();continue;}
-    const dir=Math.atan2(T.vy,T.vx);c.save();c.translate(p.x,p.y);c.rotate(dir);if(R.q){c.shadowColor='rgba(255,214,120,.85)';c.shadowBlur=s*.8;}
-    c.fillStyle='#1c1a17';c.fillRect(-s*1.05,-s*.75,s*2.1,s*.32);c.fillRect(-s*1.05,s*.43,s*2.1,s*.32);
-    const hull=c.createLinearGradient(0,-s*.5,0,s*.5);hull.addColorStop(0,'#5a6570');hull.addColorStop(1,'#232a31');c.fillStyle=hull;c.strokeStyle='#ffd166';c.lineWidth=Math.max(1.2,s*.14);c.beginPath();c.rect(-s*.9,-s*.5,s*1.8,s);c.fill();c.stroke();c.shadowBlur=0;
-    c.fillStyle='#14181c';c.fillRect(s*.25,-s*.12,s*1.2,s*.24);c.fillStyle='#ffd166';c.fillRect(s*1.3,-s*.16,s*.18,s*.32);c.beginPath();c.arc(0,0,s*.44,0,7);c.fillStyle=n.css;c.fill();c.strokeStyle='#ffd166';c.stroke();c.restore();
-    // light, sparse blasts at the front
-    if(T.hp<100){c.fillStyle='rgba(0,0,0,.6)';c.fillRect(p.x-s,p.y-s*1.25,s*2,Math.max(2,s*.22));c.fillStyle=T.hp>50?'#6ee7a0':T.hp>25?'#ffd166':'#ff6b5a';c.fillRect(p.x-s,p.y-s*1.25,s*2*T.hp/100,Math.max(2,s*.22));}
-    if(T.k&&g.tick-T.fire<3&&R.q!==0&&Math.random()<.05)addFx('ring',T.x-.5+T.vx*3,T.y-.5+T.vy*3,{r:1.6,dur:500,col:'rgba(255,170,80,.9)'});}}
+  // tanks: a detailed top-down sprite per realm; tracks roll as they drive, dust behind on the move, muzzle flash in battle; a dot when far away
+  if(g.tanks.length){const s=Math.max(3.6,Math.min(z*1.7,15));for(const T of g.tanks){const p=w2s(T.x,T.y);if(p.x<-24||p.y<-24||p.x>cw+24||p.y>ch+24)continue;const n=g.nations[T.a];
+    if(s<6){c.fillStyle='#2b3138';c.strokeStyle=n.css;c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,s*.8,0,7);c.fill();c.stroke();continue;}
+    const mv=T.lx!=null&&(T.lx!==T.x||T.ly!==T.y);if(mv)T.od=(T.od||0)+hyp(T.x-T.lx,T.y-T.ly);T.lx=T.x;T.ly=T.y;
+    const dir=Math.atan2(T.vy,T.vx);
+    if(mv&&R.q===2&&T.k&&Math.random()<.25)addFx('dust',T.x-.5-T.vx*1.2,T.y-.5-T.vy*1.2,{dur:700});
+    c.save();c.translate(p.x,p.y);c.rotate(dir);
+    if(R.q){c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(s*.12,s*.16,s*1.2,s*.82,0,0,7);c.fill();}
+    c.drawImage(tankSprite(n,(T.od||0)),-s*1.2,-s*.85,s*2.4,s*1.7);
+    if(T.k&&g.tick-T.fire<2&&Math.random()<.35){c.globalCompositeOperation='lighter';const gr=c.createRadialGradient(s*1.65,0,0,s*1.65,0,s*.55);gr.addColorStop(0,'rgba(255,240,180,.95)');gr.addColorStop(1,'rgba(255,120,20,0)');c.fillStyle=gr;c.beginPath();c.arc(s*1.65,0,s*.55,0,7);c.fill();c.globalCompositeOperation='source-over';}
+    c.restore();
+    if(T.hp<100){c.fillStyle='rgba(0,0,0,.6)';c.fillRect(p.x-s,p.y-s*1.3,s*2,Math.max(2,s*.2));c.fillStyle=T.hp>50?'#6ee7a0':T.hp>25?'#ffd166':'#ff6b5a';c.fillRect(p.x-s,p.y-s*1.3,s*2*T.hp/100,Math.max(2,s*.2));}
+    if(T.k&&g.tick-T.fire<3&&R.q!==0&&Math.random()<.04)addFx('ring',T.x-.5+T.vx*3,T.y-.5+T.vy*3,{r:1.4,dur:450,col:'rgba(255,170,80,.9)'});}}
   // effects
   for(let i=R.fx.length-1;i>=0;i--){
     const f=R.fx[i];f.t+=dt/f.dur;if(f.t>=1){R.fx.splice(i,1);continue;}const p=w2s(f.x+.5,f.y+.5),e=1-(1-f.t)*(1-f.t);
@@ -353,6 +387,7 @@ function draw(g,dt,ts){
       if(T>.2&&T<.34){const k=1-(T-.2)/.14;c.fillStyle=`rgba(255,240,190,${.9*k})`;c.beginPath();c.arc(cx,cy-L*.46,L*.1*(1+(1-k)*1.5),0,7);c.fill();}
       if(T>.18){const k=Math.min(1,(T-.18)/.1);c.font=`800 ${Math.round(20+4*k)}px ${FONT}`;c.lineWidth=4.5;c.strokeStyle='rgba(6,12,20,.92)';c.direction='ltr';txt(c,f.s,cx,cy+L*.62+(1-k)*8,'#ffe08a');c.direction='inherit';}
       c.globalAlpha=1;}
+    else if(f.type==='dust'){c.globalAlpha=.3*(1-f.t);c.fillStyle='#8a7a62';c.beginPath();c.arc(p.x,p.y,(2+f.t*7)*Math.min(1.6,z/4),0,7);c.fill();c.globalAlpha=1;}
     else if(f.type==='text'){c.globalAlpha=1-f.t*f.t;c.font=`700 ${f.size||15}px ${FONT}`;c.lineWidth=3.5;c.strokeStyle='rgba(6,12,20,.9)';if(/^[+\-\d]/.test(f.s))c.direction='ltr';txt(c,f.s,p.x,p.y-10-e*34,f.col||'#fff');c.direction='inherit';c.globalAlpha=1;}
   }
   // placement preview: range circle plus a ghost of the building where it will actually stand

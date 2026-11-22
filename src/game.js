@@ -142,8 +142,8 @@ function flipAround(g,s,o,R){
 // a realm with no city left falls apart: the conqueror takes the heartland, the rest turns lawless
 function collapseNation(g,O,o,s){
   if(!O.alive)return;emit(g,'collapse',{d:O.id,a:o});
-  const own=g.owner,W=g.W,keep=[];for(const t of g.structs)if(!t.dead&&t.owner===O.id&&t.type!=='mon')keep.push(t.x,t.y);
-  for(let i=0;i<g.N;i++)if(own[i]===O.id){const x=i%W,y=(i/W)|0,dx=x-s.x,dy=y-s.y;let mine=dx*dx+dy*dy<=225;for(let k=0;k<keep.length&&!mine;k+=2)mine=(x-keep[k])**2+(y-keep[k+1])**2<=9;setOwner(g,i,mine?o:0);}
+  // the conqueror takes the whole fallen realm, buildings included
+  const own=g.owner;for(let i=0;i<g.N;i++)if(own[i]===O.id)setOwner(g,i,o);
   if(O.alive)killNation(g,O,o,s.x,s.y);
 }
 function killNation(g,O,by,x,y){
