@@ -73,7 +73,7 @@ function aiBuild(g,n,threat){
   else if(hostile&&n.cnt.fort<1+Math.floor(n.tiles/700)&&G>=buildCost(g,n,'fort')*(wantCity?2.5:1.2))type='fort';
   else if(n.era>=2&&n.coast>8&&n.cnt.port<Math.min(3,1+Math.floor(n.tiles/1500))&&G>=buildCost(g,n,'port')*1.5)type='port';
   else if(n.era>=2&&n.cnt.port&&n.cnt.coast<n.cnt.port&&G>=buildCost(g,n,'coast')*2)type='coast';
-  else if(n.era>=2&&n.cnt.camp<Math.min(2,Math.floor(n.tiles/2200))&&G>=buildCost(g,n,'camp')*1.5)type='camp';
+  else if(n.era>=3&&n.cnt.camp<Math.min(2,Math.floor(n.tiles/2200))&&G>=buildCost(g,n,'camp')*1.5)type='camp';
   else if(n.era>=3&&n.cnt.factory<Math.min(3,1+Math.floor(n.tiles/2500))&&G>=buildCost(g,n,'factory')*1.3)type='factory';
   else if(n.era>=3&&n.cnt.silo<(n.tiles>2500?2:1)&&G>=buildCost(g,n,'silo')*1.2)type='silo';
   else if(n.era>=3&&enemySilo&&n.cnt.shield<1+(n.mon?1:0)&&G>=buildCost(g,n,'shield')*1.4)type='shield';
