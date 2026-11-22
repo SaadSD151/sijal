@@ -391,6 +391,12 @@ function statsHtml(){const S=UI.admSt;
   const days=[];for(let i=13;i>=0;i--){const k=sDay(i);days.push([k,S.d[k]||{}]);}const mx=Math.max(1,...days.map(x=>x[1].uniq|0));
   const hrs=[];for(let h=0;h<24;h++)hrs.push(D['h'+String(h).padStart(2,'0')]|0);const hm=Math.max(1,...hrs);
   const mob=(D.u_m|0)+(D.u_p|0),O=S.on;
+  // this week against the week before, and the averages that show how people play
+  const sum=(a,b,k)=>{let v=0;for(let i=a;i<b;i++)v+=(S.d[sDay(i)]||{})[k]|0;return v;};
+  const W={u:sum(0,7,'uniq'),g:sum(0,7,'games'),ms:sum(0,7,'ms'),nw:sum(0,7,'new'),w:sum(0,7,'wins'),l:sum(0,7,'loss'),gm:sum(0,7,'u_m'),gp:sum(0,7,'u_p'),go:sum(0,7,'g_o'),sg:sum(0,7,'signup')},PW={u:sum(7,14,'uniq'),g:sum(7,14,'games'),ms:sum(7,14,'ms')};
+  const avgMin=W.g?W.ms/W.g/60:0,wr=W.w+W.l?W.w/(W.w+W.l):0,ret=W.u?Math.max(0,W.u-W.nw)/W.u:0,ppv=W.u?W.g/W.u:0;
+  let pk=-1,pv=0;for(let h=0;h<24;h++){const v=sum(0,7,'h'+String(h).padStart(2,'0'));if(v>pv){pv=v;pk=h;}}
+  const tips=statTips({W,PW,avgMin,wr,ret,ppv,pk,days:Object.keys(S.d).length});
   return`<div class="hp stp"><div class="sth"><h3>📊 ${t('stT')}</h3><button class="btn sm" data-a="admSt">↻ ${t('stRef')}</button></div>
   <div class="stnow"><i></i><b>${n(O.now)}</b> ${t('stNow')}<small>${t('stIn',n(O.g),n(O.o),n(O.m))} · ${t('stDay',n(O.day))}</small></div>
   <h4>${t('stToday')}</h4><div class="stg">
@@ -398,6 +404,12 @@ function statsHtml(){const S=UI.admSt;
   ${tile('⚔️',t('stGames'),n(D.games),cmp(D.games,Y.games))}${tile('🏆',t('stWL'),n(D.wins)+' / '+n(D.loss),'')}${tile('⏱️',t('stHrs'),hr(D.ms),cmp(D.ms,Y.ms))}
   ${tile('📝',t('stSign'),n(D.signup),'')}${tile('💜',t('stSup'),n(D.sup),'')}${tile('📱',t('stMob'),mob?Math.round((D.u_m|0)/mob*100)+'%':'—',mob?t('stPc',Math.round((D.u_p|0)/mob*100)):'')}
   </div><div class="stty">${ty(D)}</div>
+  <h4>${t('stWeek')}</h4><div class="stg">
+  ${tile('👤',t('stUniq'),n(W.u),cmp(W.u,PW.u))}${tile('⚔️',t('stGames'),n(W.g),cmp(W.g,PW.g))}${tile('⏱️',t('stHrs'),hr(W.ms),cmp(W.ms,PW.ms))}
+  ${tile('🔁',t('stRet'),Math.round(ret*100)+'%',t('stRetS'))}${tile('🎮',t('stPpv'),ppv.toFixed(1),t('stPpvS'))}${tile('⌛',t('stAvg'),avgMin.toFixed(1),t('stAvgS'))}
+  ${tile('🏆',t('stWr'),W.w+W.l?Math.round(wr*100)+'%':'—','')}${tile('🕘',t('stPeak'),pk<0?'—':pk+':00','')}${tile('🌐',t('stOnl'),W.g?Math.round(W.go/W.g*100)+'%':'—','')}
+  </div>
+  <div class="sttip"><h4>💡 ${t('stTips')}</h4>${tips.map(x=>`<div class="tip ${x[0]}"><b>${x[1]}</b><p>${x[2]}</p></div>`).join('')}</div>
   <h4>${t('st14')}</h4><div class="stb">${days.map(([k,v])=>`<div title="${k}"><span>${n(v.uniq)}</span><i style="height:${Math.round((v.uniq|0)/mx*100)}%"></i><small>${k.slice(8)}</small></div>`).join('')}</div>
   <p class="keys">${t('st14n')}</p>
   <h4>${t('stHours')}</h4><div class="stb sth2">${hrs.map((v,h)=>`<div title="${h}:00 · ${v}"><i style="height:${Math.round(v/hm*100)}%"></i><small>${h%3?'':h}</small></div>`).join('')}</div>
@@ -406,6 +418,26 @@ function statsHtml(){const S=UI.admSt;
   ${tile('⏱️',t('stHrs'),hr(T.ms),'')}${tile('🔐',t('stAcc'),S.acc==null?'—':n(S.acc),'')}${tile('🏅',t('stLb'),UI.admLb?n(UI.admLb.length):'—','')}
   ${tile('🏆',t('stWL'),n(T.wins)+' / '+n(T.loss),'')}${tile('📝',t('stSign'),n(T.signup),'')}${tile('💜',t('stSup'),n(T.sup),'')}
   </div><div class="stty">${ty(T)}</div><p class="keys">${t('stNote')}</p></div>`;}
+// plain advice from the numbers: what to do when visits are low, players do not come back, or battles are too short
+function statTips(a){const W=a.W,T=[],L=TX[UI.prof.lang]&&TX[UI.prof.lang].tips?TX[UI.prof.lang].tips:TX.ar.tips,f=(k,...v)=>{let s=L[k];v.forEach((x,i)=>s=s.split('{'+i+'}').join(x));return s;};
+  const add=(lv,k,...v)=>T.push([lv,f(k+'T',...v),f(k+'D',...v)]);const post=a.pk<0?'9':String((a.pk+23)%24);
+  if(a.days<2)add('info','new');
+  const daily=W.u/7;
+  if(daily<30)add('bad','low',Math.round(daily),post);
+  else if(daily<150)add('mid','grow',Math.round(daily),post);
+  if(a.PW.u>=20&&W.u<a.PW.u*.8)add('bad','drop',Math.round((1-W.u/a.PW.u)*100));
+  if(a.PW.u>=20&&W.u>a.PW.u*1.3)add('good','up',Math.round((W.u/a.PW.u-1)*100));
+  if(W.u>=15&&a.ret<.25)add('mid','ret',Math.round(a.ret*100));
+  if(W.u>=15&&a.ppv<.6)add('mid','ppv');
+  if(W.g>=15&&a.avgMin<4)add('mid','short',a.avgMin.toFixed(1));
+  if(W.w+W.l>=15&&a.wr<.2)add('mid','hard',Math.round(a.wr*100));
+  if(W.w+W.l>=15&&a.wr>.8)add('mid','easy',Math.round(a.wr*100));
+  const mb=W.gm+W.gp;if(mb>=15&&W.gm/mb>.7)add('info','mob',Math.round(W.gm/mb*100));if(mb>=15&&W.gp/mb>.5)add('info','pc',Math.round(W.gp/mb*100));
+  if(W.g>=30&&W.go/W.g<.05)add('info','onl');
+  if(W.nw>=20&&W.sg/W.nw<.05)add('info','acc');
+  if(a.pk>=0&&W.u>=15)add('info','peak',a.pk+':00',post+':00');
+  if(!T.some(x=>x[0]==='bad'||x[0]==='mid'))add('good','fine');
+  return T;}
 function renderAdmin(){
   const L=UI.admList,B=UI.admLb,p=UI.prof;
   $('#help').innerHTML=`<h2>${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2>${UI.owner?statsHtml():''}

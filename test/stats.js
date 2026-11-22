@@ -34,12 +34,16 @@ const {chromium,devices}=require('playwright'),http=require('http'),fs=require('
   const pc=await dev({viewport:{width:1280,height:800}});
   ok(D().uniq===2&&D().u_p===1&&D().new===2&&DB.stats.t.visits===3,'a PC is a second unique device');
   // owner panel
+  for(let i=1;i<14;i++){const k=new Date(Date.now()+3*36e5-i*864e5).toISOString().slice(0,10);DB.stats.d[k]={uniq:i<7?12:20,new:i<7?10:15,visits:30,games:8,ms:8*150,wins:1,loss:7,u_m:11,u_p:1,h21:9,g_q:8};}
   DB.names={saadsd:'x',ali:'y',noor:'z'};DB.lb={a:{n:'A',w:3,g:5}};
   await pc.evaluate(()=>{const U=__sijal.UI;U.owner=true;U.admin=true;__sijal.act('admin');});await pc.waitForTimeout(1500);
   const txt=await pc.$eval('#help .stp',e=>e.innerText).catch(()=>'');
   ok(/فاتحين اللعبة الحين/.test(txt)&&/الزيارات/.test(txt)&&/الحسابات/.test(txt),'owner panel shows stats');
   const tiles=await pc.$$eval('#help .stp .stc2',es=>es.map(e=>e.innerText.replace(/\s+/g,' ')));console.log(tiles.slice(0,9).join(' | '));
   ok(tiles.some(x=>/الحسابات 3/.test(x)),'accounts count from names');
+  const tips=await pc.$$eval('#help .sttip .tip b',es=>es.map(e=>e.textContent));console.log('tips:',tips.join(' | '));
+  ok(tips.some(x=>/الزيارات قليلة/.test(x))&&tips.some(x=>/نزلت/.test(x))&&tips.some(x=>/يخسرون/.test(x))&&tips.some(x=>/قصيرة/.test(x)),'suggestions match the numbers');
+  await pc.evaluate(()=>document.querySelector('#help .sttip').scrollIntoView());
   await pc.screenshot({path:path.join(process.argv[2]||'/tmp','stats-pc.png'),fullPage:false});
   await ph.evaluate(()=>{const U=__sijal.UI;U.owner=true;U.admin=true;__sijal.act('admin');});await ph.waitForTimeout(1500);
   await ph.screenshot({path:path.join(process.argv[2]||'/tmp','stats-phone.png')});
