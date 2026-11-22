@@ -208,7 +208,7 @@ const AUTH='https://identitytoolkit.googleapis.com/v1/accounts:';
 function accReq(kind,F){return fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json());}
 // entering an account: a guest's progress on this device moves into it, and the guest's own entries are removed so nobody shows up twice
 function accEnter(j,F,okMsg){
-  const p=UI.prof,old=p.fb||{};if(j.localId===old.uid){old.user=F.u;saveProf();return accDone(okMsg);}
+  const p=UI.prof,old=p.fb||{};if(okMsg==='made')stat('signup');if(j.localId===old.uid){old.user=F.u;saveProf();return accDone(okMsg);}
   const guest=!old.user&&old.uid?{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}:null,gTok=old.tok,gUid=old.uid;
   const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
@@ -352,6 +352,19 @@ function renderSkins(){
 const ADMIN_ROOT='saadsd';
 // supporting the developer: 10 riyals by STC Pay unlocks the whole season once the owner confirms it
 const TIKTOK='https://www.tiktok.com/@sijal_2';const STC_PAY='0538053242',SUPPORT_SAR=10;
+// ── game statistics for the owner: anonymous counters per Saudi day and all-time, and who has the game open right now ──
+const sDay=o=>new Date(Date.now()+3*36e5-(o||0)*864e5).toISOString().slice(0,10),sHour=()=>new Date(Date.now()+3*36e5).getUTCHours();
+const SQ={q:{},ms:0};
+function stat(k,n){if(cloudOn())SQ.q[k]=(SQ.q[k]||0)+(n==null?1:n);}
+function statFlush(keep){if(!cloudOn())return;const q=SQ.q;if(SQ.ms>=1000){q.ms=(q.ms||0)+Math.floor(SQ.ms/1000);SQ.ms%=1000;}const ks=Object.keys(q);if(!ks.length)return;SQ.q={};const d=sDay(),b={};
+  for(const k of ks){const v={'.sv':{increment:q[k]}};b['d/'+d+'/'+k]=v;b['t/'+k]=v;}
+  fetch(LB_DB+'/stats.json',{method:'PATCH',body:JSON.stringify(b),keepalive:!!keep}).catch(()=>{});}
+function statPing(){if(!cloudOn()||document.hidden)return;const g=G,s=UI.phase==='play'&&g&&!g.o.demo&&!g.over?(NET.on?'o':'g'):'m';
+  fetch(LB_DB+'/stats/on/'+UI.prof.did+'.json',{method:'PUT',body:JSON.stringify({t:{'.sv':'timestamp'},s,m:UI.mob?1:0})}).catch(()=>{});}
+function statBoot(){const p=UI.prof;if(!p.did){p.did=(Math.random().toString(36).slice(2)+'0000000000').slice(0,10);if(!p.seen)stat('new');}
+  stat('visits');stat('h'+String(sHour()).padStart(2,'0'));const d=sDay();if(p.sDay!==d){p.sDay=d;stat('uniq');stat(UI.mob?'u_m':'u_p');}saveProf();
+  setTimeout(statFlush,4000);setInterval(statFlush,30000);setTimeout(statPing,5000);setInterval(statPing,60000);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)statFlush(true);else statPing();});}
 function adminCheck(){
   const p=UI.prof,f=p.fb||{};if(!cloudOn()||!f.user)return;const was=UI.admin;
   lbAuth().then(f=>{fetch(LB_DB+'/names/'+encodeURIComponent(f.user.toLowerCase())+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).catch(()=>{});
@@ -359,12 +372,43 @@ function adminCheck(){
   .then(a=>{UI.admin=!!a;if(UI.admin!==!!was)renderMenu();if(UI.owner&&UI.screen==='help'&&$('#help .bpg'))renderPass();}).catch(()=>{});
 }
 function admReq(path,o){return lbAuth().then(f=>fetch(LB_DB+path+(path.includes('?')?'&':'?')+'auth='+f.tok,o||{}).then(r=>{if(!r.ok)throw 0;return r.json();}));}
-function openAdmin(){if(!UI.admin)return;UI.admLb=null;UI.admList=null;renderAdmin();show('help');
+function openAdmin(){if(!UI.admin)return;UI.admLb=null;UI.admList=null;if(UI.owner)admStats();renderAdmin();show('help');
   admReq('/admins.json').then(j=>{UI.admList=j||{};renderAdmin();}).catch(()=>{UI.admList='err';renderAdmin();});
   fetch(LB_DB+'/lb.json').then(r=>r.json()).then(j=>{UI.admLb=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).sort((a,b)=>(b.w|0)-(a.w|0));renderAdmin();}).catch(()=>{});}
+function admStats(){UI.admSt=null;statFlush();
+  Promise.all([admReq('/stats/d.json?orderBy=%22$key%22&limitToLast=14'),admReq('/stats/t.json'),admReq('/stats/on.json'),admReq('/names.json?shallow=true').catch(()=>null)]).then(([d,tt,on,nm])=>{
+    const now=Date.now(),O={now:0,g:0,o:0,m:0,mob:0,day:0};const old={};
+    for(const[id,v]of Object.entries(on||{})){const a=now-(v&&v.t||0);if(a<150000){O.now++;O[v.s]=(O[v.s]||0)+1;if(v.m)O.mob++;}if(a<864e5)O.day++;if(a>3*864e5)old[id]=null;}
+    if(Object.keys(old).length)admReq('/stats/on.json',{method:'PATCH',body:JSON.stringify(old)}).catch(()=>{});
+    UI.admSt={d:d||{},t:tt||{},on:O,acc:nm?Object.keys(nm).length:null,at:now};if(UI.screen==='help'&&$('#help .stp'))renderAdmin();}).catch(()=>{UI.admSt='err';if($('#help .stp'))renderAdmin();});}
+function statsHtml(){const S=UI.admSt;
+  if(S==null)return`<div class="hp stp"><h3>📊 ${t('stT')}</h3><p class="keys">${t('lbLoad')}</p></div>`;
+  if(S==='err')return`<div class="hp stp"><h3>📊 ${t('stT')}</h3><p class="bad">${t('stRules')}</p><div class="row"><button class="btn sm" data-a="admSt">${t('stRef')}</button></div></div>`;
+  const D=S.d[sDay()]||{},Y=S.d[sDay(1)]||{},T=S.t,n=v=>(v|0).toLocaleString('en'),hr=v=>((v|0)/3600).toFixed((v|0)<36000?1:0);
+  const cmp=(a,b)=>{a|=0;b|=0;if(!b)return'';const p=Math.round((a-b)/b*100);return`<em class="${p>=0?'up':'dn'}">${p>=0?'▲':'▼'} ${Math.abs(p)}%</em>`;};
+  const tile=(ic,l,v,sub)=>`<div class="stc2"><small>${ic} ${l}</small><b>${v}</b>${sub?`<span>${sub}</span>`:''}</div>`;
+  const ty=o=>[['q','quick'],['c','custom'],['d','daily'],['o','online']].map(([k,l])=>`<span>${t(l)}: <b>${n(o['g_'+k])}</b></span>`).join('');
+  const days=[];for(let i=13;i>=0;i--){const k=sDay(i);days.push([k,S.d[k]||{}]);}const mx=Math.max(1,...days.map(x=>x[1].uniq|0));
+  const hrs=[];for(let h=0;h<24;h++)hrs.push(D['h'+String(h).padStart(2,'0')]|0);const hm=Math.max(1,...hrs);
+  const mob=(D.u_m|0)+(D.u_p|0),O=S.on;
+  return`<div class="hp stp"><div class="sth"><h3>📊 ${t('stT')}</h3><button class="btn sm" data-a="admSt">↻ ${t('stRef')}</button></div>
+  <div class="stnow"><i></i><b>${n(O.now)}</b> ${t('stNow')}<small>${t('stIn',n(O.g),n(O.o),n(O.m))} · ${t('stDay',n(O.day))}</small></div>
+  <h4>${t('stToday')}</h4><div class="stg">
+  ${tile('👀',t('stVis'),n(D.visits),cmp(D.visits,Y.visits))}${tile('👤',t('stUniq'),n(D.uniq),cmp(D.uniq,Y.uniq))}${tile('✨',t('stNew'),n(D.new),cmp(D.new,Y.new))}
+  ${tile('⚔️',t('stGames'),n(D.games),cmp(D.games,Y.games))}${tile('🏆',t('stWL'),n(D.wins)+' / '+n(D.loss),'')}${tile('⏱️',t('stHrs'),hr(D.ms),cmp(D.ms,Y.ms))}
+  ${tile('📝',t('stSign'),n(D.signup),'')}${tile('💜',t('stSup'),n(D.sup),'')}${tile('📱',t('stMob'),mob?Math.round((D.u_m|0)/mob*100)+'%':'—',mob?t('stPc',Math.round((D.u_p|0)/mob*100)):'')}
+  </div><div class="stty">${ty(D)}</div>
+  <h4>${t('st14')}</h4><div class="stb">${days.map(([k,v])=>`<div title="${k}"><span>${n(v.uniq)}</span><i style="height:${Math.round((v.uniq|0)/mx*100)}%"></i><small>${k.slice(8)}</small></div>`).join('')}</div>
+  <p class="keys">${t('st14n')}</p>
+  <h4>${t('stHours')}</h4><div class="stb sth2">${hrs.map((v,h)=>`<div title="${h}:00 · ${v}"><i style="height:${Math.round(v/hm*100)}%"></i><small>${h%3?'':h}</small></div>`).join('')}</div>
+  <h4>${t('stAll')}</h4><div class="stg">
+  ${tile('👀',t('stVis'),n(T.visits),'')}${tile('👥',t('stPlayers'),n(T.new),'')}${tile('⚔️',t('stGames'),n(T.games),'')}
+  ${tile('⏱️',t('stHrs'),hr(T.ms),'')}${tile('🔐',t('stAcc'),S.acc==null?'—':n(S.acc),'')}${tile('🏅',t('stLb'),UI.admLb?n(UI.admLb.length):'—','')}
+  ${tile('🏆',t('stWL'),n(T.wins)+' / '+n(T.loss),'')}${tile('📝',t('stSign'),n(T.signup),'')}${tile('💜',t('stSup'),n(T.sup),'')}
+  </div><div class="stty">${ty(T)}</div><p class="keys">${t('stNote')}</p></div>`;}
 function renderAdmin(){
   const L=UI.admList,B=UI.admLb,p=UI.prof;
-  $('#help').innerHTML=`<h2>${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2>
+  $('#help').innerHTML=`<h2>${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2>${UI.owner?statsHtml():''}
   <div class="hp"><h3>${t('admAdmins')}</h3>${UI.owner?`<div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>`:''}
   ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:UI.owner?`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`:''}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
   ${UI.owner?`<div class="hp"><h3>💜 ${t('supAdm')}</h3><div class="row"><input id="grUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGrant">${t('supGrant')}</button></div><p class="keys">${t('supAdmNote')}</p></div>`:''}
@@ -392,7 +436,7 @@ function supSend(){
   if(!/^05\d{8}$/.test(ph))return err('supPhone');if(!/^[A-Za-z0-9_]{3,16}$/.test(us))return err('admUser');if(us.toLowerCase()!==f.user.toLowerCase())return err('supUserBad');const ref=ph;if(!/^https?:/.test(location.protocol))return err('sgSite');
   if(Date.now()-(p.supAt||0)<6e4)return err('supWait');loading(true);
   fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (STC Pay)',phone:ph,message:'Support claim · username: '+f.user+' · paid from phone: '+ph+' · amount: '+SUPPORT_SAR+' SAR'})})
-  .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
+  .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;stat('sup');statFlush();p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
 }
 function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
 function admLbDel(uid){if(!confirm(t('admSure')))return;admReq('/lb/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
@@ -403,7 +447,7 @@ function admMsg(){const m=(($('#admMsgIn')||{}).value||'').trim().slice(0,140);i
 function newsCheck(){if(!cloudOn())return;fetch(LB_DB+'/msg.json').then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.m||!j.ts||UI.prof.msgSeen===j.ts)return;UI.prof.msgSeen=j.ts;saveProf();toast('📣 '+esc(j.m),'prop',9000);}).catch(()=>{});}
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
-  const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
+  const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
   // quick battle: a different world shape every time
   const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
   let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
@@ -421,7 +465,7 @@ function quitXp(){
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
+  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
   let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
@@ -698,7 +742,7 @@ function act(a){
       if(v==='gold')me2.gold+=1e5;else if(v==='troops')me2.troops+=1e5;else if(v==='era')me2.era=4;else if(v==='build'||v==='msl')C[v]=!C[v];
       else if(v==='win'&&!g.over){g.over={w:me2.id,win:true,why:'dom'};g.ev.push({t:'over',win:true,w:me2.id});show(null);}
       if(v!=='win'){renderPause();toast('🛠️ '+t('admDone'),'prop',1500);}break;}
-    case'admin':openAdmin();break;
+    case'admin':openAdmin();break;case'admSt':admStats();renderAdmin();break;
     case'admGive':admGive();break;case'admDel':admDel(v);break;case'lbDel':admLbDel(v);break;case'admMe':admMe();break;case'admMsg':admMsg();break;
     case'closeCard':closeCard();break;
     case'radX':break;
@@ -868,7 +912,7 @@ function bindInput(){
 
 // ── main loop ──
 function frame(ts){
-  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(UI.rad&&(UI.screen||UI.phase!=='play'||!g||g.o.demo))radClose();if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);if(g.o.daily&&p.dailyDone!==g.o.daily){p.dailyDone=g.o.daily;saveProf();}if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
+  requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(UI.rad&&(UI.screen||UI.phase!=='play'||!g||g.o.demo))radClose();if(g&&!g.o.demo&&g.started&&UI.statG!==g){UI.statG=g;stat('games');stat('g_'+(NET.on?'o':g.o.daily?'d':UI.mType||'c'));}if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);SQ.ms+=dt;if(g.o.daily&&p.dailyDone!==g.o.daily){p.dailyDone=g.o.daily;saveProf();}if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
   if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=fitZoom(g)*1.5;if(g.over||g.tick>7000){startDemo();return;}}
   else if(!UI.screen){const K=UI.keys,s=dt*.55/cam.z;if(K.a||K.arrowleft)cam.tx-=s;if(K.d||K.arrowright)cam.tx+=s;if(K.w||K.arrowup)cam.ty-=s;if(K.s||K.arrowdown)cam.ty+=s;}
   if(g.started&&!g.over&&!g.o.mp&&(g.o.demo||(!UI.paused&&!UI.screen))){acc+=dt*(g.o.demo?2:UI.speed);let n=0;while(acc>=100&&n<10){tick(g);acc-=100;n++;}if(n===10)acc=0;}
@@ -890,8 +934,9 @@ function boot(){
   // try to start the music straight away; browsers only allow sound after the first touch, so if it is blocked, say so once
   try{const C=window.AudioContext||window.webkitAudioContext;if(C&&!AU.ctx){const a=AU.ctx=new C();AU.out=a.createGain();AU.out.gain.value=.55;AU.out.connect(a.destination);AU.fx=a.createGain();AU.mus=a.createGain();AU.fx.connect(AU.out);AU.mus.connect(AU.out);applyVol();a.resume().catch(()=>{});
     setTimeout(()=>{if(AU.ctx&&AU.ctx.state!=='running'&&UI.prof.music!==false){const d=toast(t('tapSound'),'prop',0);if(d){const off=()=>{d.remove();for(const ev of['pointerdown','touchstart','keydown'])document.removeEventListener(ev,off,true);};for(const ev of['pointerdown','touchstart','keydown'])document.addEventListener(ev,off,true);}}},900);}}catch(e){}document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AU.ctx)auInit();});setInterval(netTick,50);setInterval(auTick,1000);applyGfx();addEventListener('pagehide',()=>{if(NET.on)netClose();});
+  statBoot();
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
-  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,run:n=>{for(let i=0;i<n;i++)tick(G);}};
+  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,seaIsShorter},UI,R,cam,act,tap:onMapTap,stat:{flush:statFlush,ping:statPing},run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
 boot();
