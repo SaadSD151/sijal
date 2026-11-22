@@ -640,7 +640,7 @@ function act(a){
     case'radBack':if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,false);break;
     case'radAll':if(UI.rad)send({k:'atk',i:UI.rad.i,r:UI.ratio,m:'all'});radClose();break;
     case'radMsl':if(UI.rad)send({k:'msl',s:v,i:UI.rad.i});radClose();break;
-    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>`<button data-a="emoS:${i+1}">${e}</button>`).join('')}</div>`;break;}
+    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?' class="e67"':''}>${e==='67'?'<span>🫴</span><b>67</b><span class="r">🫴</span>':e}</button>`).join('')}</div>`;break;}
     case'emoS':send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
     case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
     case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;

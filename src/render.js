@@ -166,6 +166,11 @@ function drawBadge(c,x,y,s,ts){
   const pulse=.55+.45*Math.sin(ts/420);c.save();if(R.q){c.shadowColor=`rgba(200,140,255,${.55+.4*pulse})`;c.shadowBlur=s*.9;}c.drawImage(g,x-s/2,y-s*.56,s,s*1.12);c.restore();
   if(R.q){const sx=x-s*.3+((ts/9)%(s*1.6))-s*.2;c.save();c.globalAlpha=.35*pulse;c.fillStyle='#fff';c.beginPath();c.arc(sx,y-s*.15,s*.09,0,7);c.fill();c.restore();}
 }
+function drawEmo(c,e,x,y,q,ts){
+  if(e!=='67'){c.font=`${q}px sans-serif`;c.fillText(e,x,y);return;}
+  const b=Math.sin(ts/140)*q*.28;c.font=`900 ${q*.95}px ${FONT}`;c.lineWidth=Math.max(3,q*.16);c.strokeStyle='rgba(6,12,20,.9)';c.save();c.direction='ltr';txt(c,'67',x,y,'#ffd166');c.restore();
+  c.font=`${q*.78}px sans-serif`;c.fillText('🫴',x-q*1.05,y-b);c.save();c.translate(x+q*1.05,y+b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -281,7 +286,7 @@ function draw(g,dt,ts){
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
     if(H&&n.id!==me&&H.ally[n.id]){const q=Math.max(14,f*.95);c.font=`${q}px sans-serif`;c.fillText('🤝',p.x-hw-q*.75,y);c.font=`700 ${f}px ${FONT}`;}
-    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.font=`${q}px sans-serif`;c.globalAlpha=age>.85?(1-age)/.15:1;c.fillText(EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5));c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
+    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.globalAlpha=age>.85?(1-age)/.15:1;drawEmo(c,EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5),q,ts);c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
   }
   R.lb=LB;
   // missiles and pending strikes

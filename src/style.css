@@ -298,6 +298,9 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .gfxp span{font-size:12px;padding:3px 0;background:rgba(0,0,0,.35)}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
+.emg button.e67{grid-column:span 2;display:flex;align-items:center;justify-content:center;gap:2px;background:linear-gradient(180deg,rgba(241,207,110,.25),rgba(201,149,45,.2));border-color:#f1cf6e}
+.e67 b{font-weight:900;color:#ffd166;font-size:20px}.e67 span{font-size:18px;display:inline-block;animation:e67 .55s ease-in-out infinite alternate}.e67 span.r{transform:scaleX(-1);animation-delay:-.275s}
+@keyframes e67{from{translate:0 4px}to{translate:0 -4px}}
 .emg button:active{transform:scale(.92)}
 .auf{display:flex;flex-direction:column;gap:8px;padding:8px 0;border-top:1px solid var(--line2);margin-top:6px}
 .auf h3{margin:0;text-align:center}.auf>.keys{margin:0;text-align:center}

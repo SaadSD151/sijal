@@ -598,24 +598,58 @@ function pocketPass(g){
     let cx=0,cy=0;for(const i of list){cx+=i%W;cy+=(i/W)|0;}g.fills.push({a:nbo,o,tiles:ord,p:0,step:Math.ceil(ord.length/15)});emit(g,'enclave',{a:nbo,d:o,n:qt,x:Math.round(cx/qt),y:Math.round(cy/qt)});
   }
 }
-// ── tank camps: each finished camp rolls out up to 5 tanks, one every 3 seconds. Idle tanks roam the realm;
-// when their realm attacks they race to the front, and every tank there makes the offensive cheaper to push ──
+// ── tank camps: each finished camp rolls out up to 5 tanks, one every 3 seconds. Tanks only ever drive over their own land.
+// At peace they patrol the border near where they are; in an offensive each tank takes its own spot along the front line ──
 const TANK_N=5;
+// shortest walk over the owner's land from tile s to tile e (8 directions), capped so it stays cheap
+function ownPath(g,a,s,e,cap){
+  const W=g.W,H=g.H,own=g.owner,prev=g.prev,q=g.q;if(s===e)return[s];prev.fill(-1);let qh=0,qt=0;prev[s]=s;q[qt++]=s;
+  while(qh<qt&&qt<cap){const c=q[qh++];if(c===e)break;const cx=c%W,cy=(c/W)|0;
+    for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(prev[j]<0&&own[j]===a){prev[j]=c;q[qt++]=j;}}}
+  if(prev[e]<0)return null;const P=[e];let k=e;while(k!==s){k=prev[k];P.push(k);}return P.reverse();
+}
+// own tiles touching the enemy land an offensive is eating, ordered along the front
+function frontLine(g,k){
+  const W=g.W,H=g.H,own=g.owner,T=k.heap.v,seen=new Set(),L=[];
+  for(let m=0;m<T.length&&L.length<400;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;
+    for(let d=0;d<8;d++){const X=x+DX8[d],Y=y+DY8[d];if(X<0||Y<0||X>=W||Y>=H)continue;const j=Y*W+X;if(own[j]===k.a&&!seen.has(j)){seen.add(j);L.push(j);}}}
+  if(L.length<2)return L;let mx=0,my=0;for(const i of L){mx+=i%W;my+=(i/W)|0;}mx/=L.length;my/=L.length;
+  let sxx=0,syy=0,sxy=0;for(const i of L){const dx=i%W-mx,dy=((i/W)|0)-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy;}
+  // order along the longer spread of the front (no trigonometry, so the simulation stays identical on every device)
+  const l=(sxx+syy)/2+Math.sqrt(((sxx-syy)/2)**2+sxy*sxy);let ax=sxy,ay=l-sxx;if(Math.abs(ax)+Math.abs(ay)<1e-9){ax=sxx>=syy?1:0;ay=sxx>=syy?0:1;}
+  L.sort((p,q)=>((p%W)*ax+((p/W)|0)*ay)-((q%W)*ax+((q/W)|0)*ay)||p-q);return L;
+}
+function borderNear(g,a,x0,y0,R){
+  const W=g.W,H=g.H,own=g.owner;for(let t=0;t<16;t++){const x=x0+(((g.rng()*(2*R+1))|0)-R),y=y0+(((g.rng()*(2*R+1))|0)-R);if(x<1||y<1||x>=W-1||y>=H-1)continue;const i=y*W+x;
+    if(own[i]!==a)continue;if(own[i-1]!==a||own[i+1]!==a||own[i-W]!==a||own[i+W]!==a)return i;}return -1;
+}
 function tickTanks(g){
-  const now=g.tick,W=g.W,H=g.H,own=g.owner;
+  const now=g.tick,W=g.W,own=g.owner;
   for(const s of g.structs){if(s.dead||s.type!=='camp'||s.build||!s.owner)continue;
     if(s.tkOwner!==s.owner){s.tkOwner=s.owner;s.tk=0;s.tkAt=now+30;}
-    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({a:s.owner,c:s,x:s.x+.5,y:s.y+.5,tx:s.x+.5,ty:s.y+.5,vx:1,vy:0,k:0,next:now,fire:0});}}
+    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({id:++g.aid,a:s.owner,c:s,x:s.x+.5,y:s.y+.5,vx:1,vy:0,k:0,path:null,pi:0,re:now,fire:0});}}
   for(const k of g.attacks)k.tb=0;
-  const fronts={};for(const k of g.attacks){if(k.naval||k.fx==null||k.troops<1)continue;(fronts[k.a]||(fronts[k.a]=[])).push(k);}
-  for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
-    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}
-    const F=fronts[T.a];let k=null,bd=1e18;if(F)for(const q of F){const d=(q.fx-T.x)**2+(q.fy-T.y)**2;if(d<bd){bd=d;k=q;}}
-    if(k){T.k=k.id;T.tx=k.fx+.5;T.ty=k.fy+.5;}
-    else{T.k=0;if(now>=T.next){T.next=now+40+((g.rng()*60)|0);for(let t=0;t<12;t++){const x=c.x+(((g.rng()*41)|0)-20),y=c.y+(((g.rng()*41)|0)-20);if(x<0||y<0||x>=W||y>=H)continue;const i=y*W+x;if(own[i]===T.a&&g.M.ter[i]>1){T.tx=x+.5;T.ty=y+.5;break;}}}}
-    const dx=T.tx-T.x,dy=T.ty-T.y,d=hyp(dx,dy),sp=k?.55:.12;
-    if(d>.3){const st=Math.min(sp,d);T.x+=dx/d*st;T.y+=dy/d*st;T.vx=dx/d;T.vy=dy/d;}
-    if(k&&d<4){const lv=c.level||1;k.tb=Math.min(2.5,(k.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}
+  // fronts per realm, refreshed when tanks re-plan
+  const byA={};for(const k of g.attacks){if(k.naval||k.troops<1)continue;(byA[k.a]||(byA[k.a]=[])).push(k);}
+  const live=[];for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
+    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}live.push(T);}
+  live.sort((p,q)=>p.id-q.id);const slot={};
+  for(const T of live){const ti=Math.floor(T.y)*W+Math.floor(T.x),F=byA[T.a];
+    // nearest offensive of this realm
+    let k=null,bd=1e18;if(F)for(const q of F){const fx=q.fx!=null?q.fx:q.ox,fy=q.fx!=null?q.fy:q.oy,d=(fx-T.x)**2+(fy-T.y)**2;if(d<bd){bd=d;k=q;}}
+    if(k){const key=k.id;slot[key]=(slot[key]||0)+1;T.slot=slot[key]-1;}
+    if(now>=T.re||(k?T.k!==k.id:T.k)){
+      T.re=now+(k?20:60+((g.rng()*40)|0));let tgt=-1;
+      if(k){if(!k._fl||now-k._flT>=20){k._fl=frontLine(g,k);k._flT=now;}const L=k._fl;
+        if(L.length){const n=live.filter(o=>o.a===T.a).length;tgt=L[Math.min(L.length-1,Math.floor((T.slot+.5)/Math.max(1,n)*L.length))];}}
+      for(const R of k?[6,20]:[10,25,50]){if(tgt>=0)break;tgt=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}
+      T.k=k?k.id:0;let start=ti;if(own[start]!==T.a){const b=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),4);if(b>=0){start=b;T.x=b%W+.5;T.y=((b/W)|0)+.5;}}
+      T.path=tgt>=0&&own[start]===T.a?ownPath(g,T.a,start,tgt,g.N):null;T.pi=0;}
+    // drive along the path; never onto land that is not ours
+    const sp=T.k?.55:.14;let left=sp;
+    while(T.path&&T.pi<T.path.length&&left>0){const n=T.path[T.pi];if(own[n]!==T.a){T.path=null;T.re=now;break;}const nx=n%W+.5,ny=((n/W)|0)+.5,dx=nx-T.x,dy=ny-T.y,d=hyp(dx,dy);
+      if(d<=left){T.x=nx;T.y=ny;left-=d;T.pi++;}else{T.x+=dx/d*left;T.y+=dy/d*left;T.vx=dx/d;T.vy=dy/d;left=0;}}
+    if(T.k&&(!T.path||T.pi>=T.path.length)){const kk=F&&F.find(q=>q.id===T.k);if(kk){const lv=T.c.level||1;kk.tb=Math.min(2.5,(kk.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}}
 }
 function tickFills(g){
   for(let j=g.fills.length-1;j>=0;j--){const f=g.fills[j],K=g.nations[f.a];if(!K.alive){g.fills.splice(j,1);continue;}

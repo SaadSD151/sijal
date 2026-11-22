@@ -310,6 +310,9 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .gfxp span{font-size:12px;padding:3px 0;background:rgba(0,0,0,.35)}
 .emg{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;max-height:200px;overflow:auto;padding:4px 0}
 .emg button{font-size:22px;line-height:1;padding:7px 0;border-radius:8px;border:1px solid var(--line2);background:rgba(255,255,255,.04);cursor:pointer}
+.emg button.e67{grid-column:span 2;display:flex;align-items:center;justify-content:center;gap:2px;background:linear-gradient(180deg,rgba(241,207,110,.25),rgba(201,149,45,.2));border-color:#f1cf6e}
+.e67 b{font-weight:900;color:#ffd166;font-size:20px}.e67 span{font-size:18px;display:inline-block;animation:e67 .55s ease-in-out infinite alternate}.e67 span.r{transform:scaleX(-1);animation-delay:-.275s}
+@keyframes e67{from{translate:0 4px}to{translate:0 -4px}}
 .emg button:active{transform:scale(.92)}
 .auf{display:flex;flex-direction:column;gap:8px;padding:8px 0;border-top:1px solid var(--line2);margin-top:6px}
 .auf h3{margin:0;text-align:center}.auf>.keys{margin:0;text-align:center}
@@ -444,7 +447,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='mobile';(function(){"use strict";
-const BUILD_ID='a54f438a3e';
+const BUILD_ID='fb52ffa115';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -477,7 +480,7 @@ function patOn(k,x,y){switch(k){case'stripes':return(x+y)%6<2;case'dots':return 
   case'diamonds':return(Math.abs(x%8-4)+Math.abs(y%8-4))===3;case'zigzag':return(y+(x%8<4?x%8:7-x%8))%6<2;
   case'stars':{const a=x%9,b=y%9;return(a===4&&b>=3&&b<=5)||(b===4&&a>=3&&a<=5);}}return false;}
 // emoji a realm can show over its land
-const EMO=['😀','😊','😂','😍','😎','🤔','🙄','😢','😭','😱','😡','🤬','😈','🤡','💀','👍','👎','👏','🙏','💪','🤝','🕊️','🏳️','⚔️','🔥','💣','☢️','⚠️','🎯','👑','💰','❤️','💔','🆘','⏳','👀'];
+const EMO=['😀','😊','😂','😍','😎','🤔','🙄','😢','😭','😱','😡','🤬','😈','🤡','💀','👍','👎','👏','🙏','💪','🤝','🕊️','🏳️','⚔️','🔥','💣','☢️','⚠️','🎯','👑','💰','❤️','💔','🆘','⏳','👀','67'];
 const PAL=[[231,76,60],[52,152,219],[46,204,113],[241,196,15],[155,89,182],[230,126,34],[26,188,156],[236,112,160],[127,140,255],[149,165,60],[211,84,0],[94,214,214],[190,144,212],[255,165,120],[100,180,100],[170,120,80],[220,220,110],[90,120,200],[200,90,130],[60,160,140],[240,150,200],[140,200,240],[180,60,60],[120,120,160]];
 const DX8=[1,-1,0,0,1,1,-1,-1],DY8=[0,0,1,-1,1,-1,1,-1];
 
@@ -1197,24 +1200,58 @@ function pocketPass(g){
     let cx=0,cy=0;for(const i of list){cx+=i%W;cy+=(i/W)|0;}g.fills.push({a:nbo,o,tiles:ord,p:0,step:Math.ceil(ord.length/15)});emit(g,'enclave',{a:nbo,d:o,n:qt,x:Math.round(cx/qt),y:Math.round(cy/qt)});
   }
 }
-// ── tank camps: each finished camp rolls out up to 5 tanks, one every 3 seconds. Idle tanks roam the realm;
-// when their realm attacks they race to the front, and every tank there makes the offensive cheaper to push ──
+// ── tank camps: each finished camp rolls out up to 5 tanks, one every 3 seconds. Tanks only ever drive over their own land.
+// At peace they patrol the border near where they are; in an offensive each tank takes its own spot along the front line ──
 const TANK_N=5;
+// shortest walk over the owner's land from tile s to tile e (8 directions), capped so it stays cheap
+function ownPath(g,a,s,e,cap){
+  const W=g.W,H=g.H,own=g.owner,prev=g.prev,q=g.q;if(s===e)return[s];prev.fill(-1);let qh=0,qt=0;prev[s]=s;q[qt++]=s;
+  while(qh<qt&&qt<cap){const c=q[qh++];if(c===e)break;const cx=c%W,cy=(c/W)|0;
+    for(let d=0;d<8;d++){const x=cx+DX8[d],y=cy+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(prev[j]<0&&own[j]===a){prev[j]=c;q[qt++]=j;}}}
+  if(prev[e]<0)return null;const P=[e];let k=e;while(k!==s){k=prev[k];P.push(k);}return P.reverse();
+}
+// own tiles touching the enemy land an offensive is eating, ordered along the front
+function frontLine(g,k){
+  const W=g.W,H=g.H,own=g.owner,T=k.heap.v,seen=new Set(),L=[];
+  for(let m=0;m<T.length&&L.length<400;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;
+    for(let d=0;d<8;d++){const X=x+DX8[d],Y=y+DY8[d];if(X<0||Y<0||X>=W||Y>=H)continue;const j=Y*W+X;if(own[j]===k.a&&!seen.has(j)){seen.add(j);L.push(j);}}}
+  if(L.length<2)return L;let mx=0,my=0;for(const i of L){mx+=i%W;my+=(i/W)|0;}mx/=L.length;my/=L.length;
+  let sxx=0,syy=0,sxy=0;for(const i of L){const dx=i%W-mx,dy=((i/W)|0)-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy;}
+  // order along the longer spread of the front (no trigonometry, so the simulation stays identical on every device)
+  const l=(sxx+syy)/2+Math.sqrt(((sxx-syy)/2)**2+sxy*sxy);let ax=sxy,ay=l-sxx;if(Math.abs(ax)+Math.abs(ay)<1e-9){ax=sxx>=syy?1:0;ay=sxx>=syy?0:1;}
+  L.sort((p,q)=>((p%W)*ax+((p/W)|0)*ay)-((q%W)*ax+((q/W)|0)*ay)||p-q);return L;
+}
+function borderNear(g,a,x0,y0,R){
+  const W=g.W,H=g.H,own=g.owner;for(let t=0;t<16;t++){const x=x0+(((g.rng()*(2*R+1))|0)-R),y=y0+(((g.rng()*(2*R+1))|0)-R);if(x<1||y<1||x>=W-1||y>=H-1)continue;const i=y*W+x;
+    if(own[i]!==a)continue;if(own[i-1]!==a||own[i+1]!==a||own[i-W]!==a||own[i+W]!==a)return i;}return -1;
+}
 function tickTanks(g){
-  const now=g.tick,W=g.W,H=g.H,own=g.owner;
+  const now=g.tick,W=g.W,own=g.owner;
   for(const s of g.structs){if(s.dead||s.type!=='camp'||s.build||!s.owner)continue;
     if(s.tkOwner!==s.owner){s.tkOwner=s.owner;s.tk=0;s.tkAt=now+30;}
-    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({a:s.owner,c:s,x:s.x+.5,y:s.y+.5,tx:s.x+.5,ty:s.y+.5,vx:1,vy:0,k:0,next:now,fire:0});}}
+    if(s.tk<TANK_N&&now>=s.tkAt){s.tk++;s.tkAt=now+30;g.tanks.push({id:++g.aid,a:s.owner,c:s,x:s.x+.5,y:s.y+.5,vx:1,vy:0,k:0,path:null,pi:0,re:now,fire:0});}}
   for(const k of g.attacks)k.tb=0;
-  const fronts={};for(const k of g.attacks){if(k.naval||k.fx==null||k.troops<1)continue;(fronts[k.a]||(fronts[k.a]=[])).push(k);}
-  for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
-    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}
-    const F=fronts[T.a];let k=null,bd=1e18;if(F)for(const q of F){const d=(q.fx-T.x)**2+(q.fy-T.y)**2;if(d<bd){bd=d;k=q;}}
-    if(k){T.k=k.id;T.tx=k.fx+.5;T.ty=k.fy+.5;}
-    else{T.k=0;if(now>=T.next){T.next=now+40+((g.rng()*60)|0);for(let t=0;t<12;t++){const x=c.x+(((g.rng()*41)|0)-20),y=c.y+(((g.rng()*41)|0)-20);if(x<0||y<0||x>=W||y>=H)continue;const i=y*W+x;if(own[i]===T.a&&g.M.ter[i]>1){T.tx=x+.5;T.ty=y+.5;break;}}}}
-    const dx=T.tx-T.x,dy=T.ty-T.y,d=hyp(dx,dy),sp=k?.55:.12;
-    if(d>.3){const st=Math.min(sp,d);T.x+=dx/d*st;T.y+=dy/d*st;T.vx=dx/d;T.vy=dy/d;}
-    if(k&&d<4){const lv=c.level||1;k.tb=Math.min(2.5,(k.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}
+  // fronts per realm, refreshed when tanks re-plan
+  const byA={};for(const k of g.attacks){if(k.naval||k.troops<1)continue;(byA[k.a]||(byA[k.a]=[])).push(k);}
+  const live=[];for(let j=g.tanks.length-1;j>=0;j--){const T=g.tanks[j],c=T.c,A=g.nations[T.a];
+    if(c.dead||c.owner!==T.a||!A||!A.alive){if(c.tk>0&&c.tkOwner===T.a)c.tk--;g.tanks[j]=g.tanks[g.tanks.length-1];g.tanks.pop();continue;}live.push(T);}
+  live.sort((p,q)=>p.id-q.id);const slot={};
+  for(const T of live){const ti=Math.floor(T.y)*W+Math.floor(T.x),F=byA[T.a];
+    // nearest offensive of this realm
+    let k=null,bd=1e18;if(F)for(const q of F){const fx=q.fx!=null?q.fx:q.ox,fy=q.fx!=null?q.fy:q.oy,d=(fx-T.x)**2+(fy-T.y)**2;if(d<bd){bd=d;k=q;}}
+    if(k){const key=k.id;slot[key]=(slot[key]||0)+1;T.slot=slot[key]-1;}
+    if(now>=T.re||(k?T.k!==k.id:T.k)){
+      T.re=now+(k?20:60+((g.rng()*40)|0));let tgt=-1;
+      if(k){if(!k._fl||now-k._flT>=20){k._fl=frontLine(g,k);k._flT=now;}const L=k._fl;
+        if(L.length){const n=live.filter(o=>o.a===T.a).length;tgt=L[Math.min(L.length-1,Math.floor((T.slot+.5)/Math.max(1,n)*L.length))];}}
+      for(const R of k?[6,20]:[10,25,50]){if(tgt>=0)break;tgt=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}
+      T.k=k?k.id:0;let start=ti;if(own[start]!==T.a){const b=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),4);if(b>=0){start=b;T.x=b%W+.5;T.y=((b/W)|0)+.5;}}
+      T.path=tgt>=0&&own[start]===T.a?ownPath(g,T.a,start,tgt,g.N):null;T.pi=0;}
+    // drive along the path; never onto land that is not ours
+    const sp=T.k?.55:.14;let left=sp;
+    while(T.path&&T.pi<T.path.length&&left>0){const n=T.path[T.pi];if(own[n]!==T.a){T.path=null;T.re=now;break;}const nx=n%W+.5,ny=((n/W)|0)+.5,dx=nx-T.x,dy=ny-T.y,d=hyp(dx,dy);
+      if(d<=left){T.x=nx;T.y=ny;left-=d;T.pi++;}else{T.x+=dx/d*left;T.y+=dy/d*left;T.vx=dx/d;T.vy=dy/d;left=0;}}
+    if(T.k&&(!T.path||T.pi>=T.path.length)){const kk=F&&F.find(q=>q.id===T.k);if(kk){const lv=T.c.level||1;kk.tb=Math.min(2.5,(kk.tb||0)+.22*(1+.15*(lv-1)));T.fire=now;}}}
 }
 function tickFills(g){
   for(let j=g.fills.length-1;j>=0;j--){const f=g.fills[j],K=g.nations[f.a];if(!K.alive){g.fills.splice(j,1);continue;}
@@ -1599,6 +1636,11 @@ function drawBadge(c,x,y,s,ts){
   const pulse=.55+.45*Math.sin(ts/420);c.save();if(R.q){c.shadowColor=`rgba(200,140,255,${.55+.4*pulse})`;c.shadowBlur=s*.9;}c.drawImage(g,x-s/2,y-s*.56,s,s*1.12);c.restore();
   if(R.q){const sx=x-s*.3+((ts/9)%(s*1.6))-s*.2;c.save();c.globalAlpha=.35*pulse;c.fillStyle='#fff';c.beginPath();c.arc(sx,y-s*.15,s*.09,0,7);c.fill();c.restore();}
 }
+function drawEmo(c,e,x,y,q,ts){
+  if(e!=='67'){c.font=`${q}px sans-serif`;c.fillText(e,x,y);return;}
+  const b=Math.sin(ts/140)*q*.28;c.font=`900 ${q*.95}px ${FONT}`;c.lineWidth=Math.max(3,q*.16);c.strokeStyle='rgba(6,12,20,.9)';c.save();c.direction='ltr';txt(c,'67',x,y,'#ffd166');c.restore();
+  c.font=`${q*.78}px sans-serif`;c.fillText('🫴',x-q*1.05,y-b);c.save();c.translate(x+q*1.05,y+b);c.scale(-1,1);c.fillText('🫴',0,0);c.restore();
+}
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
@@ -1714,7 +1756,7 @@ function draw(g,dt,ts){
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
     if(H&&n.id!==me&&H.ally[n.id]){const q=Math.max(14,f*.95);c.font=`${q}px sans-serif`;c.fillText('🤝',p.x-hw-q*.75,y);c.font=`700 ${f}px ${FONT}`;}
-    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.font=`${q}px sans-serif`;c.globalAlpha=age>.85?(1-age)/.15:1;c.fillText(EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5));c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
+    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.globalAlpha=age>.85?(1-age)/.15:1;drawEmo(c,EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5),q,ts);c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
   }
   R.lb=LB;
   // missiles and pending strikes
@@ -1958,6 +2000,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'4.6',d:'2026-11-22',ar:['🪖 صلّحنا الدبابات: ما عاد تمشي في البحر ولا أراضي الأعداء، تمشي بس داخل دولتك','🛡️ وقت السلم تقعد عند حدودك بدل ما ترجع للمعسكر، ووقت الهجوم تتوزع على طول خط الجبهة بدل ما تتكوّم في نقطة وحدة','🫴 ميم 67 الجديد في الإيموجي: يطلع فوق دولتك واليدين تتحرك، ويشوفه الكل'],en:['🪖 Tanks fixed: they no longer cross the sea or enemy land, only your own realm','🛡️ At peace they wait at your border instead of returning to camp, and in an attack they spread along the whole front instead of bunching up','🫴 New 67 meme in the emojis: shown over your realm with moving hands, for everyone to see']},
  {v:'4.5',d:'2026-11-21',ar:['🪖 مبنى جديد: معسكر الدبابات (عصر البارود). يطلّع 5 دبابات، وحدة كل 3 ثواني','🛡️ الدبابات تتجول في دولتك، ولما تهجم تروح بسرعة للجبهة وتقوّي الهجوم كثير، ومعها تفجيرات خفيفة','🎨 شكل الدبابة: هيكل حديدي بإطار ذهبي وبرج بلون دولتك، ولما تبعّد تصير نقطة تتحرك'],en:['🪖 New building: the Tank Camp (Age of Gunpowder). It rolls out 5 tanks, one every 3 seconds','🛡️ Tanks roam your realm and race to the front when you attack, making it much stronger, with light blasts','🎨 Tanks have a steel hull with a gold rim and a turret in your colour, and turn into moving dots when zoomed out']},
  {v:'4.4',d:'2026-11-20',ar:['🛡️ علامة السيزون صفر الأسطورية: درع بنفسجي بنجمة ذهبية يلمع جنب اسمك في القيم والمتصدرين وغرف الأونلاين، وتقدر تخفيها من التخصيص','💸 أنت تختار تصرف خبرتك: زر «افتح السيزون صفر» بـ10,000، وبعدها زر «افتح» على كل مستوى بـ1,000','🎖️ الباتل باس صار اسمه «السيزون صفر» وفيه 20 مستوى، كل مستوى بـ1000 خبرة، و5 سكنات جديدة: معيّنات، متعرّج، يشم، قرمزي، فضّي','🗂️ فوق القائمة الرئيسية صار فيه خانات: القائمة، والسيزون صفر، والتخصيص اللي تغيّر منه سكناتك','🎯 الدائرة في الجوال صارت أصغر وأسرع، وبدون الشريط والأزرار الزيادة','📅 تحدي اليوم صار محاولة وحدة بس كل يوم، وأول ما تبدأه تنحسب. الخبرة فيه ×1.5 و+50 لو فزت'],en:['🛡️ The legendary Season Zero badge: a glowing violet shield with a gold star beside your name in battle, on the leaderboard and in online rooms; hide it in Customize','💸 You choose when to spend: Open Season Zero for 10,000, then Claim each tier for 1,000','🎖️ The Battle Pass is now Season Zero with 20 tiers at 1,000 experience each, and 5 new skins: diamonds, zigzag, jade, crimson, silver','🗂️ Tabs on top of the main menu: Menu, Season Zero, and Customize where you change your skins','🎯 The phone circle is smaller and quicker, without the extra bar and buttons','📅 The daily challenge is now one attempt a day, counted as soon as you start it; experience there is ×1.5 and +50 if you win']},
  {v:'4.0',d:'2026-11-20',ar:['🎖️ الباتل باس وصل! يفتح لما توصل 10 آلاف خبرة، وكل 1000 خبرة بعدها تفتح مستوى جديد، والمجموع 15 مستوى','🎨 نقشات للأرض: خطوط، نقاط، شطرنج، شبكة، أمواج، أسهم، طوب، نجوم، تتلوّن فيها دولتك كاملة','🏰 أشكال للمباني: ذهبي، حجري، نيون، ملكي، جليدي، أوبسيديان، ناري','👀 السكنات يشوفها كل اللاعبين معك في الأونلاين، تلبسها من زر «الباتل باس» في القائمة'],en:['🎖️ The Battle Pass is here! It opens at 10,000 experience, and every 1,000 after that unlocks a new tier, 15 tiers in all','🎨 Land patterns: stripes, dots, checker, grid, waves, chevrons, bricks, stars, covering your whole realm','🏰 Building styles: golden, stone, neon, royal, ice, obsidian, fire','👀 Other players see your skins online; equip them from the Battle Pass button in the menu']},
@@ -1966,8 +2009,7 @@ const LOG=[
  {v:'3.7',d:'2026-11-19',ar:['🛠️ صلّحنا قلتش أسعار المباني: سعر المدينة كان يوصل ملايين لما تحتل مدن كثير. الحين السعر يتحسب بس من المباني اللي بنيتها بنفسك، والمدن اللي تحتلها ما ترفعه','💰 نفس الإصلاح على كل المباني: منصة الصواريخ والقبة والمصنع والميناء والحصن. بعد سادس مبنى من نفس النوع السعر يزيد بشوي بس، فما عاد يطير','✏️ اسمك في صفحة الحساب صار له زر «حفظ» وزر «رجّع القديم»','🏆 قائمة المتصدرين تنظفت من الأسماء المكررة اللي ما لعبت ولا معركة'],en:['🛠️ Fixed the building price glitch: a city could cost millions after you captured many. Now the price only counts buildings you built yourself, so captured cities no longer raise it','💰 The same fix for every building: silos, domes, factories, ports and forts. After the 6th of a kind the price only rises a little, so it never runs away','✏️ Your name on the Account page now has Save and Undo buttons','🏆 The leaderboard no longer lists repeated names that never played a battle']},
  {v:'3.5',d:'2026-11-19',ar:['⚖️ توازن جديد للعبة: الجنود يزيدون بشكل واقعي (حوالي 30 ألف بعد دقيقتين بدل ما توصل مليون)، والقيم يطول 15 لين 25 دقيقة','💰 المباني صارت أغلى: كل مبنى جديد من نفس النوع أغلى من اللي قبله بحوالي 40٪، والعصور أغلى','🏙️ المدن المحايدة في الخرائط صارت أقل، وأيقونات المدن والمباني صارت أكبر بكثير','🛡️ دائرة الحصن والقبة والدفاع البحري صارت ما تتعدى حدودك، ولها خط واضح على طرفها','🤝 علامة التحالف تطلع جنب اسم أي دولة متحالف معها','🗺️ كل الخرائط صارت أكبر بحوالي 30٪ والبحر أقل','🖼️ في إعدادات الجرافيكس صورة لكل مستوى توريك الفرق','📏 مدى كل المباني صار أكبر، والمسافة بين المباني أكبر عشان ما تتراكب، وأرضك أول ما تبدأ صارت تقريباً 3 أضعاف','🏕️ القبائل الصغيرة صارت تهجم على طول بكل جنودها وتخلي 2000 بس، فتكبر بسرعة من أول القيم'],en:['⚖️ New balance: troops grow realistically (about 30K after two minutes instead of reaching a million), and a match lasts 15 to 25 minutes','💰 Buildings cost more: each new one of a kind costs about 40% more than the last, and ages cost more','🏙️ Fewer neutral cities on the maps, and bigger city and building icons','🛡️ Fort, dome and coastal gun areas stop at your border, with a clear outline on their edge','🤝 A handshake shows next to the name of every realm you are allied with','🗺️ Every map is about 30% bigger with less sea','🖼️ The graphics settings show a picture of each level so you can see the difference','📏 Every building has a larger range, buildings sit further apart so they do not overlap, and your starting land is about three times bigger','🏕️ Small tribes now attack right away with everything above a 2000-man reserve, so they grow fast from the start']},
  {v:'3.4',d:'2026-11-19',ar:['🔢 رقم الجنود صار يمشي ورا خط الهجوم ويتحرك مع الجبهة كاملة، يميل مع الحدود ويكبر لما الجبهة تكبر','🌾 رقم الجنود ما يطلع لما تهجم على أرض فاضية، بس لما تهجم على دولة'],en:['🔢 The troop count now rides behind the attack line and moves with the whole front, tilting along the border and growing with it','🌾 No troop count when you attack empty land, only against realms']},
- {v:'3.3',d:'2026-11-19',ar:['🟢 أي أرض فاضية تحاصرها بأرضك من كل الجهات تنضم لك تلقائياً مهما كان حجمها، وتتعبّى من الأطراف للنص بأنميشن','🎯 القائمة الدائرية صارت أوضح وأجمل: تحت كل زر كلمة تشرحه (هجوم، بحري، البطاقة، صواريخ، كل الحدود)','🖱️ كلك يمين في الكمبيوتر ما يطلّع قائمة المتصفح فوق الدائرة','🗡️ السيفين لما تقضي على دولة صاروا أصغر'],en:['🟢 Any empty land you ring on every side joins you automatically whatever its size, filling from the edges inward','🎯 A clearer, nicer radial menu: a word under each button (Attack, By sea, Card, Missiles, All borders)','🖱️ Right click on PC no longer opens the browser menu over the circle','🗡️ Smaller crossed swords when you wipe out a realm']},
- {v:'3.2',d:'2026-11-19',ar:['😡 البوتات الكبار صارت ترد عليك بإيموجي: لو هجمت عليها أو غدرت فيها أو أنهيت تحالف كانت تبيه، ولو رفضت لأنها ما تثق فيك، ولو أهديتها ذهب','💬 أسباب رفض السلام والتحالف صارت كثيرة وواقعية وتتغير كل مرة','🏗️ كل المباني تنبني خلال 6 ثواني بدل 10','🔢 رقم جنود العدو على حدودك صار ثابت مثل رقمك','🎮 قائمة الجرافيكس توضح وش ضحّينا فيه بالمنخفض عشان السلاسة، ووش أضفنا بالعالي، والفصول باقية في كل المستويات'],en:['😡 Big bots now answer you with emojis: when you attack or betray them, end an alliance they wanted, refuse you for lack of trust, or receive your gold','💬 Many varied, realistic reasons when peace or alliance is refused','🏗️ Every building finishes in 6 seconds instead of 10','🔢 The enemy troop count on your border is now as steady as yours','🎮 The graphics menu explains what Low gives up for smoothness and what High adds']}];
+ {v:'3.3',d:'2026-11-19',ar:['🟢 أي أرض فاضية تحاصرها بأرضك من كل الجهات تنضم لك تلقائياً مهما كان حجمها، وتتعبّى من الأطراف للنص بأنميشن','🎯 القائمة الدائرية صارت أوضح وأجمل: تحت كل زر كلمة تشرحه (هجوم، بحري، البطاقة، صواريخ، كل الحدود)','🖱️ كلك يمين في الكمبيوتر ما يطلّع قائمة المتصفح فوق الدائرة','🗡️ السيفين لما تقضي على دولة صاروا أصغر'],en:['🟢 Any empty land you ring on every side joins you automatically whatever its size, filling from the edges inward','🎯 A clearer, nicer radial menu: a word under each button (Attack, By sea, Card, Missiles, All borders)','🖱️ Right click on PC no longer opens the browser menu over the circle','🗡️ Smaller crossed swords when you wipe out a realm']}];
 function t(k,...a){let s=TX[UI.lang][k];if(s==null)s=TX.ar[k];if(s==null)return k;if(typeof s!=='string')return s;a.forEach((v,i)=>{s=s.split('{'+i+'}').join(v);});return s;}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function natName(n){return n.minor?tribeName(n.tribe,UI.lang):n.pname?n.pname:n.human||n.nameIdx<0?(UI.prof&&UI.prof.name)||t('defName'):NAT[UI.lang][n.nameIdx][0];}
@@ -2832,7 +2874,7 @@ function act(a){
     case'radBack':if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,false);break;
     case'radAll':if(UI.rad)send({k:'atk',i:UI.rad.i,r:UI.ratio,m:'all'});radClose();break;
     case'radMsl':if(UI.rad)send({k:'msl',s:v,i:UI.rad.i});radClose();break;
-    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>`<button data-a="emoS:${i+1}">${e}</button>`).join('')}</div>`;break;}
+    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?' class="e67"':''}>${e==='67'?'<span>🫴</span><b>67</b><span class="r">🫴</span>':e}</button>`).join('')}</div>`;break;}
     case'emoS':send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
     case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
     case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;
