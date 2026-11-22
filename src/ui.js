@@ -97,7 +97,7 @@ const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins',
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div>${UI.admin?`<button class="btn admb" data-a="admin">🛠️ ${t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
   <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
@@ -311,7 +311,7 @@ function prep(g){
 function startDemo(){G=newGame({w:200,h:128,seed:(Math.random()*2**31)|0,type:'continents',bots:9,diff:1,demo:true});prep(G);startGame(G);}
 // ── battle pass ──
 // experience is spent on the season: 10,000 opens it, then each tier takes 1,000, claimed automatically as soon as you have it
-const passTier=p=>p.passT>0?Math.min(PASS.length,p.passT):0;
+const passTier=p=>UI.owner?PASS.length:p.passT>0?Math.min(PASS.length,p.passT):0;
 // buying is the player's choice: open the season for 10,000, then claim each tier in order for 1,000
 function passBuy(){
   const p=UI.prof;if(p.passT==null)p.passT=-1;const on=p.passT>=0,cost=on?PASS_STEP:PASS_AT;
@@ -322,9 +322,9 @@ function passBuy(){
 }
 const canBuy=p=>{const n=p.passT==null?-1:p.passT;return n<0?(p.xp|0)>=PASS_AT:n<PASS.length&&(p.xp|0)>=PASS_STEP;};
 const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
-const hasBadge=p=>(p.passT==null?-1:p.passT)>=0&&!p.hideBadge;
+const hasPass=p=>UI.owner||(p.passT==null?-1:p.passT)>=0,hasBadge=p=>hasPass(p)&&!p.hideBadge;
 const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
-function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0,pass:(p.passT==null?-1:p.passT)>=0?1:0};}
+function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0,pass:hasPass(p)?1:0};}
 const SKP={};
 function skinPreview(t,k){
   const key=t+k;if(SKP[key])return SKP[key];const c=mk(96,64),x=c.getContext('2d'),col=FAC[UI.prof.fac||'hawks'].c,css=`rgb(${col[0]},${col[1]},${col[2]})`;
@@ -334,7 +334,7 @@ function skinPreview(t,k){
   return SKP[key]=c.toDataURL();
 }
 function renderPass(){
-  const p=UI.prof,n=passTier(p),k=p.skin||{},on=p.passT>=0,xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
+  const p=UI.prof,n=passTier(p),k=p.skin||{},on=hasPass(p),xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
   const head=on?(n>=PASS.length?t('bpDone'):xp>=PASS_STEP?t('bpReady',n+1):t('bpNext',fmt(PASS_STEP-xp),n+1)):xp>=PASS_AT?t('bpCanOpen'):t('bpLock',fmt(PASS_AT-xp));
   const openBtn=on?'':`<button class="btn big bpbuy${xp>=PASS_AT?'':' low'}" data-a="bpBuy">🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
   $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}
@@ -344,7 +344,7 @@ function renderPass(){
 // customization: equip what you have unlocked
 function renderSkins(){
   const p=UI.prof,k=p.skin||{},n=passTier(p),sec=(ty,lab)=>{const L=PASS.slice(0,n).filter(e=>e[0]===ty);return`<h3>${lab}</h3><div class="bpg free"><div class="bpc got${!k[ty]?' eq':''}"><div class="none">✕</div><b>${t('skNone')}</b><button class="btn sm${!k[ty]?'':' ok'}" data-a="skin:${ty}:">${!k[ty]?'✓ '+t('bpOn'):t('bpWear')}</button></div>${L.map(([,id])=>{const eq=k[ty]===id;return`<div class="bpc got${eq?' eq':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><button class="btn sm${eq?'':' ok'}" data-a="skin:${ty}:${eq?'':id}">${eq?'✓ '+t('bpOn'):t('bpWear')}</button></div>`;}).join('')}</div>`;};
-  const bdg=(p.passT==null?-1:p.passT)>=0?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
+  const bdg=hasPass(p)?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
   $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 // ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
@@ -352,8 +352,8 @@ const ADMIN_ROOT='';
 function adminCheck(){
   const p=UI.prof,f=p.fb||{};if(!cloudOn()||!f.user)return;const was=UI.admin;
   lbAuth().then(f=>{fetch(LB_DB+'/names/'+encodeURIComponent(f.user.toLowerCase())+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).catch(()=>{});
-    if(ADMIN_ROOT&&f.user.toLowerCase()===ADMIN_ROOT)return true;return fetch(LB_DB+'/admins/'+f.uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(v=>!!v);})
-  .then(a=>{UI.admin=!!a;if(UI.admin!==!!was)renderMenu();}).catch(()=>{});
+    UI.owner=!!(ADMIN_ROOT&&f.user.toLowerCase()===ADMIN_ROOT);if(UI.owner)return true;return fetch(LB_DB+'/admins/'+f.uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(v=>!!v);})
+  .then(a=>{UI.admin=!!a;if(UI.admin!==!!was)renderMenu();if(UI.owner&&UI.screen==='help'&&$('#help .bpg'))renderPass();}).catch(()=>{});
 }
 function admReq(path,o){return lbAuth().then(f=>fetch(LB_DB+path+(path.includes('?')?'&':'?')+'auth='+f.tok,o||{}).then(r=>{if(!r.ok)throw 0;return r.json();}));}
 function openAdmin(){if(!UI.admin)return;UI.admLb=null;UI.admList=null;renderAdmin();show('help');
@@ -361,9 +361,9 @@ function openAdmin(){if(!UI.admin)return;UI.admLb=null;UI.admList=null;renderAdm
   fetch(LB_DB+'/lb.json').then(r=>r.json()).then(j=>{UI.admLb=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).sort((a,b)=>(b.w|0)-(a.w|0));renderAdmin();}).catch(()=>{});}
 function renderAdmin(){
   const L=UI.admList,B=UI.admLb,p=UI.prof;
-  $('#help').innerHTML=`<h2>🛠️ ${t('admin')}</h2>
-  <div class="hp"><h3>${t('admAdmins')}</h3><div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>
-  ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
+  $('#help').innerHTML=`<h2>${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2>
+  <div class="hp"><h3>${t('admAdmins')}</h3>${UI.owner?`<div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>`:''}
+  ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:UI.owner?`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`:''}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
   <div class="hp"><h3>${t('admMsgT')}</h3><div class="row"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn sm ok" data-a="admMsg">${t('admSend')}</button></div></div>
   <div class="hp"><h3>${t('admMeT')}</h3><div class="row"><label>${t('x_xp')} <input id="admXp" type="number" min="0" value="${p.xp|0}" style="width:7em"></label><label>${t('bpTierL')} <input id="admPt" type="number" min="-1" max="${PASS.length}" value="${p.passT==null?-1:p.passT}" style="width:4em"></label><button class="btn sm ok" data-a="admMe">${t('admSave')}</button></div></div>
   <div class="hp"><h3>${t('lb')}</h3>${B==null?`<p class="keys">${t('lbLoad')}</p>`:B.map(r=>`<div class="hpr"><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${r.w|0} ${t('wins')} · ${r.g|0}</small><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">${t('admDelRow')}</button></div>`).join('')}</div>
@@ -680,8 +680,8 @@ function act(a){
     case'radBack':if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,false);break;
     case'radAll':if(UI.rad)send({k:'atk',i:UI.rad.i,r:UI.ratio,m:'all'});radClose();break;
     case'radMsl':if(UI.rad)send({k:'msl',s:v,i:UI.rad.i});radClose();break;
-    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?` class="e67${(UI.prof.passT==null?-1:UI.prof.passT)>=0?'':' lock'}"`:''}>${e==='67'?`<span>🫴</span><b>67</b><span class="r">🫴</span>${(UI.prof.passT==null?-1:UI.prof.passT)>=0?'':'<i>🔒</i>'}`:e}</button>`).join('')}</div>`;break;}
-    case'emoS':if(EMO[+v-1]==='67'&&!((p.passT==null?-1:p.passT)>=0)){sfx('err');toast(t('e67'),'bad',2600);break;}send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
+    case'emoOpen':{if($('#cAmt .emg')&&UI.emoTo===+v){$('#cAmt').innerHTML='';break;}UI.emoTo=+v;UI.cardAmt=null;$('#cAmt').innerHTML=`<div class="emg">${EMO.map((e,i)=>[e,i]).sort((x,y)=>(y[0]==='67')-(x[0]==='67')).map(([e,i])=>`<button data-a="emoS:${i+1}"${e==='67'?` class="e67${hasPass(UI.prof)?'':' lock'}"`:''}>${e==='67'?`<span>🫴</span><b>67</b><span class="r">🫴</span>${hasPass(UI.prof)?'':'<i>🔒</i>'}`:e}</button>`).join('')}</div>`;break;}
+    case'emoS':if(EMO[+v-1]==='67'&&!hasPass(p)){sfx('err');toast(t('e67'),'bad',2600);break;}send(UI.emoTo?{k:'emo',e:+v,d:UI.emoTo}:{k:'emo',e:+v});$('#cAmt').innerHTML='';break;
     case'embAll':send({k:'emb',v:+v});UI.cardKey='';break;
     case'emb':send({k:'emb',d:+v,v:+w});UI.cardKey='';break;
     case'auOpen':if($('#cAmt .auf'))$('#cAmt').innerHTML='';else auOpen();break;
