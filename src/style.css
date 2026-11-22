@@ -145,6 +145,8 @@ html,body,#app,#hud,.screen,#gToasts{touch-action:manipulation}
 .bpc.cant{background:linear-gradient(180deg,rgba(20,83,45,.35),rgba(5,46,22,.4));border-color:#166534}
 .bpc.cant .btn,.bpc.cant .btn:disabled{background:linear-gradient(180deg,#166534,#0f3d22);border-color:#14532d;color:#86a893;opacity:1;filter:none;cursor:default}
 .sup{flex:none;width:min(560px,100%);display:flex;flex-direction:column;gap:6px;align-items:center;margin:6px 0;padding:12px;border-radius:14px;background:linear-gradient(180deg,rgba(138,92,240,.25),rgba(91,43,196,.2));border:1px solid #c9a2ff;text-align:center}.sup span{color:var(--dim);font-size:13px}
+.trust ul{margin:4px 0 0;padding-inline-start:18px;display:flex;flex-direction:column;gap:5px;font-size:13px}.trust li{color:#d7dee8}
+.sups input{width:100%;box-sizing:border-box;font-size:18px;text-align:center}
 .sups{display:flex;flex-direction:column;gap:8px}.sups p{margin:0}.stc{display:flex;gap:8px;align-items:center;justify-content:center;font-size:22px;padding:8px;border-radius:10px;background:rgba(0,0,0,.3)}
 .bpc em.ok{color:#8fe3a8}.bpc .none{width:96px;height:64px;border-radius:8px;display:grid;place-items:center;font-size:26px;color:var(--dim);background:rgba(255,255,255,.05);border:1px dashed var(--line2)}
 .dlock{padding:8px 14px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line2);font-weight:700}

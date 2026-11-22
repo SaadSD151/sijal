@@ -338,7 +338,7 @@ function renderPass(){
   const p=UI.prof,n=passTier(p),k=p.skin||{},on=hasPass(p),xp=p.xp|0,pc=!on?clamp(xp/PASS_AT*100,0,100):n>=PASS.length?100:clamp(xp/PASS_STEP*100,0,100);
   const head=on?(n>=PASS.length?t('bpDone'):xp>=PASS_STEP?t('bpReady',n+1):t('bpNext',fmt(PASS_STEP-xp),n+1)):xp>=PASS_AT?t('bpCanOpen'):t('bpLock',fmt(PASS_AT-xp));
   const openBtn=on?'':`<button class="btn big bpbuy${xp>=PASS_AT?'':' low'}" data-a="bpBuy">🎖️ ${t('bpOpen')} · ${fmt(PASS_AT)}</button>`;
-  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}${n<PASS.length&&!UI.owner?`<div class="sup"><b>💜 ${t('supT',SUPPORT_SAR)}</b><span>${t('supD')}</span><button class="btn ok" data-a="supOpen">${t('supBtn',SUPPORT_SAR)}</button></div>`:''}
+  $('#help').innerHTML=`${mtabs('pass')}<h2>🎖️ ${t('bp')}</h2><p class="keys">${t('bpNote')}</p><div class="bpbar"><div style="width:${pc}%"></div><span dir="ltr">${on?(n>=PASS.length?t('bpTier',n,PASS.length):fmt(PASS_STEP)+' / '+fmt(xp)):fmt(PASS_AT)+' / '+fmt(xp)}</span></div><p class="keys">${head}</p>${openBtn}${n<PASS.length&&!UI.owner?`<div class="sup"><b>💜 ${t('supT',SUPPORT_SAR)}</b><span>${t('supD')}</span><span>${t('supWho')}</span><button class="btn ok" data-a="supOpen">${t('supBtn',SUPPORT_SAR)}</button></div>`:''}
   <div class="bpg">${PASS.map(([ty,id],j)=>{const got=j<n,eq=k[ty]===id;return`<div class="bpc${got?' got':''}${eq?' eq':''}${on&&j===n?(xp>=PASS_STEP?' can':' cant'):''}"><small>${j+1}</small><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><span>${t(ty==='pat'?'bpPat':'bpBld')}</span>${got?`<em class="ok">✓ ${t('bpGot')}</em>`:on&&j===n?`<button class="btn sm ok" data-a="bpBuy">${t('bpClaim')} · ${fmt(PASS_STEP)}</button>`:`<em>🔒 ${fmt(PASS_STEP)}</em>`}</div>`;}).join('')}</div>
   <div class="row"><button class="btn" data-a="skins">🎨 ${t('tSkins')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
@@ -380,17 +380,18 @@ function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();
 function renderSupport(){
   const p=UI.prof,f=p.fb||{};
   $('#help').innerHTML=`<h2>💜 ${t('supT',SUPPORT_SAR)}</h2><p class="keys">${t('supD')}</p>
-  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:!STC_PAY?`<div class="hp"><p>${t('supSoon')}</p></div>`:`<div class="hp sups">
+  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:!STC_PAY?`<div class="hp"><p>${t('supSoon')}</p></div>`:`<div class="hp trust"><h3>🛡️ ${t('trT')}</h3><ul>${t('trL').map(x=>`<li>${x.replace('{0}',SUPPORT_SAR)}</li>`).join('')}</ul></div><div class="hp sups">
     <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><div class="stc" dir="ltr"><b>${esc(STC_PAY)}</b><button class="btn sm" data-a="supCopy">${t('supCopy')}</button></div>
-    <p><b>2.</b> ${t('supStep2')}</p><input id="supRef" maxlength="40" dir="ltr" placeholder="${t('supRefPh')}">
-    <p><b>3.</b> ${t('supStep3')}</p><p class="keys">${t('supUser')}: <b dir="ltr">${esc(f.user)}</b></p>
-    <button class="btn big ok" data-a="supSend">${t('supSend')}</button><p class="keys">${t('supNote')}</p></div>`}
+    <p><b>2.</b> ${t('supStep2')}</p><input id="supPhone" maxlength="10" inputmode="numeric" dir="ltr" placeholder="05XXXXXXXX">
+    <p><b>3.</b> ${t('supStep3')}</p><input id="supUser" maxlength="16" dir="ltr" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="${t('ac_user')}">
+    <p><b>4.</b> ${t('supStep4')}</p><button class="btn big ok" data-a="supSend">${t('supSend')}</button></div>`}
   <div class="row"><button class="btn" data-a="pass">${t('back')}</button></div>`;
 }
 function supSend(){
-  const p=UI.prof,f=p.fb||{},ref=(($('#supRef')||{}).value||'').trim();if(!f.user)return;if(ref.length<3)return err('supRef');if(!/^https?:/.test(location.protocol))return err('sgSite');
+  const p=UI.prof,f=p.fb||{},ph=(($('#supPhone')||{}).value||'').replace(/\D/g,''),us=(($('#supUser')||{}).value||'').trim();if(!f.user)return;
+  if(!/^05\d{8}$/.test(ph))return err('supPhone');if(!/^[A-Za-z0-9_]{3,16}$/.test(us))return err('admUser');if(us.toLowerCase()!==f.user.toLowerCase())return err('supUserBad');const ref=ph;if(!/^https?:/.test(location.protocol))return err('sgSite');
   if(Date.now()-(p.supAt||0)<6e4)return err('supWait');loading(true);
-  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (STC Pay)',reference:ref,message:'Support claim from '+f.user+' · ref: '+ref})})
+  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (STC Pay)',phone:ph,message:'Support claim · username: '+f.user+' · paid from phone: '+ph+' · amount: '+SUPPORT_SAR+' SAR'})})
   .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="pass">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
 }
 function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
