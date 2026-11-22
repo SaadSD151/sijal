@@ -601,7 +601,7 @@ function pocketPass(g){
 }
 // ── tank camps: each finished camp rolls out up to 5 tanks, one every 3 seconds. Tanks only ever drive over their own land.
 // At peace they patrol the border near where they are; in an offensive each tank takes its own spot along the front line ──
-const TANK_N=5;
+const TANK_N=5,TANK_R=50;
 // shortest walk over the owner's land from tile s to tile e (8 directions), capped so it stays cheap
 function ownPath(g,a,s,e,cap){
   const W=g.W,H=g.H,own=g.owner,prev=g.prev,q=g.q;if(s===e)return[s];prev.fill(-1);let qh=0,qt=0;prev[s]=s;q[qt++]=s;
@@ -639,7 +639,8 @@ function tickTanks(g){
   live.sort((p,q)=>p.id-q.id);const slot={};
   for(const T of live){const ti=Math.floor(T.y)*W+Math.floor(T.x),F=byA[T.a];
     // nearest offensive of this realm
-    let k=null,bd=1e18;if(F)for(const q of F){const fx=q.fx!=null?q.fx:q.ox,fy=q.fx!=null?q.fy:q.oy,d=(fx-T.x)**2+(fy-T.y)**2;if(d<bd){bd=d;k=q;}}
+    // only tanks within reach of a front answer it; the rest keep guarding their own stretch of border
+    let k=null,bd=TANK_R*TANK_R;if(F)for(const q of F){const fx=q.fx!=null?q.fx:q.ox,fy=q.fx!=null?q.fy:q.oy,d=(fx-T.x)**2+(fy-T.y)**2;if(d<=bd){bd=d;k=q;}}
     if(k){const key=k.id;slot[key]=(slot[key]||0)+1;T.slot=slot[key]-1;}
     const lost=own[ti]!==T.a;
     if(lost||now>=T.re||(k?T.k!==k.id:T.k)){
