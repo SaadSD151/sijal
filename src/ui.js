@@ -97,7 +97,7 @@ const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins',
 function renderMenu(){
   const p=UI.prof,rk=rankOf(p);
   $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
+  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><button class="btn supb" data-a="supMenu">💜 ${t('supMenu')}</button>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div></div>
   <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
@@ -385,14 +385,14 @@ function renderSupport(){
     <p><b>2.</b> ${t('supStep2')}</p><input id="supPhone" maxlength="10" inputmode="numeric" dir="ltr" placeholder="05XXXXXXXX">
     <p><b>3.</b> ${t('supStep3')}</p><input id="supUser" maxlength="16" dir="ltr" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="${t('ac_user')}">
     <p><b>4.</b> ${t('supStep4')}</p><button class="btn big ok" data-a="supSend">${t('supSend')}</button></div>`}
-  <div class="row"><button class="btn" data-a="pass">${t('back')}</button></div>`;
+  <div class="row"><button class="btn" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('back')}</button></div>`;
 }
 function supSend(){
   const p=UI.prof,f=p.fb||{},ph=(($('#supPhone')||{}).value||'').replace(/\D/g,''),us=(($('#supUser')||{}).value||'').trim();if(!f.user)return;
   if(!/^05\d{8}$/.test(ph))return err('supPhone');if(!/^[A-Za-z0-9_]{3,16}$/.test(us))return err('admUser');if(us.toLowerCase()!==f.user.toLowerCase())return err('supUserBad');const ref=ph;if(!/^https?:/.test(location.protocol))return err('sgSite');
   if(Date.now()-(p.supAt||0)<6e4)return err('supWait');loading(true);
   fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (STC Pay)',phone:ph,message:'Support claim · username: '+f.user+' · paid from phone: '+ph+' · amount: '+SUPPORT_SAR+' SAR'})})
-  .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="pass">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
+  .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
 }
 function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
 function admLbDel(uid){if(!confirm(t('admSure')))return;admReq('/lb/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
@@ -684,7 +684,8 @@ function act(a){
     case'pass':renderPass();show('help');break;
     case'skins':renderSkins();show('help');break;
     case'bpBuy':passBuy();break;
-    case'supOpen':renderSupport();show('help');break;
+    case'supOpen':UI.supFrom='pass';renderSupport();show('help');break;
+    case'supMenu':UI.supFrom='menu';renderSupport();show('help');break;
     case'supCopy':try{navigator.clipboard.writeText(STC_PAY);toast(t('supCopied'),'prop',1500);}catch(e){}break;
     case'supSend':supSend();break;
     case'admGrant':admGrant();break;
