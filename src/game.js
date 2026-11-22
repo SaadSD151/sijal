@@ -71,7 +71,7 @@ function killStruct(g,s){
 }
 function defOf(g,n){
   if(n.defDirty){n.defDirty=false;const a=n.defS=[];
-    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,(R_FORT+s.level-1)**2,9+s.level);}}
+    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,FT_R(s.level)**2,9+s.level);}}
   return n.defS;
 }
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
@@ -289,7 +289,7 @@ function landing(g,b){
 }
 function tickBoats(g){
   // coastal batteries shell hostile ships in range once a second
-  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=(COAST_R+2*(s.level-1))**2,bc=0;
+  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=CO_R(s.level)**2,bc=0;
     for(const b of g.boats){if(b.a===s.owner||O.ally[b.a]||b.sunk)continue;const c=b.path[Math.min(b.path.length-1,Math.floor(b.p))],d=(c%W-s.x)**2+(((c/W)|0)-s.y)**2;if(d<bd){bd=d;best=b;bc=c;}}
     if(best){best.troops-=Math.max(800,best.troops*.15)*(1+.35*(s.level-1));emit(g,'shot',{x:s.x,y:s.y,tx:bc%W,ty:(bc/W)|0});if(best.troops<300){best.sunk=true;emit(g,'sunk',{a:s.owner,d:best.a,x:bc%W,y:(bc/W)|0});}}}}
   for(let j=g.boats.length-1;j>=0;j--){const b=g.boats[j];let rm=!g.nations[b.a].alive||b.sunk;
@@ -370,7 +370,8 @@ function tickTrades(g){
 // nearest shore tile of realm o within R of a tapped spot (land or sea), facing open water
 // ── building upgrades: every building can be raised to level 5 ──
 const UP_MULT=[0,0,1,1.6,2.6,4],SH_P={rocket:[0,.7,.8,.9,.95,1],nuke:[0,.25,.4,.6,.8,.95],doom:[0,0,0,.15,.4,.75]};
-const SH_R=lv=>SHIELD_R+2*(lv-1),SH_CD=lv=>60-8*(lv-1);
+// defence range grows a lot with each upgrade
+const FT_R=lv=>Math.round(R_FORT+2.5*(lv-1)),CO_R=lv=>COAST_R+4*(lv-1),SH_R=lv=>SHIELD_R+4*(lv-1),SH_CD=lv=>60-8*(lv-1);
 function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type].cost)*UP_MULT[s.level+1]/10)*10;}
 function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
 function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}

@@ -471,7 +471,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='cc52678e57';
+const BUILD_ID='4fe0c1b4d9';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -697,7 +697,7 @@ function killStruct(g,s){
 }
 function defOf(g,n){
   if(n.defDirty){n.defDirty=false;const a=n.defS=[];
-    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,(R_FORT+s.level-1)**2,9+s.level);}}
+    for(const s of g.structs)if(!s.dead&&!s.build&&s.owner===n.id){if(s.type==='city')a.push(s.x,s.y,s.capital?R_CAP*R_CAP:R_CITY*R_CITY,s.ruin>g.tick?1.1:s.capital?2.2:1.5);else if(s.type==='fort')a.push(s.x,s.y,FT_R(s.level)**2,9+s.level);}}
   return n.defS;
 }
 function neutCities(g){if(g.ncDirty){g.ncDirty=false;g.ncity=g.structs.filter(s=>!s.dead&&s.type==='city'&&!s.owner);}return g.ncity;}
@@ -915,7 +915,7 @@ function landing(g,b){
 }
 function tickBoats(g){
   // coastal batteries shell hostile ships in range once a second
-  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=(COAST_R+2*(s.level-1))**2,bc=0;
+  if(g.tick%10===0){const W=g.W;for(const s of g.structs){if(s.dead||s.build||s.type!=='coast')continue;const O=g.nations[s.owner];let best=null,bd=CO_R(s.level)**2,bc=0;
     for(const b of g.boats){if(b.a===s.owner||O.ally[b.a]||b.sunk)continue;const c=b.path[Math.min(b.path.length-1,Math.floor(b.p))],d=(c%W-s.x)**2+(((c/W)|0)-s.y)**2;if(d<bd){bd=d;best=b;bc=c;}}
     if(best){best.troops-=Math.max(800,best.troops*.15)*(1+.35*(s.level-1));emit(g,'shot',{x:s.x,y:s.y,tx:bc%W,ty:(bc/W)|0});if(best.troops<300){best.sunk=true;emit(g,'sunk',{a:s.owner,d:best.a,x:bc%W,y:(bc/W)|0});}}}}
   for(let j=g.boats.length-1;j>=0;j--){const b=g.boats[j];let rm=!g.nations[b.a].alive||b.sunk;
@@ -996,7 +996,8 @@ function tickTrades(g){
 // nearest shore tile of realm o within R of a tapped spot (land or sea), facing open water
 // ── building upgrades: every building can be raised to level 5 ──
 const UP_MULT=[0,0,1,1.6,2.6,4],SH_P={rocket:[0,.7,.8,.9,.95,1],nuke:[0,.25,.4,.6,.8,.95],doom:[0,0,0,.15,.4,.75]};
-const SH_R=lv=>SHIELD_R+2*(lv-1),SH_CD=lv=>60-8*(lv-1);
+// defence range grows a lot with each upgrade
+const FT_R=lv=>Math.round(R_FORT+2.5*(lv-1)),CO_R=lv=>COAST_R+4*(lv-1),SH_R=lv=>SHIELD_R+4*(lv-1),SH_CD=lv=>60-8*(lv-1);
 function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type].cost)*UP_MULT[s.level+1]/10)*10;}
 function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
 function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}
@@ -1785,7 +1786,7 @@ function draw(g,dt,ts){
   const SP=[];
   // protected area of my forts, shield domes and coastal guns (and every dome while aiming a missile): filled only over the owner's land, outlined along its edge
   {const aimM=UI.mode&&UI.mode[0]==='m',RC=R.rng||(R.rng={});for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'&&s.type!=='coast'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
-    const rr=s.type==='fort'?R_FORT+s.level-1:s.type==='coast'?COAST_R+2*(s.level-1):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
+    const rr=s.type==='fort'?FT_R(s.level):s.type==='coast'?CO_R(s.level):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
     const sel=!!(UI.bs===s||(UI.mode&&UI.mode[0]==='b')||aimM),key=s.i+':'+s.type+(sel?'s':''),col=!mine?[255,90,70]:s.type==='shield'?[120,190,255]:s.type==='coast'?[90,220,200]:[255,233,168];let E=RC[key];
     if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&own[Y*W+X]===o;
       for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge&&sel?205:(s.type==='shield'?44:34);}
@@ -2089,7 +2090,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'5.0',d:'2026-11-22',ar:['⚔️ لما تقضي على دولة تاخذ أرضها كاملة، ما يبقى منها شي فاضي','🪖 شكل جديد للدبابات: جنازير وعجلات تتحرك، وهيكل مموّه بلون دولتك، وبرج ومدفع، ولهب من المدفع وغبار وهي تمشي','🛡️ خطوط مدى الحصون صارت تطلع بس لما تختار الحصن أو تبني، عشان ما تتلخبط مع الحدود'],en:['⚔️ Wiping out a realm now gives you all of its land, with nothing left empty','🪖 New tank look: moving tracks and wheels, a camouflaged hull in your colour, turret and gun, muzzle flash and dust on the move','🛡️ Fort range outlines only show when you select a fort or build, so they are not mistaken for borders']},
+ {v:'5.0',d:'2026-11-22',ar:['⚔️ لما تقضي على دولة تاخذ أرضها كاملة، ما يبقى منها شي فاضي','🪖 شكل جديد للدبابات: جنازير وعجلات تتحرك، وهيكل مموّه بلون دولتك، وبرج ومدفع، ولهب من المدفع وغبار وهي تمشي','🛡️ خطوط مدى الحصون صارت تطلع بس لما تختار الحصن أو تبني، عشان ما تتلخبط مع الحدود','📏 تطوير الحصن والقبة والدفاع البحري صار يكبّر مداهم بشكل أكبر: الحصن من 8 لين 18، القبة من 19 لين 35، والدفاع البحري من 17 لين 33'],en:['⚔️ Wiping out a realm now gives you all of its land, with nothing left empty','🪖 New tank look: moving tracks and wheels, a camouflaged hull in your colour, turret and gun, muzzle flash and dust on the move','🛡️ Fort range outlines only show when you select a fort or build, so they are not mistaken for borders','📏 Upgrading forts, domes and coastal guns now grows their range much more: fort 8 to 18, dome 19 to 35, coastal gun 17 to 33']},
  {v:'4.9',d:'2026-11-22',ar:['🔥 الأرض اللي تنضرب بنيزك أو صاروخ أو نووي تصير محروقة وتولّع فيها نار، وكل ما رفعت الجرافيكس صارت النار والدخان أوضح','🗺️ المعركة السريعة صارت تختار شكل خريطة مختلف كل مرة','🏛️ زر العصر صار يوضح عصرك الحالي والعصر اللي بتشتريه'],en:['🔥 Ground hit by a meteor, missile or nuke turns scorched and burns, with richer flames and smoke on higher graphics','🗺️ Quick Battle now picks a different world shape every time','🏛️ The age button now shows your current age and the one you are buying']},
  {v:'4.8',d:'2026-11-22',ar:['💜 تقدر تدعم المطوّر بـ10 ريال عن طريق STC Pay وتاخذ السيزون صفر كامل، من صفحة السيزون صفر'],en:['💜 Support the developer with 10 riyals by STC Pay and get all of Season Zero, from the Season Zero page']},
  {v:'4.7',d:'2026-11-22',ar:['💥 الصواريخ صارت تدمّر دبابات العدو، والدبابات تتقاتل لما تتقابل، وكل دبابة لها شريط صحة','🛡️ دباباتك صارت تدافع: لما أحد يهاجمك تروح للجبهة وتواجه دباباته','🫴 ميم 67 صار لأصحاب السيزون صفر، واليدين انعكست','🚪 صاحب الغرفة يقدر يطرد أي لاعب من غرفة الانتظار، وداخل القيم من قائمة اللاعبين في قائمة الإيقاف'],en:['💥 Missiles now destroy enemy tanks, tanks fight when they meet, and each tank has a health bar','🛡️ Your tanks now defend: when you are attacked they head to the front and face the enemy tanks','🫴 The 67 meme is now for Season Zero holders, with the hands flipped','🚪 The host can kick any player from the waiting room, and during the match from the player list in the pause menu']},
@@ -2906,9 +2907,9 @@ function structNear(g,i,o){const W=g.W,x0=i%W,y0=(i/W)|0;let b=null,bd=9;for(let
 function effText(s,lv){
   switch(s.type){
     case'city':return t('ef_city',fmt(4000*lv*(s.capital?1.5:1)),1+lv);
-    case'fort':return t('ef_fort',5+lv-1,fmt(60000*lv),R_FORT+lv-1);
+    case'fort':return t('ef_fort',5+lv-1,fmt(60000*lv),FT_R(lv));
     case'port':return t('ef_port',2*lv,35*(lv-1));
-    case'coast':return t('ef_coast',COAST_R+2*(lv-1),35*(lv-1));
+    case'coast':return t('ef_coast',CO_R(lv),35*(lv-1));
     case'silo':return t('ef_silo',15*(lv-1));
     case'factory':return t('ef_factory',3*lv,35*(lv-1));
     case'camp':return t('ef_camp',TANK_N,Math.round(22*(1+.15*(lv-1))));
