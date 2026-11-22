@@ -437,7 +437,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='fb52ffa115';
+const BUILD_ID='2ee05ec791';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1230,12 +1230,13 @@ function tickTanks(g){
     // nearest offensive of this realm
     let k=null,bd=1e18;if(F)for(const q of F){const fx=q.fx!=null?q.fx:q.ox,fy=q.fx!=null?q.fy:q.oy,d=(fx-T.x)**2+(fy-T.y)**2;if(d<bd){bd=d;k=q;}}
     if(k){const key=k.id;slot[key]=(slot[key]||0)+1;T.slot=slot[key]-1;}
-    if(now>=T.re||(k?T.k!==k.id:T.k)){
+    const lost=own[ti]!==T.a;
+    if(lost||now>=T.re||(k?T.k!==k.id:T.k)){
       T.re=now+(k?20:60+((g.rng()*40)|0));let tgt=-1;
       if(k){if(!k._fl||now-k._flT>=20){k._fl=frontLine(g,k);k._flT=now;}const L=k._fl;
         if(L.length){const n=live.filter(o=>o.a===T.a).length;tgt=L[Math.min(L.length-1,Math.floor((T.slot+.5)/Math.max(1,n)*L.length))];}}
       for(const R of k?[6,20]:[10,25,50]){if(tgt>=0)break;tgt=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}
-      T.k=k?k.id:0;let start=ti;if(own[start]!==T.a){const b=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),4);if(b>=0){start=b;T.x=b%W+.5;T.y=((b/W)|0)+.5;}}
+      T.k=k?k.id:0;let start=ti;if(own[start]!==T.a){let b=-1;for(const R of[2,5,10,20]){if(b>=0)break;b=borderNear(g,T.a,Math.floor(T.x),Math.floor(T.y),R);}if(b<0){b=T.c.i;}start=b;T.x=b%W+.5;T.y=((b/W)|0)+.5;}
       T.path=tgt>=0&&own[start]===T.a?ownPath(g,T.a,start,tgt,g.N):null;T.pi=0;}
     // drive along the path; never onto land that is not ours
     const sp=T.k?.55:.14;let left=sp;
