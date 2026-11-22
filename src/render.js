@@ -345,6 +345,9 @@ function draw(g,dt,ts){
   for(const m of g.missiles){
     for(let k=0;k<11;k++){const t0=m.t-k*.016,t1=t0-.016;if(t1<0)break;const a=mslPos(m,t0),b=mslPos(m,t1);
       c.strokeStyle=`rgba(255,${205-k*13},${130-k*11},${.92-k*.08})`;c.lineWidth=(m.type==='nuke'?4.2:2.6)*(1-k*.07);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();}
+    if(!m.iv&&m.t>.72){m.iv=1;for(const s of g.structs){if(s.dead||s.build||s.type!=='shield'||s.owner===m.a||g.nations[s.owner].ally[m.a]||s.cd>g.tick||(s.x-m.tx)**2+(s.y-m.ty)**2>SH_R(s.level)**2)continue;
+      const mt=.95,d=Math.hypot(m.tx-m.sx,m.ty-m.sy),mx=lerp(m.sx,m.tx,mt)+.5,my=lerp(m.sy,m.ty,mt)+.5-Math.sin(Math.PI*mt)*d*.28,ms=Math.max(250,(mt-m.t)*m.dur*100/Math.max(1,UI.speed||1));
+      (R.iv||(R.iv=[])).push({tx:m.tx,ty:m.ty,mx,my,until:performance.now()+ms+1500});addFx('intc',s.x,s.y,{mx,my,dur:ms});addFx('flash',s.x,s.y,{dur:300});break;}}
     const h=mslPos(m,m.t),tp=w2s(m.tx+.5,m.ty+.5);c.fillStyle='#fff';c.beginPath();c.arc(h.x,h.y,m.type==='nuke'?4:2.8,0,7);c.fill();
     c.strokeStyle='rgba(255,84,64,.85)';c.setLineDash([6,5]);c.lineWidth=1.6;c.beginPath();c.arc(tp.x,tp.y,MSL[m.type].r*z,0,7);c.stroke();c.setLineDash([]);
   }
@@ -375,7 +378,23 @@ function draw(g,dt,ts){
       gr.addColorStop(0,`rgba(255,250,220,${.95*(1-f.t)})`);gr.addColorStop(.45,`rgba(255,${f.nuke?150:170},60,${.7*(1-f.t)})`);gr.addColorStop(1,'rgba(120,30,10,0)');
       c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();c.strokeStyle=`rgba(255,235,200,${.8*(1-f.t)})`;c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,rr*1.08,0,7);c.stroke();
     }else if(f.type==='ring'){c.strokeStyle=f.col||'#ffe9a8';c.globalAlpha=1-f.t;c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,(f.r||8)*z*e+4,0,7);c.stroke();c.globalAlpha=1;}
-    else if(f.type==='shot'){const q=w2s(f.tx+.5,f.ty+.5);c.strokeStyle=`rgba(255,190,90,${1-f.t})`;c.lineWidth=2.5;c.beginPath();c.moveTo(p.x,p.y);c.lineTo(q.x,q.y);c.stroke();c.fillStyle=`rgba(255,240,200,${1-f.t})`;c.beginPath();c.arc(q.x,q.y,4+f.t*8,0,7);c.fill();}
+    else if(f.type==='shot'){
+      // coastal gun: muzzle flash, a shell on an arc, then a splash of water and fire where it lands
+      const q=w2s(f.tx+.5,f.ty+.5),fly=.55;
+      if(f.t<.18){const a=1-f.t/.18;c.globalCompositeOperation='lighter';const gr=c.createRadialGradient(p.x,p.y,0,p.x,p.y,10*Math.min(2,z/3)+6);gr.addColorStop(0,`rgba(255,240,190,${a})`);gr.addColorStop(1,'rgba(255,120,20,0)');c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,10*Math.min(2,z/3)+6,0,7);c.fill();c.globalCompositeOperation='source-over';}
+      if(f.t<fly){const u=f.t/fly,hx=lerp(p.x,q.x,u),hy=lerp(p.y,q.y,u)-Math.sin(Math.PI*u)*Math.hypot(q.x-p.x,q.y-p.y)*.25;
+        c.strokeStyle='rgba(255,210,140,.8)';c.lineWidth=2.4;c.beginPath();for(let k=0;k<=8;k++){const v=Math.max(0,u-k*.03),x=lerp(p.x,q.x,v),y=lerp(p.y,q.y,v)-Math.sin(Math.PI*v)*Math.hypot(q.x-p.x,q.y-p.y)*.25;k?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();
+        c.fillStyle='#fff3c4';c.beginPath();c.arc(hx,hy,3.6,0,7);c.fill();}
+      else{const u=(f.t-fly)/(1-fly),r=(6+u*16)*Math.min(1.8,Math.max(.8,z/3));c.fillStyle=`rgba(230,245,255,${.7*(1-u)})`;for(let k=0;k<5;k++){const a=k*1.256+u;c.beginPath();c.arc(q.x+Math.cos(a)*r*.6,q.y-Math.abs(Math.sin(a))*r*1.2*(1-u),2.2*(1-u)+.8,0,7);c.fill();}
+        c.strokeStyle=`rgba(255,255,255,${.8*(1-u)})`;c.lineWidth=1.6;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.globalCompositeOperation='lighter';c.fillStyle=`rgba(255,150,50,${.75*(1-u)})`;c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.fill();c.globalCompositeOperation='source-over';}}
+    else if(f.type==='intc'){
+      // interceptor from the dome: rises steeply, then curves onto the meeting point; a white smoke trail behind it
+      const q=w2s(f.mx,f.my),cx=p.x,cy=p.y-Math.max(60,Math.abs(q.y-p.y)*1.1),pt=u=>({x:(1-u)*(1-u)*p.x+2*(1-u)*u*cx+u*u*q.x,y:(1-u)*(1-u)*p.y+2*(1-u)*u*cy+u*u*q.y}),u=Math.min(1,f.t*1.02);
+      c.strokeStyle='rgba(225,240,255,.7)';c.lineWidth=3.2;c.beginPath();for(let k=0;k<=18;k++){const v=Math.max(0,u-k*.035),P=pt(v);k?c.lineTo(P.x,P.y):c.moveTo(P.x,P.y);}c.stroke();
+      const H=pt(u);c.globalCompositeOperation='lighter';const hg=c.createRadialGradient(H.x,H.y,0,H.x,H.y,9);hg.addColorStop(0,'rgba(255,255,255,1)');hg.addColorStop(.35,'rgba(140,210,255,.9)');hg.addColorStop(1,'rgba(60,140,255,0)');c.fillStyle=hg;c.beginPath();c.arc(H.x,H.y,9,0,7);c.fill();c.globalCompositeOperation='source-over';}
+    else if(f.type==='flash'){c.globalAlpha=1-f.t;c.fillStyle='rgba(160,215,255,.9)';c.beginPath();c.arc(p.x,p.y,6+f.t*16,0,7);c.fill();c.globalAlpha=1;}
+    else if(f.type==='airburst'){const q=w2s(f.mx,f.my),r=10+f.t*42,gr=c.createRadialGradient(q.x,q.y,0,q.x,q.y,r);gr.addColorStop(0,`rgba(255,255,240,${1-f.t})`);gr.addColorStop(.4,`rgba(150,215,255,${.8*(1-f.t)})`);gr.addColorStop(1,'rgba(80,140,255,0)');
+      c.globalCompositeOperation='lighter';c.fillStyle=gr;c.beginPath();c.arc(q.x,q.y,r,0,7);c.fill();c.globalCompositeOperation='source-over';c.strokeStyle=`rgba(200,235,255,${.8*(1-f.t)})`;c.lineWidth=2;c.beginPath();c.arc(q.x,q.y,r*1.15,0,7);c.stroke();}
     else if(f.type==='sword'){
       // a drawn steel sword slashes down with a light trail, rests, then fades with the troops taken
       const T=f.t,sw=Math.min(1,T/.22),ease=1-(1-sw)**3,a=T>.78?(1-T)/.22:1,L=clamp(z*8,54,80),cx=p.x,cy=p.y-24;

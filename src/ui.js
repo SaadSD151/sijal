@@ -742,13 +742,13 @@ function handleEvents(){
   for(const e of ev){
     const A=e.a?N[e.a]:null,D=e.d?N[e.d]:null;
     if(e.t==='boom'){const dm=e.type==='doom',nk=dm||e.type==='nuke';addFx('boom',e.x,e.y,{r:e.r*(nk?1.6:1.25),dur:dm?3200:nk?2000:900,nuke:nk});if(!demo){sfx(nk?'nuke':'boom');if(nk)R.shake=dm?30:16;}continue;}
-    if(e.t==='intercept'){addFx('ring',e.x,e.y,{r:3,col:'#9fe0ff'});if(!demo&&e.a===me)feed(t('m_inter'),'good');continue;}
+    if(e.t==='intercept'){const now=performance.now();const L=(R.iv||[]).filter(v=>v.until>now);R.iv=L;const v=L.find(v=>v.tx===e.x&&v.ty===e.y);if(v){addFx('airburst',e.x,e.y,{mx:v.mx,my:v.my,dur:700});L.splice(L.indexOf(v),1);}else addFx('ring',e.x,e.y,{r:3,col:'#9fe0ff'});if(!demo&&e.a===me)feed(t('m_inter'),'good');continue;}
     if(e.t==='meteorWarn'){addFx('ring',e.x,e.y,{r:7,col:'#ff9a5a',dur:1600});if(!demo){feed(t('m_meteor'),'warn');sfx('alert');}continue;}
     if(demo)continue;
     const cn=e.s&&e.s.type==='city'?esc(cityName(e.s.name,UI.lang)):'';
     switch(e.t){
       case'war':if(e.d===me&&A.minor){feed(t('m_warYou',nmh(A)),'bad');}else if(e.d===me){feed(t('m_warYou',nmh(A)),'bad');banner(t('m_warYou',natName(A)),'bad');sfx('siren');(UI.threats||(UI.threats=[])).push({id:e.a,until:performance.now()+14000});}break;
-      case'shot':addFx('shot',e.x,e.y,{tx:e.tx,ty:e.ty,dur:420});break;
+      case'shot':addFx('shot',e.x,e.y,{tx:e.tx,ty:e.ty,dur:900});break;
       case'sunk':addFx('boom',e.x,e.y,{r:2.5,dur:700});if(e.a===me){feed(t('m_sunk'),'good');sfx('boom');}else if(e.d===me){feed(t('m_sunkYou'),'bad');sfx('boom');}break;
       case'cityFall':addFx('ring',e.s.x,e.s.y,{r:7+e.s.level,col:A?A.css:'#fff',dur:1300});
         if(e.a===me){feed(t('m_cityYou',cn),'good');banner(cn);sfx('city');}else if(e.d===me){feed(t('m_cityLost',cn),'bad');if(!e.cap)banner(t('m_cityLost',cn),'bad');sfx('lose1');}break;
