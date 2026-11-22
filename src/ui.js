@@ -461,7 +461,7 @@ function hudUpdate(){
   T.querySelector('b').textContent=fmt(me.troops);T.querySelector('small').textContent='/ '+fmt(me.maxT);T.querySelector('u').style.width=clamp(me.troops/me.maxT*100,0,100)+'%';
   Gd.querySelector('b').textContent=fmt(me.gold);Gd.querySelector('small').textContent='+'+me.income.toFixed(0);
   const be=$('#bEra'),ek=me.era+'|'+(me.era<4&&me.gold>=eraCost(me));
-  if(be.dataset.k!==ek){be.dataset.k=ek;be.innerHTML=`<span>${t('eras')[me.era-1]}</span>`+(me.era<4?`<b>▲ ${eraCost(me)}</b>`:'');be.classList.toggle('rdy',me.era<4&&me.gold>=eraCost(me));be.title=me.era<4?t('advance',t('eras')[me.era]):'';}
+  if(be.dataset.k!==ek){be.dataset.k=ek;be.innerHTML=me.era<4?`<span>${t('eraNow')}: ${t('eras')[me.era-1]}</span><b>▲ ${t('eras')[me.era]} · ${eraCost(me)}</b>`:`<span>${t('eras')[me.era-1]}</span>`;be.classList.toggle('rdy',me.era<4&&me.gold>=eraCost(me));be.title=me.era<4?t('advance',t('eras')[me.era]):'';}
   const sk=g.season+'|'+Math.floor(now/SEASON_LEN/4),S=$('#sS');
   if(S.dataset.k!==sk){S.dataset.k=sk;S.innerHTML=`<i class="sz s${g.season}"></i><div><b>${t('seas')[g.season]}</b><small></small></div>`;S.title=t('seaTip')[g.season];}
   S.firstChild.style.setProperty('--p',(now%SEASON_LEN)/SEASON_LEN);S.querySelector('small').textContent=t('year',Math.floor(now/SEASON_LEN/4)+1)+' · '+clock(now);
