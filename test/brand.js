@@ -1,5 +1,5 @@
 // renders the logo (transparent PNG) and reference screenshots for the promo video
-const {chromium,devices}=require('playwright'),path=require('path'),out=path.resolve(__dirname,'../marketing');
+const {chromium,devices}=require('playwright'),path=require('path'),out=path.resolve(process.argv[2]||require('os').tmpdir());
 (async()=>{const b=await chromium.launch();
   const lp=await b.newPage({viewport:{width:1600,height:900},deviceScaleFactor:2});
   await lp.setContent(`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=IBM+Plex+Sans+Arabic:wght@600&display=swap">
