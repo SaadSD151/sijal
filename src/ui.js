@@ -670,8 +670,11 @@ function buildRefresh(){
   const g=G,s=UI.bs,c=$('#card');if(!s||!c||c.hidden)return;const me=g.nations[g.human];if(s.dead||s.owner!==me.id)return closeCard();
   $('#bLv').textContent=t('lvl',s.level);$('#bDots').innerHTML=[1,2,3,4,5].map(k=>`<i class="${k<=s.level?'on':''}"></i>`).join('');
   $('#bNow').textContent=effText(s,s.level);
-  const r=canUp(g,me,s),key=s.level+'|'+r+'|'+(s.upAt>g.tick?Math.ceil((s.upAt-g.tick)/TPS):0);if(key===UI.bKey)return;UI.bKey=key;
+  const rn=s.type==='city'&&s.ruin>g.tick,fc=rn?repairCost(g,s):0;
+  const r=canUp(g,me,s),key=s.level+'|'+r+'|'+(s.upAt>g.tick?Math.ceil((s.upAt-g.tick)/TPS):0)+'|'+(rn?Math.ceil((s.ruin-g.tick)/TPS)+':'+(me.gold>=fc):'');if(key===UI.bKey)return;UI.bKey=key;
   $('#bNext').textContent=s.level<5?'⬆ '+effText(s,s.level+1):'';
+  // a bombed city: how long until it is rebuilt, and a button to pay and fix it now
+  if(rn){$('#bBtn').innerHTML=`<p class="warn">🏚️ ${t('ruinLeft',Math.ceil((s.ruin-g.tick)/TPS))}</p><button class="btn sm ok up" data-a="fixB">🛠️ ${t('fixNow')} · ${fmt(fc)}</button>${me.gold<fc?`<p class="bad">${t('e_gold')}</p>`:''}<p class="keys">${t('ruinWhy')}</p>`;return;}
   $('#bBtn').innerHTML=s.level>=5?`<p class="good">${t('upMax')}</p>`:s.upAt>g.tick?`<p class="warn">${t('upBusy',Math.ceil((s.upAt-g.tick)/TPS))}</p>`:
     `<button class="btn sm ok up" data-a="upB"${r&&r!=='gold'?' disabled':''}>${t('upTo',s.level+1)} · ${fmt(upCost(s))}</button>${r==='era'?`<p class="bad">${t('upNeed',t('eras')[upEra(s)-1])}</p>`:r==='gold'?`<p class="bad">${t('e_gold')}</p>`:''}`;
 }
@@ -795,6 +798,7 @@ function act(a){
     case'auY':if(UI.auPend>=0){send({k:'up',i:UI.auPend});(UI.auLog||(UI.auLog=[])).push(G.tick);}UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+2000;break;
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
+    case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
@@ -836,6 +840,7 @@ function handleEvents(){
       case'allyEnd':if(e.a===me||e.b===me){const P=N[e.a===me?e.b:e.a];for(const d of document.querySelectorAll('.ts[data-ally="'+P.id+'"]'))d.remove();feed(t('m_allyEnd',nmh(P)),'warn');UI.cardKey='';}break;
       case'ally':if(e.a===me||e.b===me){feed(t('m_ally',nmh(N[e.a]),nmh(N[e.b])),'good');sfx('city');sayLine(N[e.a===me?e.b:e.a],'ally');UI.cardKey='';}break;
       case'betray':if(e.a===me||e.b===me){feed(t('m_betray',nmh(N[e.a]),nmh(N[e.b])),'bad');if(e.b===me)sfx('alert');UI.cardKey='';}break;
+      case'repair':if(e.a===me){addFx('ring',e.s.x,e.s.y,{r:5,col:'#7ee08a',dur:800});feed(t('m_fixed',cn),'good');}break;
       case'cityHit':addFx('ring',e.s.x,e.s.y,{r:4,col:'#b9b0a6',dur:900});if(e.d===me)feed(t('m_cityRuinYou',cn),'bad');else if(e.a===me)feed(t('m_cityRuin',cn),'good');break;
       case'cityGone':addFx('ring',e.s.x,e.s.y,{r:8,col:'#ff9a5a',dur:1500});if(e.d===me){feed(t('m_cityGoneYou',cn),'bad');banner(t('m_cityGoneYou',cn),'bad');}else if(e.a===me)feed(t('m_cityGone',cn),'good');break;
       case'aid':if(e.a===me){feed(t('m_aidSent',fmt(e.amt),nmh(N[e.b])),'good');sayLine(N[e.b],'thanks');}else if(e.b===me)feed(t('m_aidGot',nmh(A),fmt(e.amt)),'good');break;

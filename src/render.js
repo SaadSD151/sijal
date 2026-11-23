@@ -175,20 +175,27 @@ function drawEmo(c,e,x,y,q,ts){
 function fireSprite(){if(R.flame)return R.flame;const k=mk(32,48),x=k.getContext('2d'),gr=x.createRadialGradient(16,34,1,16,30,22);
   gr.addColorStop(0,'rgba(255,250,210,1)');gr.addColorStop(.25,'rgba(255,200,70,.95)');gr.addColorStop(.55,'rgba(255,110,20,.75)');gr.addColorStop(1,'rgba(160,20,0,0)');
   x.fillStyle=gr;x.beginPath();x.moveTo(16,2);x.bezierCurveTo(26,18,30,30,26,40);x.quadraticCurveTo(16,48,6,40);x.bezierCurveTo(2,30,6,18,16,2);x.fill();return R.flame=k;}
+function glowSprite(){if(R.fglow)return R.fglow;const k=mk(64,64),x=k.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,170,60,.9)');gr.addColorStop(.4,'rgba(255,90,20,.45)');gr.addColorStop(1,'rgba(120,10,0,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);return R.fglow=k;}
 function drawFire(c,g,z,cw,ch,ts){
-  const W=g.W,now=g.tick,q=R.q==null?2:R.q,fl=g.fallList,hz=z/2,ox=cw/2-cam.x*z,oy=ch/2-cam.y*z,sp=fireSprite();
+  const W=g.W,now=g.tick,q=R.q==null?2:R.q,fl=g.fallList,hz=z/2,ox=cw/2-cam.x*z,oy=ch/2-cam.y*z,sp=fireSprite(),gl=glowSprite();
   let drawn=0;const cap=q===2?4000:q===1?2500:1500;
   for(let j=0;j<fl.length&&drawn<cap;j++){const i=fl[j],rem=g.fall[i]-now;if(rem<=0)continue;const x=i%W,y=(i/W)|0,sx=x*z+ox+hz,sy=y*z+oy+hz;
-    if(sx<-z*2||sy<-z*3||sx>cw+z*2||sy>ch+z*2)continue;const h=((x*73856093)^(y*19349663))>>>0,inten=Math.min(1,rem/160),ph=(h%997)/997;
+    if(sx<-z*3||sy<-z*4||sx>cw+z*3||sy>ch+z*3)continue;const h=((x*73856093)^(y*19349663))>>>0,inten=Math.min(1,rem/60),ph=(h%997)/997;
     if(q===0){if(h%3)continue;c.fillStyle=`rgba(255,${90+(h%60)},20,${.35*inten})`;c.fillRect(sx-z*.35,sy-z*.35,z*.7,z*.7);drawn++;continue;}
-    const fl1=.65+.35*Math.sin(ts/(90+(h%60))+ph*6.28);
-    if(q===1){if(h%2)continue;c.globalCompositeOperation='lighter';c.globalAlpha=.55*inten*fl1;const s=z*(.9+.5*fl1);c.drawImage(sp,sx-s/2,sy-s*1.1,s,s*1.5);c.globalAlpha=1;c.globalCompositeOperation='source-over';drawn++;continue;}
-    // High: glow under the flame, two flame tongues and a little rising smoke
-    c.globalCompositeOperation='lighter';c.globalAlpha=.18*inten;c.fillStyle='#ff5a14';c.beginPath();c.arc(sx,sy,z*.9,0,7);c.fill();
-    c.globalAlpha=.7*inten*fl1;let s=z*(1+.6*fl1);c.drawImage(sp,sx-s/2+Math.sin(ts/170+ph*9)*z*.12,sy-s*1.15,s,s*1.5);
-    if(h%3===0){const f2=.6+.4*Math.sin(ts/70+ph*4);c.globalAlpha=.55*inten*f2;s=z*(.6+.4*f2);c.drawImage(sp,sx-s/2+z*.25,sy-s*1.2,s,s*1.5);}
+    const fl1=.65+.35*Math.sin(ts/(90+(h%60))+ph*6.28),hi=q===2;c.globalCompositeOperation='lighter';
+    // soft light pooled on the ground, not a square on every tile
+    if(h%2===0){const s=z*(hi?2.8:2.3)*(.85+.15*fl1);c.globalAlpha=(hi?.26:.22)*inten;c.drawImage(gl,sx-s/2,sy-s/2,s,s);}
+    // flames: spaced out and of different heights, so the fire looks alive
+    if(h%3===0||(hi&&h%4===1)){const big=h%5===0?1.35:1,s=z*(1.25+.7*fl1)*big;c.globalAlpha=(hi?.85:.78)*inten*(.7+.3*fl1);c.drawImage(sp,sx-s/2+Math.sin(ts/(150+(h%80))+ph*9)*z*.15,sy-s*1.2,s,s*1.5);
+      if(hi&&h%6===0){const f2=.6+.4*Math.sin(ts/65+ph*4),s2=z*(.7+.45*f2);c.globalAlpha=.6*inten*f2;c.drawImage(sp,sx-s2/2+z*.3,sy-s2*1.25,s2,s2*1.5);}}
+    // glowing embers in the gaps
+    else if(h%5===1){const e=.5+.5*Math.sin(ts/(220+(h%120))+ph*7);c.globalAlpha=.7*inten*e;c.fillStyle=h%2?'#ff5a1e':'#ffb347';const r=z*.14;c.fillRect(sx-r+(ph-.5)*z*.6,sy-r+((h>>4)%7/7-.5)*z*.6,r*2,r*2);}
+    // sparks drifting up
+    if(h%(hi?6:9)===0){const t=((ts/1200+ph)%1);c.globalAlpha=.85*inten*(1-t);c.fillStyle='#ffe08a';const r=Math.max(1,z*.1);c.fillRect(sx+Math.sin(t*6+ph*7)*z*.4,sy-z*(.8+t*2.6),r,r);}
     c.globalCompositeOperation='source-over';
-    if(h%9===0){const t=((ts/2200+ph)%1);c.globalAlpha=.22*inten*(1-t);c.fillStyle='#3a3530';c.beginPath();c.arc(sx+Math.sin(t*5+ph*6)*z*.4,sy-z*(1+t*3.5),z*(.4+t*.9),0,7);c.fill();}
+    // smoke: darker puffs rising and spreading
+    if(h%(hi?6:11)===0){const t=((ts/(hi?2400:2800)+ph)%1);c.globalAlpha=(hi?.26:.18)*inten*(1-t)*Math.min(1,t*4);c.fillStyle=hi?'#2f2a26':'#3a3530';c.beginPath();c.arc(sx+Math.sin(t*4+ph*6)*z*.6,sy-z*(1.2+t*4),z*(.45+t*1.2),0,7);c.fill();}
     c.globalAlpha=1;drawn++;}
 }
 // top-down main battle tank, drawn once per realm (4 tread frames): hull in the realm colour with shading and camouflage, rubber tracks with
@@ -285,8 +292,8 @@ function draw(g,dt,ts){
   {const aimM=UI.mode&&UI.mode[0]==='m',RC=R.rng||(R.rng={});for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'&&s.type!=='coast'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
     const rr=s.type==='fort'?FT_R(s.level):s.type==='coast'?CO_R(s.level):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
     const sel=!!(UI.bs===s||(UI.mode&&UI.mode[0]==='b')||aimM),key=s.i+':'+s.type+(sel?'s':''),col=!mine?[255,90,70]:s.type==='shield'?[120,190,255]:s.type==='coast'?[90,220,200]:[255,233,168];let E=RC[key];
-    if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&own[Y*W+X]===o;
-      for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge&&sel?205:(s.type==='shield'?44:34);}
+    if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,ter=g.M.ter,sea=s.type==='coast',inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&(sea?ter[Y*W+X]<2:own[Y*W+X]===o);
+      for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge&&sel?205:(s.type==='shield'?44:sea?48:34);}
       x2.putImageData(im,0,0);E=RC[key]={cv:cv2,rr,o:s.owner,t:ts};}
     const sm=c.imageSmoothingEnabled;c.imageSmoothingEnabled=false;c.drawImage(E.cv,p0.x,p0.y,D*z,D*z);c.imageSmoothingEnabled=sm;}}
   // structures

@@ -3,7 +3,7 @@ const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SH
 
 function newGame(o){
   const M=genMap(o),N=M.N;
-  const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),structAt:new Int16Array(N),
+  const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),fgen:new Uint8Array(N),structAt:new Int16Array(N),
     nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],fills:[],tanks:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
     q:new Int32Array(N),prev:new Int32Array(N),lab:new Int32Array(N),nb:null,diff:DIFF[o.diff==null?1:o.diff],ncity:[],ncDirty:true,used:M.used,grace:[1500,900,450,150][o.diff==null?1:o.diff]};
@@ -175,6 +175,8 @@ function tileDelay(g,k,n,par){
   let dl=T_DELAY[g.M.ter[n]];if(k.d)dl*=1.35;
   if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
+  // an attack that outnumbers the defenders moves faster: twice their army is about 1.6x the pace, four times about 2.2x
+  if(k.d){const D=g.nations[k.d],r=k.troops/Math.max(1000,D.troops);if(r>1)dl/=Math.min(2.6,1+.6*Math.log2(r));}
   return dl*(.55+g.rng()*.9)*g.sSpd*g.nations[k.a].mSpd;
 }
 function tileCost(g,k,i,A,D){
@@ -210,7 +212,7 @@ function pushNb(g,k,i){
 }
 // big AI realms answer a player's moves with an emoji (indices into EMO, 1-based)
 function react(g,B,A,e){if(B&&A&&B.alive&&!B.human&&!B.minor&&A.human)setEmo(g,B.id,e,A.id);}
-function warMark(g,A,D){const now=g.tick;if(now-D.lastHit[A.id]>300){emit(g,'war',{a:A.id,d:D.id});react(g,D,A,D.troops<A.troops*.5?10:D.troops>A.troops*1.5?12:11);}D.lastHit[A.id]=now;A.lastAtk[D.id]=now;D.att[A.id]=Math.max(-100,D.att[A.id]-35);}
+function warMark(g,A,D){const now=g.tick;if(now-D.lastHit[A.id]>300){emit(g,'war',{a:A.id,d:D.id});react(g,D,A,D.troops<A.troops*.5?10:D.troops>A.troops*1.5?12:11);}D.lastHit[A.id]=now;A.lastAtk[D.id]=now;D.att[A.id]=Math.max(-100,Math.min(D.att[A.id]-35,-45));A.att[D.id]=Math.min(A.att[D.id],-45);}
 function launchAttack(g,a,d,ratio,tx,ty,focus){focus=!!focus;
   const A=g.nations[a];if(!A||!A.alive||a===d)return'no';
   const D=d?g.nations[d]:null,now=g.tick;
@@ -221,7 +223,9 @@ function launchAttack(g,a,d,ratio,tx,ty,focus){focus=!!focus;
   let k=same;
   if(!k){if(cnt>=MAX_ATK)return'max';k={id:++g.aid,a,d,troops:0,heap:new Heap(),tx,ty,ox:0,oy:0,born:now,gain:0,reseed:now,focus:focus&&tx>=0};if(!seedAttack(g,k))return'noborder';}
   A.troops-=com;let tr=com;
-  if(D)for(const e of g.attacks)if(e.a===d&&e.d===a&&e.troops>0){const c=Math.min(e.troops,tr);e.troops-=c;tr-=c;if(tr<=0)break;}
+  // a counter-attack along every border meets all their attacks head on; one aimed at a point only meets their point attacks nearby,
+  // and otherwise pushes in normally, taking the ground back where it lands
+  if(D)for(const e of g.attacks){if(e.a!==d||e.d!==a||e.troops<=0)continue;if(k.focus&&!(e.focus&&hyp(e.tx-k.tx,e.ty-k.ty)<18))continue;const c=Math.min(e.troops,tr);e.troops-=c;tr-=c;if(tr<=0)break;}
   if(D)warMark(g,A,D);
   if(tr<=0)return'clash';
   k.troops+=tr;if(same){if(tx>=0){k.tx=tx;k.ty=ty;}}else g.attacks.push(k);
@@ -343,13 +347,15 @@ function tickTrains(g){
   for(let j=g.trains.length-1;j>=0;j--){const b=g.trains[j],A=g.nations[b.a];let rm=!A.alive||b.from.dead||b.from.owner!==b.a;
     if(!rm){b.p+=b.spd*b.dir;
       if(b.dir>0&&b.p>=b.path.length-1){b.p=b.path.length-1;b.dir=-1;if(b.to.dead||b.to.owner!==b.toOwner)rm=true;else g.nations[b.to.owner].gold+=b.path.length*.5;}
+      else if(b.dir<0&&b.p<=0&&b.empty)rm=true;
       else if(b.dir<0&&b.p<=0){const amt=Math.round((50+b.path.length*2)*(1+.25*(A.era-1))*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'train',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trains[j]=g.trains[g.trains.length-1];g.trains.pop();}}
 }
 // trade embargo: a realm can stop trading with one neighbour or with everyone; either side refusing stops ships and trains
 function tradeOk(g,a,b){const A=g.nations[a],B=g.nations[b];return!A.embAll&&!B.embAll&&!A.emb[b]&&!B.emb[a];}
 function setEmb(g,a,d,v){const A=g.nations[a];if(!A)return;v=v?1:0;if(d){if(g.nations[d])A.emb[d]=v;}else{A.embAll=v;if(!v)A.emb.fill(0);}
-  for(const L of[g.trades,g.trains])for(let j=L.length-1;j>=0;j--){const b=L[j],o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)){L[j]=L[L.length-1];L.pop();}}emit(g,'emb',{a,d,v});}
+  // ships and trains on their way out turn round and go home empty; those already coming back finish their trip
+  for(const L of[g.trades,g.trains])for(const b of L){const o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)&&b.dir>0){b.dir=-1;b.empty=1;}}emit(g,'emb',{a,d,v});}
 // emoji over a realm for everyone to see (optionally aimed at one realm), at most one every 3 seconds
 function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';if(EMO[e-1]==='67'&&!A.pass)return'pass';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
 function launchTrade(g,s){
@@ -363,6 +369,7 @@ function tickTrades(g){
   for(let j=g.trades.length-1;j>=0;j--){const b=g.trades[j],A=g.nations[b.a];let rm=!A.alive||b.from.dead||b.from.owner!==b.a;
     if(!rm){b.p+=b.spd*b.dir;
       if(b.dir>0&&b.p>=b.path.length-1){b.p=b.path.length-1;b.dir=-1;if(b.to.dead||!b.to.owner)rm=true;else g.nations[b.to.owner].gold+=b.path.length*.6;}
+      else if(b.dir<0&&b.p<=0&&b.empty)rm=true;
       else if(b.dir<0&&b.p<=0){const amt=Math.round((60+b.path.length*2.2)*(1+.25*(A.era-1))*(FAC[A.fac].port||1)*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'trade',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trades[j]=g.trades[g.trades.length-1];g.trades.pop();}}
 }
@@ -375,6 +382,10 @@ const FT_R=lv=>Math.round(R_FORT+2.5*(lv-1)),CO_R=lv=>COAST_R+4*(lv-1),SH_R=lv=>
 function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type].cost)*UP_MULT[s.level+1]/10)*10;}
 function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
 function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}
+// a city hit by a missile works at a fraction until it is rebuilt; paying fixes it at once, priced by the time left and the city's size
+function repairCost(g,s){const left=Math.max(0,(s.ruin||0)-g.tick);return left?Math.max(50,Math.round(Math.ceil(left/TPS)*(10+6*s.level)*(s.capital?1.5:1)/10)*10):0;}
+function repairCity(g,n,s){if(!s||s.dead||s.owner!==n.id||s.type!=='city'||!(s.ruin>g.tick))return'no';const c=repairCost(g,s);if(n.gold<c)return'gold';
+  n.gold-=c;s.ruin=g.tick;n.defDirty=true;emit(g,'repair',{s,a:n.id});return 0;}
 function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
 // is the target reached sooner by sea? walks the land from the target to our realm (breadth-first) and compares that
 // with the straight gap from our nearest tile, which must be mostly water
@@ -426,7 +437,7 @@ function tickMissiles(g){
     for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
       s.cd=g.tick+SH_CD(s.level);if(g.rng()<SH_P[m.type][s.level]){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
     if(hit){const R2=MSL[m.type].r**2;for(const T of g.tanks)if(T.a!==m.a&&!g.nations[T.a].ally[m.a]&&(T.x-.5-m.tx)**2+(T.y-.5-m.ty)**2<=R2)T.hp=0;
-      const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+      const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?460:nk?320:70,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 // missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;
 // an atom bomb erases a small city, and the doomsday bomb erases every building it touches
@@ -449,7 +460,8 @@ function blast(g,cx,cy,R,by,o){
     if(si&&g.structs[si-1].type==='city'){const s=g.structs[si-1];if(d<=R*.85){if(!hitCity(g,s,o,by))continue;}else if(!o.wipe)continue;else destroyCity(g,s,by);}
     else if(si&&o.wipe)killStruct(g,g.structs[si-1]);
     const ow=g.owner[i];if(ow&&g.rng()<1.2-d/R*.6){hits.set(ow,(hits.get(ow)||0)+1);setOwner(g,i,0);}
-    if(o.fall&&d<=R*.92){if(g.fall[i]<=now)g.fallList.push(i);g.fall[i]=Math.floor(now+o.fall*(.6+.4*g.rng()));g.dirty.push(i);}
+    // the burning ground thins out toward the edge, so it is never a clean circle; snow and winter cut it short
+    if(o.fall&&(d<=R*.65||g.rng()<1-(d/R-.65)/.32)){if(g.fall[i]<=now)g.fallList.push(i);g.fgen[i]=0;g.fall[i]=Math.floor(now+o.fall*(.6+.4*g.rng())*(g.season===3||g.M.ter[i]===7?.55:1));g.dirty.push(i);}
   }
   for(const[ow,c]of hits){const O=g.nations[ow];if(!O.alive)continue;
     O.troops=Math.max(0,O.troops-Math.min(O.troops*.7,c*(O.troops/Math.max(O.tiles+c,25))*o.kill));O.lastHitAny=now;
@@ -473,7 +485,7 @@ function useUlt(g,n,ti){
 }
 function tickPending(g){
   const now=g.tick;for(let j=g.pending.length-1;j>=0;j--){const p=g.pending[j];if(now<p.at)continue;g.pending.splice(j,1);
-    if(p.type==='meteor')blast(g,p.x,p.y,6,0,{fall:150,kill:1.5,lvl:1});
+    if(p.type==='meteor')blast(g,p.x,p.y,6,0,{fall:110,kill:1.5,lvl:1});
     else if(p.type==='tsunami')blast(g,p.x,p.y,10,p.by,{coast:4,kill:2,lvl:1});
     else blast(g,p.x,p.y,5,p.by,{fall:60,kill:2.5,lvl:1});
     emit(g,'boom',{x:p.x,y:p.y,r:p.type==='tsunami'?10:6,type:p.type,a:p.by||0});}
@@ -694,9 +706,21 @@ function snapshot(g){
   const W=g.W,dv=g.N>250000?4:g.N>120000?3:2,w=(W/dv)|0,h=(g.H/dv)|0,s=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++)s[y*w+x]=g.owner[y*dv*W+x*dv];
   g.snaps.push(s);if(g.snaps.length>360){g.snaps=g.snaps.filter((_,i)=>i%2===0);g.snapEvery*=2;}
 }
+// fire spreads by the ground it is on: slowly over grass, fast through forest (but never the whole forest), a little on hills,
+// not at all on sand, rock or snow; in winter it does not spread and burns out twice as fast
+const FIRE={2:{p:.15,gen:4,d:75},3:{p:.62,gen:10,d:110},5:{p:.07,gen:2,d:55}};
+function tickFire(g){
+  const W=g.W,H=g.H,now=g.tick,fl=g.fallList,ter=g.M.ter,gen=g.fgen,winter=g.season===3,n0=fl.length;
+  for(let j=0;j<n0;j++){const i=fl[j],rem=g.fall[i]-now;if(rem<=0)continue;
+    if(winter||ter[i]===7){g.fall[i]-=5;continue;}
+    if(rem<25)continue;const gi=gen[i],x=i%W,y=(i/W)|0;
+    for(let d=0;d<4;d++){const nx=x+DX8[d],ny=y+DY8[d];if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(g.fall[k]>now||g.structAt[k])continue;
+      const F=FIRE[ter[k]];if(!F||gi>=F.gen)continue;if(g.rng()>=F.p*.5*(1-gi/F.gen*.6))continue;
+      gen[k]=gi+1;fl.push(k);g.fall[k]=Math.floor(now+F.d*(.6+.4*g.rng())*(1-gi/(F.gen+2)));g.dirty.push(k);}}
+}
 function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
-  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickTanks(g);tickMissiles(g);tickPending(g);
+  seasonTick(g);economy(g);if(now%5===0&&g.fallList.length)tickFire(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickTanks(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
     structPass(g);allyPass(g);if(g.ruins.length&&now%100===0)g.ruins=g.ruins.filter(r=>r.until>now);if(now%50===0)for(const n of g.nations)if(n)n.defDirty=true;const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);

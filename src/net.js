@@ -38,6 +38,7 @@ function applyCmd(pid,c){
       if(c.at&&c.i>=0&&c.i<g.N){cc=shoreNear(g,c.i,tgt,10);r=cc<0?'noshore':launchBoat(g,pid,cc,ratio);}
       else{cc=c.i>=0&&c.i<g.N&&g.owner[c.i]===c.d?(g.M.coastD[c.i]===1&&portOk(g,c.i)?c.i:nearCoast(g,c.i,8)):-1;r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';if(r==='nopath'){cc=seaLanding(g,pid,c.d);if(cc>=0)r=launchBoat(g,pid,cc,ratio);}}
       if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}
+    case'fix':{const si=c.i>=0&&c.i<g.N?g.structAt[c.i]:0,s=si?g.structs[si-1]:null;r=s?repairCity(g,n,s):'no';if(mine){if(r)err(r);else sfx('build');}return;}
     case'up':{const si=c.i>=0&&c.i<g.N?g.structAt[c.i]:0,s=si?g.structs[si-1]:null;r=s?upgrade(g,n,s):'no';if(mine){if(r)err(r);else sfx('build');}return;}
     case'build':if(!ST[c.s])return;r=build(g,n,c.s,c.s==='port'||c.s==='coast'?snapPort(g,n,c.i,clamp(c.R|0,0,8),c.s):c.i);if(mine){if(r)err(r);else sfx('build');}return;
     case'msl':if(!MSL[c.s])return;r=launchMissile(g,pid,c.s,c.i);if(mine&&r)err(r);return;

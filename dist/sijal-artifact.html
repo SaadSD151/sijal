@@ -460,7 +460,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='7abef2d295';
+const BUILD_ID='aae06c97f5';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -618,7 +618,7 @@ const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SH
 
 function newGame(o){
   const M=genMap(o),N=M.N;
-  const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),structAt:new Int16Array(N),
+  const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),fgen:new Uint8Array(N),structAt:new Int16Array(N),
     nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],fills:[],tanks:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
     q:new Int32Array(N),prev:new Int32Array(N),lab:new Int32Array(N),nb:null,diff:DIFF[o.diff==null?1:o.diff],ncity:[],ncDirty:true,used:M.used,grace:[1500,900,450,150][o.diff==null?1:o.diff]};
@@ -790,6 +790,8 @@ function tileDelay(g,k,n,par){
   let dl=T_DELAY[g.M.ter[n]];if(k.d)dl*=1.35;
   if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
+  // an attack that outnumbers the defenders moves faster: twice their army is about 1.6x the pace, four times about 2.2x
+  if(k.d){const D=g.nations[k.d],r=k.troops/Math.max(1000,D.troops);if(r>1)dl/=Math.min(2.6,1+.6*Math.log2(r));}
   return dl*(.55+g.rng()*.9)*g.sSpd*g.nations[k.a].mSpd;
 }
 function tileCost(g,k,i,A,D){
@@ -825,7 +827,7 @@ function pushNb(g,k,i){
 }
 // big AI realms answer a player's moves with an emoji (indices into EMO, 1-based)
 function react(g,B,A,e){if(B&&A&&B.alive&&!B.human&&!B.minor&&A.human)setEmo(g,B.id,e,A.id);}
-function warMark(g,A,D){const now=g.tick;if(now-D.lastHit[A.id]>300){emit(g,'war',{a:A.id,d:D.id});react(g,D,A,D.troops<A.troops*.5?10:D.troops>A.troops*1.5?12:11);}D.lastHit[A.id]=now;A.lastAtk[D.id]=now;D.att[A.id]=Math.max(-100,D.att[A.id]-35);}
+function warMark(g,A,D){const now=g.tick;if(now-D.lastHit[A.id]>300){emit(g,'war',{a:A.id,d:D.id});react(g,D,A,D.troops<A.troops*.5?10:D.troops>A.troops*1.5?12:11);}D.lastHit[A.id]=now;A.lastAtk[D.id]=now;D.att[A.id]=Math.max(-100,Math.min(D.att[A.id]-35,-45));A.att[D.id]=Math.min(A.att[D.id],-45);}
 function launchAttack(g,a,d,ratio,tx,ty,focus){focus=!!focus;
   const A=g.nations[a];if(!A||!A.alive||a===d)return'no';
   const D=d?g.nations[d]:null,now=g.tick;
@@ -836,7 +838,9 @@ function launchAttack(g,a,d,ratio,tx,ty,focus){focus=!!focus;
   let k=same;
   if(!k){if(cnt>=MAX_ATK)return'max';k={id:++g.aid,a,d,troops:0,heap:new Heap(),tx,ty,ox:0,oy:0,born:now,gain:0,reseed:now,focus:focus&&tx>=0};if(!seedAttack(g,k))return'noborder';}
   A.troops-=com;let tr=com;
-  if(D)for(const e of g.attacks)if(e.a===d&&e.d===a&&e.troops>0){const c=Math.min(e.troops,tr);e.troops-=c;tr-=c;if(tr<=0)break;}
+  // a counter-attack along every border meets all their attacks head on; one aimed at a point only meets their point attacks nearby,
+  // and otherwise pushes in normally, taking the ground back where it lands
+  if(D)for(const e of g.attacks){if(e.a!==d||e.d!==a||e.troops<=0)continue;if(k.focus&&!(e.focus&&hyp(e.tx-k.tx,e.ty-k.ty)<18))continue;const c=Math.min(e.troops,tr);e.troops-=c;tr-=c;if(tr<=0)break;}
   if(D)warMark(g,A,D);
   if(tr<=0)return'clash';
   k.troops+=tr;if(same){if(tx>=0){k.tx=tx;k.ty=ty;}}else g.attacks.push(k);
@@ -958,13 +962,15 @@ function tickTrains(g){
   for(let j=g.trains.length-1;j>=0;j--){const b=g.trains[j],A=g.nations[b.a];let rm=!A.alive||b.from.dead||b.from.owner!==b.a;
     if(!rm){b.p+=b.spd*b.dir;
       if(b.dir>0&&b.p>=b.path.length-1){b.p=b.path.length-1;b.dir=-1;if(b.to.dead||b.to.owner!==b.toOwner)rm=true;else g.nations[b.to.owner].gold+=b.path.length*.5;}
+      else if(b.dir<0&&b.p<=0&&b.empty)rm=true;
       else if(b.dir<0&&b.p<=0){const amt=Math.round((50+b.path.length*2)*(1+.25*(A.era-1))*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'train',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trains[j]=g.trains[g.trains.length-1];g.trains.pop();}}
 }
 // trade embargo: a realm can stop trading with one neighbour or with everyone; either side refusing stops ships and trains
 function tradeOk(g,a,b){const A=g.nations[a],B=g.nations[b];return!A.embAll&&!B.embAll&&!A.emb[b]&&!B.emb[a];}
 function setEmb(g,a,d,v){const A=g.nations[a];if(!A)return;v=v?1:0;if(d){if(g.nations[d])A.emb[d]=v;}else{A.embAll=v;if(!v)A.emb.fill(0);}
-  for(const L of[g.trades,g.trains])for(let j=L.length-1;j>=0;j--){const b=L[j],o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)){L[j]=L[L.length-1];L.pop();}}emit(g,'emb',{a,d,v});}
+  // ships and trains on their way out turn round and go home empty; those already coming back finish their trip
+  for(const L of[g.trades,g.trains])for(const b of L){const o=b.to&&b.to.owner;if((b.a===a||o===a)&&o&&!tradeOk(g,b.a,o)&&b.dir>0){b.dir=-1;b.empty=1;}}emit(g,'emb',{a,d,v});}
 // emoji over a realm for everyone to see (optionally aimed at one realm), at most one every 3 seconds
 function setEmo(g,a,e,to){const A=g.nations[a];if(!A||!A.alive||!(e>=1&&e<=EMO.length)||g.tick-A.emoAt<30)return'cd';if(EMO[e-1]==='67'&&!A.pass)return'pass';A.emo=e;A.emoT=g.tick+60;A.emoAt=g.tick;emit(g,'emo',{a,e,to:to|0});return 0;}
 function launchTrade(g,s){
@@ -978,6 +984,7 @@ function tickTrades(g){
   for(let j=g.trades.length-1;j>=0;j--){const b=g.trades[j],A=g.nations[b.a];let rm=!A.alive||b.from.dead||b.from.owner!==b.a;
     if(!rm){b.p+=b.spd*b.dir;
       if(b.dir>0&&b.p>=b.path.length-1){b.p=b.path.length-1;b.dir=-1;if(b.to.dead||!b.to.owner)rm=true;else g.nations[b.to.owner].gold+=b.path.length*.6;}
+      else if(b.dir<0&&b.p<=0&&b.empty)rm=true;
       else if(b.dir<0&&b.p<=0){const amt=Math.round((60+b.path.length*2.2)*(1+.25*(A.era-1))*(FAC[A.fac].port||1)*(1+.35*((b.lv||1)-1)));A.gold+=amt;emit(g,'trade',{a:b.a,amt,x:b.from.x,y:b.from.y});rm=true;}}
     if(rm){g.trades[j]=g.trades[g.trades.length-1];g.trades.pop();}}
 }
@@ -990,6 +997,10 @@ const FT_R=lv=>Math.round(R_FORT+2.5*(lv-1)),CO_R=lv=>COAST_R+4*(lv-1),SH_R=lv=>
 function upCost(s){return s.level>=5?0:Math.round((s.type==='city'?500:ST[s.type].cost)*UP_MULT[s.level+1]/10)*10;}
 function upEra(s){return s.level+1>=5?4:s.level+1>=4?3:1;}
 function canUp(g,n,s){if(!s||s.dead||s.owner!==n.id||!ST[s.type]||s.type==='mon')return'no';if(s.level>=5)return'lvmax';if(s.build>g.tick||s.upAt>g.tick||(s.ruin>g.tick))return'upbusy';if(n.era<upEra(s))return'era';if(n.gold<upCost(s))return'gold';return 0;}
+// a city hit by a missile works at a fraction until it is rebuilt; paying fixes it at once, priced by the time left and the city's size
+function repairCost(g,s){const left=Math.max(0,(s.ruin||0)-g.tick);return left?Math.max(50,Math.round(Math.ceil(left/TPS)*(10+6*s.level)*(s.capital?1.5:1)/10)*10):0;}
+function repairCity(g,n,s){if(!s||s.dead||s.owner!==n.id||s.type!=='city'||!(s.ruin>g.tick))return'no';const c=repairCost(g,s);if(n.gold<c)return'gold';
+  n.gold-=c;s.ruin=g.tick;n.defDirty=true;emit(g,'repair',{s,a:n.id});return 0;}
 function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
 // is the target reached sooner by sea? walks the land from the target to our realm (breadth-first) and compares that
 // with the straight gap from our nearest tile, which must be mostly water
@@ -1041,7 +1052,7 @@ function tickMissiles(g){
     for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
       s.cd=g.tick+SH_CD(s.level);if(g.rng()<SH_P[m.type][s.level]){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
     if(hit){const R2=MSL[m.type].r**2;for(const T of g.tanks)if(T.a!==m.a&&!g.nations[T.a].ally[m.a]&&(T.x-.5-m.tx)**2+(T.y-.5-m.ty)**2<=R2)T.hp=0;
-      const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?900:nk?600:100,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
+      const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?460:nk?320:70,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 // missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;
 // an atom bomb erases a small city, and the doomsday bomb erases every building it touches
@@ -1064,7 +1075,8 @@ function blast(g,cx,cy,R,by,o){
     if(si&&g.structs[si-1].type==='city'){const s=g.structs[si-1];if(d<=R*.85){if(!hitCity(g,s,o,by))continue;}else if(!o.wipe)continue;else destroyCity(g,s,by);}
     else if(si&&o.wipe)killStruct(g,g.structs[si-1]);
     const ow=g.owner[i];if(ow&&g.rng()<1.2-d/R*.6){hits.set(ow,(hits.get(ow)||0)+1);setOwner(g,i,0);}
-    if(o.fall&&d<=R*.92){if(g.fall[i]<=now)g.fallList.push(i);g.fall[i]=Math.floor(now+o.fall*(.6+.4*g.rng()));g.dirty.push(i);}
+    // the burning ground thins out toward the edge, so it is never a clean circle; snow and winter cut it short
+    if(o.fall&&(d<=R*.65||g.rng()<1-(d/R-.65)/.32)){if(g.fall[i]<=now)g.fallList.push(i);g.fgen[i]=0;g.fall[i]=Math.floor(now+o.fall*(.6+.4*g.rng())*(g.season===3||g.M.ter[i]===7?.55:1));g.dirty.push(i);}
   }
   for(const[ow,c]of hits){const O=g.nations[ow];if(!O.alive)continue;
     O.troops=Math.max(0,O.troops-Math.min(O.troops*.7,c*(O.troops/Math.max(O.tiles+c,25))*o.kill));O.lastHitAny=now;
@@ -1088,7 +1100,7 @@ function useUlt(g,n,ti){
 }
 function tickPending(g){
   const now=g.tick;for(let j=g.pending.length-1;j>=0;j--){const p=g.pending[j];if(now<p.at)continue;g.pending.splice(j,1);
-    if(p.type==='meteor')blast(g,p.x,p.y,6,0,{fall:150,kill:1.5,lvl:1});
+    if(p.type==='meteor')blast(g,p.x,p.y,6,0,{fall:110,kill:1.5,lvl:1});
     else if(p.type==='tsunami')blast(g,p.x,p.y,10,p.by,{coast:4,kill:2,lvl:1});
     else blast(g,p.x,p.y,5,p.by,{fall:60,kill:2.5,lvl:1});
     emit(g,'boom',{x:p.x,y:p.y,r:p.type==='tsunami'?10:6,type:p.type,a:p.by||0});}
@@ -1309,9 +1321,21 @@ function snapshot(g){
   const W=g.W,dv=g.N>250000?4:g.N>120000?3:2,w=(W/dv)|0,h=(g.H/dv)|0,s=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++)s[y*w+x]=g.owner[y*dv*W+x*dv];
   g.snaps.push(s);if(g.snaps.length>360){g.snaps=g.snaps.filter((_,i)=>i%2===0);g.snapEvery*=2;}
 }
+// fire spreads by the ground it is on: slowly over grass, fast through forest (but never the whole forest), a little on hills,
+// not at all on sand, rock or snow; in winter it does not spread and burns out twice as fast
+const FIRE={2:{p:.15,gen:4,d:75},3:{p:.62,gen:10,d:110},5:{p:.07,gen:2,d:55}};
+function tickFire(g){
+  const W=g.W,H=g.H,now=g.tick,fl=g.fallList,ter=g.M.ter,gen=g.fgen,winter=g.season===3,n0=fl.length;
+  for(let j=0;j<n0;j++){const i=fl[j],rem=g.fall[i]-now;if(rem<=0)continue;
+    if(winter||ter[i]===7){g.fall[i]-=5;continue;}
+    if(rem<25)continue;const gi=gen[i],x=i%W,y=(i/W)|0;
+    for(let d=0;d<4;d++){const nx=x+DX8[d],ny=y+DY8[d];if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(g.fall[k]>now||g.structAt[k])continue;
+      const F=FIRE[ter[k]];if(!F||gi>=F.gen)continue;if(g.rng()>=F.p*.5*(1-gi/F.gen*.6))continue;
+      gen[k]=gi+1;fl.push(k);g.fall[k]=Math.floor(now+F.d*(.6+.4*g.rng())*(1-gi/(F.gen+2)));g.dirty.push(k);}}
+}
 function tick(g){
   if(g.over||!g.started)return;const now=++g.tick;
-  seasonTick(g);economy(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickTanks(g);tickMissiles(g);tickPending(g);
+  seasonTick(g);economy(g);if(now%5===0&&g.fallList.length)tickFire(g);tickAttacks(g);tickBoats(g);tickTrades(g);tickTrains(g);tickFills(g);tickTanks(g);tickMissiles(g);tickPending(g);
   if(now%10===0){
     structPass(g);allyPass(g);if(g.ruins.length&&now%100===0)g.ruins=g.ruins.filter(r=>r.until>now);if(now%50===0)for(const n of g.nations)if(n)n.defDirty=true;const fl=g.fallList;for(let j=fl.length-1;j>=0;j--)if(g.fall[fl[j]]<=now){g.dirty.push(fl[j]);fl[j]=fl[fl.length-1];fl.pop();}
     for(let j=g.proposals.length-1;j>=0;j--)if(now>g.proposals[j].until||!g.nations[g.proposals[j].from].alive)g.proposals.splice(j,1);
@@ -1394,6 +1418,8 @@ function aiBuild(g,n,threat){
   const K=g.nations.length;let hostile=threat,type=null,enemySilo=false;
   if(!hostile){let w=-30;for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!n.ally[m.id]&&g.nb[n.id*K+m.id]>2&&n.att[m.id]<w){w=n.att[m.id];hostile=m.id;}}
   for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!n.ally[m.id]&&m.cnt.silo)enemySilo=true;
+  // rebuild a bombed city first when there is gold to spare, the capital before the rest
+  {const rs=g.structs.filter(s=>!s.dead&&s.owner===n.id&&s.type==='city'&&s.ruin>g.tick).sort((a,b)=>(b.capital?1:0)-(a.capital?1:0)||b.level-a.level);if(rs.length&&n.gold>repairCost(g,rs[0])*2.5&&!repairCity(g,n,rs[0]))return;}
   const wantCity=n.cnt.city<1+Math.floor(n.tiles/600),G=n.gold;
   if(wantCity&&G>=buildCost(g,n,'city'))type='city';
   else if(hostile&&n.cnt.fort<1+Math.floor(n.tiles/700)&&G>=buildCost(g,n,'fort')*(wantCity?2.5:1.2))type='fort';
@@ -1432,9 +1458,10 @@ function aiDip(g,n){
   for(const m of g.nations){
     if(!m||!m.alive||m.id===id)continue;let a=n.att[m.id];
     if(n.ally[m.id]){allies++;a=Math.min(70,a+2);}
-    else if(g.nb[id*K+m.id]>2){foes++;a-=1+3*P.agg;}
+    // living side by side makes a realm wary, never hostile: hostility comes only from real attacks, and fades once they stop
+    else if(g.nb[id*K+m.id]>2){foes++;if(a>-30)a=Math.max(-30,a-(1+3*P.agg));else if(now-n.lastHit[m.id]>900&&now-m.lastHit[id]>900)a+=.5;}
     else a+=a<0?1:-.3;
-    if(g.hegemon===m.id)a-=6;
+    if(g.hegemon===m.id&&a>-30)a=Math.max(-30,a-6);
     n.att[m.id]=clamp(a,-100,100);
   }
   for(const m of g.nations){
@@ -1667,20 +1694,27 @@ function drawEmo(c,e,x,y,q,ts){
 function fireSprite(){if(R.flame)return R.flame;const k=mk(32,48),x=k.getContext('2d'),gr=x.createRadialGradient(16,34,1,16,30,22);
   gr.addColorStop(0,'rgba(255,250,210,1)');gr.addColorStop(.25,'rgba(255,200,70,.95)');gr.addColorStop(.55,'rgba(255,110,20,.75)');gr.addColorStop(1,'rgba(160,20,0,0)');
   x.fillStyle=gr;x.beginPath();x.moveTo(16,2);x.bezierCurveTo(26,18,30,30,26,40);x.quadraticCurveTo(16,48,6,40);x.bezierCurveTo(2,30,6,18,16,2);x.fill();return R.flame=k;}
+function glowSprite(){if(R.fglow)return R.fglow;const k=mk(64,64),x=k.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,170,60,.9)');gr.addColorStop(.4,'rgba(255,90,20,.45)');gr.addColorStop(1,'rgba(120,10,0,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);return R.fglow=k;}
 function drawFire(c,g,z,cw,ch,ts){
-  const W=g.W,now=g.tick,q=R.q==null?2:R.q,fl=g.fallList,hz=z/2,ox=cw/2-cam.x*z,oy=ch/2-cam.y*z,sp=fireSprite();
+  const W=g.W,now=g.tick,q=R.q==null?2:R.q,fl=g.fallList,hz=z/2,ox=cw/2-cam.x*z,oy=ch/2-cam.y*z,sp=fireSprite(),gl=glowSprite();
   let drawn=0;const cap=q===2?4000:q===1?2500:1500;
   for(let j=0;j<fl.length&&drawn<cap;j++){const i=fl[j],rem=g.fall[i]-now;if(rem<=0)continue;const x=i%W,y=(i/W)|0,sx=x*z+ox+hz,sy=y*z+oy+hz;
-    if(sx<-z*2||sy<-z*3||sx>cw+z*2||sy>ch+z*2)continue;const h=((x*73856093)^(y*19349663))>>>0,inten=Math.min(1,rem/160),ph=(h%997)/997;
+    if(sx<-z*3||sy<-z*4||sx>cw+z*3||sy>ch+z*3)continue;const h=((x*73856093)^(y*19349663))>>>0,inten=Math.min(1,rem/60),ph=(h%997)/997;
     if(q===0){if(h%3)continue;c.fillStyle=`rgba(255,${90+(h%60)},20,${.35*inten})`;c.fillRect(sx-z*.35,sy-z*.35,z*.7,z*.7);drawn++;continue;}
-    const fl1=.65+.35*Math.sin(ts/(90+(h%60))+ph*6.28);
-    if(q===1){if(h%2)continue;c.globalCompositeOperation='lighter';c.globalAlpha=.55*inten*fl1;const s=z*(.9+.5*fl1);c.drawImage(sp,sx-s/2,sy-s*1.1,s,s*1.5);c.globalAlpha=1;c.globalCompositeOperation='source-over';drawn++;continue;}
-    // High: glow under the flame, two flame tongues and a little rising smoke
-    c.globalCompositeOperation='lighter';c.globalAlpha=.18*inten;c.fillStyle='#ff5a14';c.beginPath();c.arc(sx,sy,z*.9,0,7);c.fill();
-    c.globalAlpha=.7*inten*fl1;let s=z*(1+.6*fl1);c.drawImage(sp,sx-s/2+Math.sin(ts/170+ph*9)*z*.12,sy-s*1.15,s,s*1.5);
-    if(h%3===0){const f2=.6+.4*Math.sin(ts/70+ph*4);c.globalAlpha=.55*inten*f2;s=z*(.6+.4*f2);c.drawImage(sp,sx-s/2+z*.25,sy-s*1.2,s,s*1.5);}
+    const fl1=.65+.35*Math.sin(ts/(90+(h%60))+ph*6.28),hi=q===2;c.globalCompositeOperation='lighter';
+    // soft light pooled on the ground, not a square on every tile
+    if(h%2===0){const s=z*(hi?2.8:2.3)*(.85+.15*fl1);c.globalAlpha=(hi?.26:.22)*inten;c.drawImage(gl,sx-s/2,sy-s/2,s,s);}
+    // flames: spaced out and of different heights, so the fire looks alive
+    if(h%3===0||(hi&&h%4===1)){const big=h%5===0?1.35:1,s=z*(1.25+.7*fl1)*big;c.globalAlpha=(hi?.85:.78)*inten*(.7+.3*fl1);c.drawImage(sp,sx-s/2+Math.sin(ts/(150+(h%80))+ph*9)*z*.15,sy-s*1.2,s,s*1.5);
+      if(hi&&h%6===0){const f2=.6+.4*Math.sin(ts/65+ph*4),s2=z*(.7+.45*f2);c.globalAlpha=.6*inten*f2;c.drawImage(sp,sx-s2/2+z*.3,sy-s2*1.25,s2,s2*1.5);}}
+    // glowing embers in the gaps
+    else if(h%5===1){const e=.5+.5*Math.sin(ts/(220+(h%120))+ph*7);c.globalAlpha=.7*inten*e;c.fillStyle=h%2?'#ff5a1e':'#ffb347';const r=z*.14;c.fillRect(sx-r+(ph-.5)*z*.6,sy-r+((h>>4)%7/7-.5)*z*.6,r*2,r*2);}
+    // sparks drifting up
+    if(h%(hi?6:9)===0){const t=((ts/1200+ph)%1);c.globalAlpha=.85*inten*(1-t);c.fillStyle='#ffe08a';const r=Math.max(1,z*.1);c.fillRect(sx+Math.sin(t*6+ph*7)*z*.4,sy-z*(.8+t*2.6),r,r);}
     c.globalCompositeOperation='source-over';
-    if(h%9===0){const t=((ts/2200+ph)%1);c.globalAlpha=.22*inten*(1-t);c.fillStyle='#3a3530';c.beginPath();c.arc(sx+Math.sin(t*5+ph*6)*z*.4,sy-z*(1+t*3.5),z*(.4+t*.9),0,7);c.fill();}
+    // smoke: darker puffs rising and spreading
+    if(h%(hi?6:11)===0){const t=((ts/(hi?2400:2800)+ph)%1);c.globalAlpha=(hi?.26:.18)*inten*(1-t)*Math.min(1,t*4);c.fillStyle=hi?'#2f2a26':'#3a3530';c.beginPath();c.arc(sx+Math.sin(t*4+ph*6)*z*.6,sy-z*(1.2+t*4),z*(.45+t*1.2),0,7);c.fill();}
     c.globalAlpha=1;drawn++;}
 }
 // top-down main battle tank, drawn once per realm (4 tread frames): hull in the realm colour with shading and camouflage, rubber tracks with
@@ -1777,8 +1811,8 @@ function draw(g,dt,ts){
   {const aimM=UI.mode&&UI.mode[0]==='m',RC=R.rng||(R.rng={});for(const s of g.structs){if(s.dead||s.build||(s.type!=='fort'&&s.type!=='shield'&&s.type!=='coast'))continue;const mine=s.owner===me;if(!mine&&!(aimM&&s.type==='shield'))continue;
     const rr=s.type==='fort'?FT_R(s.level):s.type==='coast'?CO_R(s.level):SH_R(s.level),p0=w2s(s.x-rr,s.y-rr),D=2*rr+1;if(p0.x>cw||p0.y>ch||p0.x+D*z<0||p0.y+D*z<0||rr*z<6)continue;
     const sel=!!(UI.bs===s||(UI.mode&&UI.mode[0]==='b')||aimM),key=s.i+':'+s.type+(sel?'s':''),col=!mine?[255,90,70]:s.type==='shield'?[120,190,255]:s.type==='coast'?[90,220,200]:[255,233,168];let E=RC[key];
-    if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&own[Y*W+X]===o;
-      for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge&&sel?205:(s.type==='shield'?44:34);}
+    if(!E||E.rr!==rr||E.o!==s.owner||ts-E.t>700){const cv2=E&&E.cv.width===D?E.cv:mk(D,D),x2=cv2.getContext('2d'),im=x2.createImageData(D,D),d=im.data,W=g.W,H=g.H,own=g.owner,o=s.owner,ter=g.M.ter,sea=s.type==='coast',inR=(X,Y)=>X>=0&&Y>=0&&X<W&&Y<H&&(X-s.x)**2+(Y-s.y)**2<=rr*rr&&(sea?ter[Y*W+X]<2:own[Y*W+X]===o);
+      for(let y=0;y<D;y++)for(let x=0;x<D;x++){const X=s.x-rr+x,Y=s.y-rr+y;if(!inR(X,Y))continue;const edge=!inR(X-1,Y)||!inR(X+1,Y)||!inR(X,Y-1)||!inR(X,Y+1),k=(y*D+x)*4;d[k]=col[0];d[k+1]=col[1];d[k+2]=col[2];d[k+3]=edge&&sel?205:(s.type==='shield'?44:sea?48:34);}
       x2.putImageData(im,0,0);E=RC[key]={cv:cv2,rr,o:s.owner,t:ts};}
     const sm=c.imageSmoothingEnabled;c.imageSmoothingEnabled=false;c.drawImage(E.cv,p0.x,p0.y,D*z,D*z);c.imageSmoothingEnabled=sm;}}
   // structures
@@ -2028,7 +2062,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  help:[['Cities are the heart of war','Each city rules the province around it. When a city falls, its province surrenders to the conqueror. Lose your last city and your whole realm collapses.'],['The spearhead','Tap enemy or neutral land and your attack drives toward the point you tapped. Aim it at cities.'],['Attack force','The slider sets how much of your army each attack takes. Send everything and your homeland is left thin.'],['Sieges','A city is held by a share of its realm\'s whole army, so mass your troops first. A landlocked pocket that is fully encircled falls by itself.'],['Building','Cities add troops and gold, forts double defense, ports bring gold and ships.'],['Seasons','Spring for growth, summer for attack, autumn for gold, and winter slows every army.'],['Ages','Advance from swords to the atom to unlock ports, missiles, the air shield and the bomb.'],['Politics','Alliances last two minutes, and before they end you choose whether to renew. Gift gold and call your allies to war. Grow too large and the world unites against you, and your army grows more slowly.'],['Two roads to victory','Rule 70% of the world\'s land, or raise the Eternal Monument and hold it for 150 seconds.']],
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the left button to aim an attack arrow, drag with the right button to move the map, right-click opens a realm card. On mobile: long-press a realm to open its card.'}};
 // Saudi-dialect wording for the Arabic interface
-Object.assign(TX.ar,{tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
+Object.assign(TX.ar,{ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
  faction:'اختر حضارتك',realm:'اسم دولتك',world:'شكل العالم',foes:'عدد الخصوم',
  pick:'اختر مكان «{0}» داخل أرضك',aim:'اختر الهدف على الخريطة',spawn:'اختر مكان عاصمتك: اضغط على أي أرض فاضية',
  e_gold:'الذهب ما يكفي',e_era:'يبي له عصر أحدث',e_own:'ابنِ داخل أرضك',e_busy:'المكان مشغول',e_near:'قريب مرة من مبنى ثاني',e_cnear:'قريب مرة من مدينة ثانية',e_coast:'الميناء يبي له ساحل مفتوح',
@@ -2050,7 +2084,7 @@ Object.assign(TX.ar,{tag:'خذ المدينة يطيح إقليمها',quick:'م
  lobbyHost:'أنت المضيف. عط الكود لأخوياك، ولما يدخلون ابدأ المعركة. إعدادات العالم هي اللي اخترتها في المعركة المخصّصة.',lobbyWait:'ننتظر المضيف يبدأ المعركة…',
  mpSpawn:'اختر حضارتك ومكان عاصمتك. المعركة تبدأ لما الكل يختار أو بعد دقيقة',mpWait:'ننتظر باقي اللاعبين…',mpLeft:'{0} طلع من المعركة والحاسوب مسك دولته',mpDead:'طاحت دولتك. تتفرج الحين على باقي الحرب',
  e_room:'ما قدرنا نوصل للغرفة. تأكد من الكود، وإذا ما ضبط جرّب شبكة ثانية (واي فاي أو بيانات الجوال)',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
-Object.assign(TX.en,{b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
+Object.assign(TX.en,{ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
  mpSpawn:'Choose your civilization and found your capital. The battle starts when everyone has chosen, or after one minute',
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the right button to move the map, right-click opens a realm card.'});
 TX.en.help[1]=['Attacking','Pick from the Attack type list: “At a point” focuses your army in a narrow corridor toward the spot you tap, “Along every border” strikes across your whole shared border. You can hide the list and bring it back. On mobile the realm\'s options open first: attack, ally or gift.'];
@@ -2130,6 +2164,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
  {v:'5.1',d:'2026-11-22',ar:['🎵 صار للعبة حساب على تيك توك: @sijal_2، تلقاه في القائمة الرئيسية. تابعنا!'],en:['🎵 Sijal is on TikTok: @sijal_2, linked from the main menu. Follow us!']},
  {v:'5.0',d:'2026-11-22',ar:['⚔️ لما تقضي على دولة تاخذ أرضها كاملة، ما يبقى منها شي فاضي','🪖 شكل جديد للدبابات: جنازير وعجلات تتحرك، وهيكل مموّه بلون دولتك، وبرج ومدفع، ولهب من المدفع وغبار وهي تمشي','🛡️ خطوط مدى الحصون صارت تطلع بس لما تختار الحصن أو تبني، عشان ما تتلخبط مع الحدود','🚀 القبة الدفاعية صارت تطلق صاروخ اعتراض يطلع للسما ويفجّر الصاروخ الجاي، والدفاع البحري يطلق قذيفة بلهب من المدفع وترشّ الموية مكان ما تطيح','📏 تطوير الحصن والقبة والدفاع البحري صار يكبّر مداهم بشكل أكبر: الحصن من 8 لين 18، القبة من 19 لين 35، والدفاع البحري من 17 لين 33'],en:['⚔️ Wiping out a realm now gives you all of its land, with nothing left empty','🪖 New tank look: moving tracks and wheels, a camouflaged hull in your colour, turret and gun, muzzle flash and dust on the move','🛡️ Fort range outlines only show when you select a fort or build, so they are not mistaken for borders','🚀 Shield domes now launch an interceptor that climbs and bursts the incoming missile, and coastal guns fire a shell with a muzzle flash and a splash where it lands','📏 Upgrading forts, domes and coastal guns now grows their range much more: fort 8 to 18, dome 19 to 35, coastal gun 17 to 33']},
  {v:'4.9',d:'2026-11-22',ar:['🔥 الأرض اللي تنضرب بنيزك أو صاروخ أو نووي تصير محروقة وتولّع فيها نار، وكل ما رفعت الجرافيكس صارت النار والدخان أوضح','🗺️ المعركة السريعة صارت تختار شكل خريطة مختلف كل مرة','🏛️ زر العصر صار يوضح عصرك الحالي والعصر اللي بتشتريه'],en:['🔥 Ground hit by a meteor, missile or nuke turns scorched and burns, with richer flames and smoke on higher graphics','🗺️ Quick Battle now picks a different world shape every time','🏛️ The age button now shows your current age and the one you are buying']},
@@ -2188,6 +2223,7 @@ function applyCmd(pid,c){
       if(c.at&&c.i>=0&&c.i<g.N){cc=shoreNear(g,c.i,tgt,10);r=cc<0?'noshore':launchBoat(g,pid,cc,ratio);}
       else{cc=c.i>=0&&c.i<g.N&&g.owner[c.i]===c.d?(g.M.coastD[c.i]===1&&portOk(g,c.i)?c.i:nearCoast(g,c.i,8)):-1;r=cc>=0?launchBoat(g,pid,cc,ratio):'nopath';if(r==='nopath'){cc=seaLanding(g,pid,c.d);if(cc>=0)r=launchBoat(g,pid,cc,ratio);}}
       if(mine){if(typeof r==='object'){sfx('boat');addFx('text',cc%W,(cc/W)|0,{s:fmt(r.troops),dur:1100,col:'#ffe9a8'});}else err(r);}return;}
+    case'fix':{const si=c.i>=0&&c.i<g.N?g.structAt[c.i]:0,s=si?g.structs[si-1]:null;r=s?repairCity(g,n,s):'no';if(mine){if(r)err(r);else sfx('build');}return;}
     case'up':{const si=c.i>=0&&c.i<g.N?g.structAt[c.i]:0,s=si?g.structs[si-1]:null;r=s?upgrade(g,n,s):'no';if(mine){if(r)err(r);else sfx('build');}return;}
     case'build':if(!ST[c.s])return;r=build(g,n,c.s,c.s==='port'||c.s==='coast'?snapPort(g,n,c.i,clamp(c.R|0,0,8),c.s):c.i);if(mine){if(r)err(r);else sfx('build');}return;
     case'msl':if(!MSL[c.s])return;r=launchMissile(g,pid,c.s,c.i);if(mine&&r)err(r);return;
@@ -3044,8 +3080,11 @@ function buildRefresh(){
   const g=G,s=UI.bs,c=$('#card');if(!s||!c||c.hidden)return;const me=g.nations[g.human];if(s.dead||s.owner!==me.id)return closeCard();
   $('#bLv').textContent=t('lvl',s.level);$('#bDots').innerHTML=[1,2,3,4,5].map(k=>`<i class="${k<=s.level?'on':''}"></i>`).join('');
   $('#bNow').textContent=effText(s,s.level);
-  const r=canUp(g,me,s),key=s.level+'|'+r+'|'+(s.upAt>g.tick?Math.ceil((s.upAt-g.tick)/TPS):0);if(key===UI.bKey)return;UI.bKey=key;
+  const rn=s.type==='city'&&s.ruin>g.tick,fc=rn?repairCost(g,s):0;
+  const r=canUp(g,me,s),key=s.level+'|'+r+'|'+(s.upAt>g.tick?Math.ceil((s.upAt-g.tick)/TPS):0)+'|'+(rn?Math.ceil((s.ruin-g.tick)/TPS)+':'+(me.gold>=fc):'');if(key===UI.bKey)return;UI.bKey=key;
   $('#bNext').textContent=s.level<5?'⬆ '+effText(s,s.level+1):'';
+  // a bombed city: how long until it is rebuilt, and a button to pay and fix it now
+  if(rn){$('#bBtn').innerHTML=`<p class="warn">🏚️ ${t('ruinLeft',Math.ceil((s.ruin-g.tick)/TPS))}</p><button class="btn sm ok up" data-a="fixB">🛠️ ${t('fixNow')} · ${fmt(fc)}</button>${me.gold<fc?`<p class="bad">${t('e_gold')}</p>`:''}<p class="keys">${t('ruinWhy')}</p>`;return;}
   $('#bBtn').innerHTML=s.level>=5?`<p class="good">${t('upMax')}</p>`:s.upAt>g.tick?`<p class="warn">${t('upBusy',Math.ceil((s.upAt-g.tick)/TPS))}</p>`:
     `<button class="btn sm ok up" data-a="upB"${r&&r!=='gold'?' disabled':''}>${t('upTo',s.level+1)} · ${fmt(upCost(s))}</button>${r==='era'?`<p class="bad">${t('upNeed',t('eras')[upEra(s)-1])}</p>`:r==='gold'?`<p class="bad">${t('e_gold')}</p>`:''}`;
 }
@@ -3169,6 +3208,7 @@ function act(a){
     case'auY':if(UI.auPend>=0){send({k:'up',i:UI.auPend});(UI.auLog||(UI.auLog=[])).push(G.tick);}UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+2000;break;
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
+    case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
@@ -3210,6 +3250,7 @@ function handleEvents(){
       case'allyEnd':if(e.a===me||e.b===me){const P=N[e.a===me?e.b:e.a];for(const d of document.querySelectorAll('.ts[data-ally="'+P.id+'"]'))d.remove();feed(t('m_allyEnd',nmh(P)),'warn');UI.cardKey='';}break;
       case'ally':if(e.a===me||e.b===me){feed(t('m_ally',nmh(N[e.a]),nmh(N[e.b])),'good');sfx('city');sayLine(N[e.a===me?e.b:e.a],'ally');UI.cardKey='';}break;
       case'betray':if(e.a===me||e.b===me){feed(t('m_betray',nmh(N[e.a]),nmh(N[e.b])),'bad');if(e.b===me)sfx('alert');UI.cardKey='';}break;
+      case'repair':if(e.a===me){addFx('ring',e.s.x,e.s.y,{r:5,col:'#7ee08a',dur:800});feed(t('m_fixed',cn),'good');}break;
       case'cityHit':addFx('ring',e.s.x,e.s.y,{r:4,col:'#b9b0a6',dur:900});if(e.d===me)feed(t('m_cityRuinYou',cn),'bad');else if(e.a===me)feed(t('m_cityRuin',cn),'good');break;
       case'cityGone':addFx('ring',e.s.x,e.s.y,{r:8,col:'#ff9a5a',dur:1500});if(e.d===me){feed(t('m_cityGoneYou',cn),'bad');banner(t('m_cityGoneYou',cn),'bad');}else if(e.a===me)feed(t('m_cityGone',cn),'good');break;
       case'aid':if(e.a===me){feed(t('m_aidSent',fmt(e.amt),nmh(N[e.b])),'good');sayLine(N[e.b],'thanks');}else if(e.b===me)feed(t('m_aidGot',nmh(A),fmt(e.amt)),'good');break;
