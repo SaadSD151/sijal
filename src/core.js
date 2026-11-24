@@ -1,7 +1,7 @@
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
-const T_DELAY=[0,0,1.3,1.6,1.5,2.4,4.6,2.2],T_COST=[0,0,11,17,14,26,60,22],T_DEF=[0,0,1,1.3,.9,1.6,2.6,1.25],T_VAL=[0,0,1,.75,.3,.5,.12,.22];
+const T_DELAY=[0,0,1.5,1.9,1.8,3,6.5,2.9],T_COST=[0,0,11,17,14,26,60,22],T_DEF=[0,0,1,1.3,.9,1.6,2.6,1.25],T_VAL=[0,0,1,.75,.3,.5,.12,.22];
 // each further building of a kind costs `mul` times the previous one
 const ST={city:{era:1,cost:400,mul:1.4},fort:{era:1,cost:200,mul:1.25},port:{era:2,cost:400,mul:1.35},factory:{era:2,cost:650,mul:1.3},camp:{era:3,cost:2500,mul:1.5},coast:{era:2,cost:350,mul:1.25},silo:{era:3,cost:1500,mul:1.3},shield:{era:3,cost:900,mul:1.3},mon:{era:4,cost:15000,mul:1}};
 const MSL={rocket:{era:3,cost:900,r:4,cd:50},nuke:{era:4,cost:6000,r:10,cd:50},doom:{era:4,cost:18000,r:20,cd:50}};

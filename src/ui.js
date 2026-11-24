@@ -832,7 +832,7 @@ function handleEvents(){
   const g=G,ev=g.ev;if(!ev.length)return;const me=g.human,demo=g.o.demo,N=g.nations;
   for(const e of ev){
     const A=e.a?N[e.a]:null,D=e.d?N[e.d]:null;
-    if(e.t==='boom'){const dm=e.type==='doom',nk=dm||e.type==='nuke';addFx('boom',e.x,e.y,{r:e.r*(nk?1.6:1.25),dur:dm?3200:nk?2000:900,nuke:nk});if(!demo){sfx(nk?'nuke':'boom');if(nk)R.shake=dm?30:16;}continue;}
+    if(e.t==='boom'){const dm=e.type==='doom',nk=dm||e.type==='nuke';addFx('boom',e.x,e.y,{r:e.r*(nk?1.6:1.25),dur:dm?4200:nk?3000:900,nuke:nk,kind:e.type});if(!demo){sfx(nk?'nuke':'boom');if(nk)R.shake=dm?30:16;}continue;}
     if(e.t==='intercept'){const now=performance.now();const L=(R.iv||[]).filter(v=>v.until>now);R.iv=L;const v=L.find(v=>v.tx===e.x&&v.ty===e.y);if(v){addFx('airburst',e.x,e.y,{mx:v.mx,my:v.my,dur:700});L.splice(L.indexOf(v),1);}else addFx('ring',e.x,e.y,{r:3,col:'#9fe0ff'});if(!demo&&e.a===me)feed(t('m_inter'),'good');continue;}
     if(e.t==='meteorWarn'){addFx('ring',e.x,e.y,{r:7,col:'#ff9a5a',dur:1600});if(!demo){feed(t('m_meteor'),'warn');sfx('alert');}continue;}
     if(demo)continue;

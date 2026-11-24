@@ -142,6 +142,19 @@ function mslSprite(type){const C=R.msp||(R.msp={});if(C[type])return C[type];
 // a flickering exhaust flame behind a missile
 function mslFlame(c,len,w,ts,col){const f=.75+.25*Math.sin(ts/37)+.1*Math.sin(ts/13);const g=c.createLinearGradient(0,0,-len*f,0);g.addColorStop(0,'rgba(255,255,230,.95)');g.addColorStop(.3,col);g.addColorStop(1,'rgba(255,60,0,0)');
   c.globalCompositeOperation='lighter';c.fillStyle=g;c.beginPath();c.moveTo(0,-w);c.quadraticCurveTo(-len*f*.5,-w*1.1,-len*f,0);c.quadraticCurveTo(-len*f*.5,w*1.1,0,w);c.closePath();c.fill();c.globalCompositeOperation='source-over';}
+// smoke that stays in the air: world-space puffs that grow, drift with a light wind and fade.
+// High: long-lived and many; Medium: half as many and shorter; Low: none (a short line is drawn instead)
+const SMOKE_CAP=[0,320,900],SMOKE_LIFE=[0,.5,1];
+function puff(x,y,r,life,dark,delay){const q=R.q==null?2:R.q;if(!q)return;const L=R.smoke||(R.smoke=[]);if(L.length>=SMOKE_CAP[q])L.shift();
+  L.push({x,y,r,life:life*SMOKE_LIFE[q],dark,born:performance.now()+(delay||0),w:Math.random()*6.28});}
+function drawSmoke(c,z,cw,ch){const L=R.smoke;if(!L||!L.length)return;const now=performance.now(),hi=R.q===2;let j=0;
+  for(let i=0;i<L.length;i++){const P=L[i],a=(now-P.born)/P.life;if(a>=1)continue;L[j++]=P;if(a<0)continue;
+    const wx=P.x+a*a*1.6+Math.sin(P.w+a*3)*.25,wy=P.y-a*.8,q=w2s(wx,wy),r=P.r*z*(1+a*2.6);if(q.x<-r||q.y<-r||q.x>cw+r||q.y>ch+r)continue;
+    const al=Math.pow(1-a,1.5)*Math.min(1,a*10+.3)*(P.dark?.7:.55),sh=P.dark?38+a*70:120+a*80;
+    if(hi){c.fillStyle=`rgba(25,25,30,${al*.3})`;c.beginPath();c.arc(q.x,q.y+r*.14,r*1.1,0,7);c.fill();}
+    c.fillStyle=`rgba(${sh|0},${sh|0},${(sh*1.04)|0},${al})`;c.beginPath();c.arc(q.x,q.y,r,0,7);c.fill();}
+  L.length=j;}
+const mslW=(m,t)=>({x:lerp(m.sx,m.tx,t)+.5,y:lerp(m.sy,m.ty,t)+.5-Math.sin(Math.PI*t)*Math.hypot(m.tx-m.sx,m.ty-m.sy)*.28});
 const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.PI*t)*Math.hypot(m.tx-m.sx,m.ty-m.sy)*.28);
 // troop count of each front I am in: drawn behind the front line, along it, sized by its length (from the attack's own frontier tiles)
 function frontSpots(g,me,ts){
@@ -329,7 +342,7 @@ function draw(g,dt,ts){
     if(s.type==='mon'){const left=Math.max(0,Math.ceil((s.cd-g.tick)/TPS));c.font=`700 13px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.9)';txt(c,left+'s',p.x,p.y-r-9,'#ffe9a8');
       c.strokeStyle='rgba(255,233,168,.7)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+5+Math.sin(ts/200)*2,0,7);c.stroke();}
     if(s.type==='silo'&&s.cd>g.tick&&s.owner===me){c.strokeStyle='#f2b441';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+3,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.cd-g.tick)/50));c.stroke();}
-    if(s.build>g.tick){c.globalAlpha=1;c.strokeStyle='#ffe9a8';c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,r+3.5,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.build-g.tick)/100));c.stroke();if(s.owner===me){c.font=`700 11px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.9)';txt(c,Math.ceil((s.build-g.tick)/TPS)+'s',p.x,p.y-r-10,'#ffe9a8');}}
+    if(s.build>g.tick){c.globalAlpha=1;c.strokeStyle='#ffe9a8';c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,r+3.5,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.build-g.tick)/(s.bt||60)));c.stroke();if(s.owner===me){c.font=`700 11px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.9)';txt(c,Math.ceil((s.build-g.tick)/TPS)+'s',p.x,p.y-r-10,'#ffe9a8');}}
   }
   // nation labels: your realm first, then the largest; each one avoids building icons and every label already placed
   const LB=[],LO=g.nations.filter(n=>n&&n.alive&&n.tiles).sort((a,b)=>(b.id===me)-(a.id===me)||b.tiles-a.tiles),fmax=clamp(Math.min(cw,ch)*.085,22,56);
@@ -368,13 +381,13 @@ function draw(g,dt,ts){
     F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa+=da*.1;F.ss+=(F.sz-F.ss)*.1;
     const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
     c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
+  drawSmoke(c,z,cw,ch);
   for(const m of g.missiles){
-    {const dm=m.type==='doom',nk=m.type==='nuke',span=dm?.6:nk?.5:.42,N=dm?60:nk?48:40,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs;
-      for(let k=N;k>=1;k--){const t0=m.t-span*k/N;if(t0<0)continue;const a=mslPos(m,t0),age=k/N,w=Math.sin(k*12.9898+m.sx)*.5,r=r0*(1+age*(dm?5:4)),al=Math.pow(1-age,1.2)*(dm?.8:.72);
-        const sh=dm?40+age*50:nk?128+age*70:142+age*68;c.fillStyle=`rgba(30,32,38,${al*.35})`;c.beginPath();c.arc(a.x+w*r*.5,a.y+w*r*.3+r*.12,r*1.12,0,7);c.fill();
-        c.fillStyle=`rgba(${sh|0},${(sh*(dm?.85:1))|0},${(sh*(dm?.85:1.02))|0},${al})`;c.beginPath();c.arc(a.x+w*r*.5,a.y+w*r*.3,r,0,7);c.fill();}
-      // fire close behind the missile
-      c.globalCompositeOperation='lighter';for(let k=1;k<=9;k++){const t0=m.t-span*k/N;if(t0<0)break;const a=mslPos(m,t0),f=1-k/10;c.fillStyle=`rgba(255,${120+k*12},${30+k*6},${.75*f})`;c.beginPath();c.arc(a.x,a.y,r0*(1.3+k*.3),0,7);c.fill();}c.globalCompositeOperation='source-over';}
+    {const dm=m.type==='doom',nk=m.type==='nuke',q=R.q==null?2:R.q,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs,span=.42,N=40;
+      if(q){const P=mslW(m,m.t),step=q===2?.45:.9;if(!m._lp)m._lp={x:mslW(m,0).x,y:mslW(m,0).y};let dx=P.x-m._lp.x,dy=P.y-m._lp.y,d=Math.hypot(dx,dy);
+        while(d>=step){m._lp.x+=dx/d*step;m._lp.y+=dy/d*step;puff(m._lp.x,m._lp.y,dm?.85:nk?.65:.45,dm?11000:nk?9000:7000,dm);dx=P.x-m._lp.x;dy=P.y-m._lp.y;d=Math.hypot(dx,dy);}}
+      else{c.strokeStyle='rgba(200,200,205,.6)';c.lineWidth=2;c.beginPath();for(let k=0;k<=12;k++){const t0=Math.max(0,m.t-k*.02),a=mslPos(m,t0);k?c.lineTo(a.x,a.y):c.moveTo(a.x,a.y);}c.stroke();}
+      c.globalCompositeOperation='lighter';for(let k=1;k<=(q?9:4);k++){const t0=m.t-span*k/N;if(t0<0)break;const a=mslPos(m,t0),f=1-k/10;c.fillStyle=`rgba(255,${120+k*12},${30+k*6},${.75*f})`;c.beginPath();c.arc(a.x,a.y,r0*(1.3+k*.3),0,7);c.fill();}c.globalCompositeOperation='source-over';}
     if(!m.iv&&m.t>.72){m.iv=1;for(const s of g.structs){if(s.dead||s.build||s.type!=='shield'||s.owner===m.a||g.nations[s.owner].ally[m.a]||s.cd>g.tick||(s.x-m.tx)**2+(s.y-m.ty)**2>SH_R(s.level)**2)continue;
       const mt=.95,d=Math.hypot(m.tx-m.sx,m.ty-m.sy),mx=lerp(m.sx,m.tx,mt)+.5,my=lerp(m.sy,m.ty,mt)+.5-Math.sin(Math.PI*mt)*d*.28,ms=Math.max(250,(mt-m.t)*m.dur*100/Math.max(1,UI.speed||1));
       (R.iv||(R.iv=[])).push({tx:m.tx,ty:m.ty,mx,my,until:performance.now()+ms+1500});addFx('intc',s.x,s.y,{mx,my,dur:ms});addFx('flash',s.x,s.y,{dur:300});break;}}
@@ -409,10 +422,27 @@ function draw(g,dt,ts){
   // effects
   for(let i=R.fx.length-1;i>=0;i--){
     const f=R.fx[i];f.t+=dt/f.dur;if(f.t>=1){R.fx.splice(i,1);continue;}const p=w2s(f.x+.5,f.y+.5),e=1-(1-f.t)*(1-f.t);
-    if(f.type==='boom'){
-      const rr=Math.max(4,f.r*z*(.25+.95*e)),gr=c.createRadialGradient(p.x,p.y,0,p.x,p.y,rr);
-      gr.addColorStop(0,`rgba(255,250,220,${.95*(1-f.t)})`);gr.addColorStop(.45,`rgba(255,${f.nuke?150:170},60,${.7*(1-f.t)})`);gr.addColorStop(1,'rgba(120,30,10,0)');
-      c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();c.strokeStyle=`rgba(255,235,200,${.8*(1-f.t)})`;c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,rr*1.08,0,7);c.stroke();
+    if(f.type==='boom'){const q=R.q==null?2:R.q,k=f.kind||(f.nuke?'nuke':'rocket'),big=k==='doom',nk=k==='nuke'||big,fa=1-f.t;
+      // smoke left behind by the blast, once
+      if(!f.sm){f.sm=1;const n=q===2?(big?34:nk?22:9):q===1?(big?14:nk?9:4):0,R0=f.r/(big?1.6:nk?1.6:1.25);
+        for(let i=0;i<n;i++){const a=Math.random()*6.28,d=Math.random()*R0*.6;puff(f.x+.5+Math.cos(a)*d,f.y+.5+Math.sin(a)*d*.6-(nk?Math.random()*R0*.8:0),(big?2.6:nk?1.8:.9)*(.6+Math.random()*.6),(big?16000:nk?12000:6000)*(.7+Math.random()*.5),true,nk?f.dur*.45:120);}}
+      // flash and fireball
+      const fb=Math.min(1,f.t/(nk?.35:.6)),rr=Math.max(4,f.r*z*(nk?.55:1)*(.25+.95*(1-(1-fb)*(1-fb)))),gr=c.createRadialGradient(p.x,p.y,0,p.x,p.y,rr);
+      const fbA=nk?Math.max(0,1-f.t/.6):fa;gr.addColorStop(0,`rgba(255,250,220,${.95*fbA})`);gr.addColorStop(.45,`rgba(255,${nk?140:170},50,${.75*fbA})`);gr.addColorStop(1,'rgba(120,30,10,0)');
+      c.fillStyle=gr;c.beginPath();c.arc(p.x,p.y,rr,0,7);c.fill();
+      // shock ring
+      if(q){const sr=f.r*z*(.3+f.t*(big?2.2:1.3));c.strokeStyle=`rgba(255,240,215,${(big?.7:.55)*fa})`;c.lineWidth=big?4:2.5;c.beginPath();c.ellipse(p.x,p.y,sr,sr*.55,0,0,7);c.stroke();}
+      // rocket: sparks thrown out
+      if(!nk&&q){c.globalCompositeOperation='lighter';for(let i=0;i<(q===2?12:6);i++){const a=i*2.4+f.x,d=rr*(.4+f.t*1.6);c.fillStyle=`rgba(255,${180+(i%3)*25},80,${fa})`;c.fillRect(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d*.7-f.t*rr*.5,2.5,2.5);}c.globalCompositeOperation='source-over';}
+      // nuke and doom: a mushroom cloud rising — a stem and a rolling cap
+      if(nk){const u=Math.min(1,f.t/.55),H=f.r*z*(big?1.5:1.05)*(1-(1-u)*(1-u)),cw2=f.r*z*(big?.75:.5)*(.5+.5*u),stem=cw2*.32,al=Math.min(1,(1-f.t)*2.2),cy=p.y-H;
+        const sg=c.createLinearGradient(0,cy,0,p.y);sg.addColorStop(0,`rgba(255,170,80,${.8*al})`);sg.addColorStop(1,`rgba(120,60,40,${.6*al})`);c.fillStyle=sg;
+        c.beginPath();c.moveTo(p.x-stem*.6,p.y);c.quadraticCurveTo(p.x-stem*.4,(p.y+cy)/2,p.x-stem,cy+cw2*.2);c.lineTo(p.x+stem,cy+cw2*.2);c.quadraticCurveTo(p.x+stem*.4,(p.y+cy)/2,p.x+stem*.6,p.y);c.closePath();c.fill();
+        const n=q===2?9:q===1?5:3;for(let i=0;i<n;i++){const a=i/n*Math.PI*2+f.t*2,rx=Math.cos(a)*cw2*.7,ry=Math.sin(a)*cw2*.22,r2=cw2*(q?.45:.7);
+          const cg=c.createRadialGradient(p.x+rx,cy+ry-r2*.2,0,p.x+rx,cy+ry,r2);const hot=Math.max(0,1-f.t*1.8);
+          cg.addColorStop(0,`rgba(255,${200-80*(1-hot)},${120-90*(1-hot)},${al})`);cg.addColorStop(.6,`rgba(${big?150:190},${big?60:90},${big?40:50},${.85*al})`);cg.addColorStop(1,`rgba(60,40,40,0)`);
+          c.fillStyle=cg;c.beginPath();c.arc(p.x+rx,cy+ry,r2,0,7);c.fill();}
+        if(big&&q){c.strokeStyle=`rgba(255,220,180,${.45*al})`;c.lineWidth=3;c.beginPath();c.ellipse(p.x,cy+cw2*.9,cw2*1.3,cw2*.3,0,0,7);c.stroke();}}
     }else if(f.type==='ring'){c.strokeStyle=f.col||'#ffe9a8';c.globalAlpha=1-f.t;c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,(f.r||8)*z*e+4,0,7);c.stroke();c.globalAlpha=1;}
     else if(f.type==='shot'){
       // coastal gun: muzzle flash, a shell on an arc, then a splash of water and fire where it lands
