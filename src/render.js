@@ -159,12 +159,22 @@ const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.
 // troop count of each front I am in: drawn behind the front line, along it, sized by its length (from the attack's own frontier tiles)
 function frontSpots(g,me,ts){
   R.front=R.front||{};if(ts-(R.frontT||0)<400)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,out={};
-  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const P=R.front[k.id],T=k.heap.v,F=[];
+  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const P=R.front[k.id],T=k.heap.v;let F=[];
     for(let m=0;m<T.length;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;let ax=0,ay=0,hit=false;
       if(x>0&&own[i-1]===k.a){ax-=1;hit=true;}if(x<W-1&&own[i+1]===k.a){ax+=1;hit=true;}if(y>0&&own[i-W]===k.a){ay-=1;hit=true;}if(y<H-1&&own[i+W]===k.a){ay+=1;hit=true;}
       if(hit)F.push(x,y,ax,ay);}
     const stats=(cx,cy,r2)=>{let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0,bx=0,by=0,dmin=1e18;for(let m=0;m<F.length;m+=4){const x=F[m],y=F[m+1];if(r2&&(x-cx)**2+(y-cy)**2>r2)continue;n++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;bx+=F[m+2];by+=F[m+3];}
       if(n<2)return null;const mx=sx/n,my=sy/n;for(let m=0;m<F.length;m+=4){const d=(F[m]-mx)**2+(F[m+1]-my)**2;if(d<dmin)dmin=d;}return{n,mx,my,cxx:sxx/n-mx*mx,cyy:syy/n-my*my,cxy:sxy/n-mx*my,bx,by,dmin};};
+    // an attack can press on several separate stretches (two sides of a realm): group the front into stretches and label the biggest,
+    // sticking with the one already labelled while it stays at least half as big, so the number never sits between them or jumps back and forth
+    if(F.length>8){const n=F.length/4,cell=new Map(),comp=new Int32Array(n).fill(-1),key=(x,y)=>((x>>2)<<16)|(y>>2);
+      for(let m=0;m<n;m++){const kk=key(F[m*4],F[m*4+1]);let a=cell.get(kk);if(!a)cell.set(kk,a=[]);a.push(m);}
+      const sizes=[];let nc=0;for(let m=0;m<n;m++){if(comp[m]>=0)continue;const st=[m];comp[m]=nc;let sz=0;
+        while(st.length){const v=st.pop();sz++;const x=F[v*4],y=F[v*4+1];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const a=cell.get(key(x+dx*4,y+dy*4));if(!a)continue;
+          for(const w of a)if(comp[w]<0&&(F[w*4]-x)**2+(F[w*4+1]-y)**2<=16){comp[w]=nc;st.push(w);}}}sizes.push(sz);nc++;}
+      if(nc>1){let best=0;for(let c2=1;c2<nc;c2++)if(sizes[c2]>sizes[best])best=c2;
+        if(P){let pc=-1,pd=1e18;for(let m=0;m<n;m++){const d=(F[m*4]-P.x)**2+(F[m*4+1]-P.y)**2;if(d<pd){pd=d;pc=comp[m];}}if(pc>=0&&pd<64&&sizes[pc]>=sizes[best]*.5)best=pc;}
+        const F2=[];for(let m=0;m<n;m++)if(comp[m]===best)F2.push(F[m*4],F[m*4+1],F[m*4+2],F[m*4+3]);F=F2;}}
     let S=stats();if(!S){if(P)out[k.id]=P;continue;}
     // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
     if(S.dmin>36){const ax=k.fx!=null?k.fx:P?P.x:S.mx,ay=k.fx!=null?k.fy:P?P.y:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
@@ -385,15 +395,19 @@ function draw(g,dt,ts){
   for(const m of g.missiles){
     {const dm=m.type==='doom',nk=m.type==='nuke',q=R.q==null?2:R.q,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs,span=.42,N=40;
       if(q){const P=mslW(m,m.t),step=q===2?.45:.9;if(!m._lp)m._lp={x:mslW(m,0).x,y:mslW(m,0).y};let dx=P.x-m._lp.x,dy=P.y-m._lp.y,d=Math.hypot(dx,dy);
-        while(d>=step){m._lp.x+=dx/d*step;m._lp.y+=dy/d*step;puff(m._lp.x,m._lp.y,dm?.85:nk?.65:.45,dm?11000:nk?9000:7000,dm);dx=P.x-m._lp.x;dy=P.y-m._lp.y;d=Math.hypot(dx,dy);}}
+        while(d>=step){m._lp.x+=dx/d*step;m._lp.y+=dy/d*step;puff(m._lp.x,m._lp.y,(dm?.85:nk?.65:.45)*Math.min(1,.35+m.t*12),dm?11000:nk?9000:7000,dm,-Math.min(1500,d/step*30));dx=P.x-m._lp.x;dy=P.y-m._lp.y;d=Math.hypot(dx,dy);}}
       else{c.strokeStyle='rgba(200,200,205,.6)';c.lineWidth=2;c.beginPath();for(let k=0;k<=12;k++){const t0=Math.max(0,m.t-k*.02),a=mslPos(m,t0);k?c.lineTo(a.x,a.y):c.moveTo(a.x,a.y);}c.stroke();}
       c.globalCompositeOperation='lighter';for(let k=1;k<=(q?9:4);k++){const t0=m.t-span*k/N;if(t0<0)break;const a=mslPos(m,t0),f=1-k/10;c.fillStyle=`rgba(255,${120+k*12},${30+k*6},${.75*f})`;c.beginPath();c.arc(a.x,a.y,r0*(1.3+k*.3),0,7);c.fill();}c.globalCompositeOperation='source-over';}
     if(!m.iv&&m.t>.72){m.iv=1;for(const s of g.structs){if(s.dead||s.build||s.type!=='shield'||s.owner===m.a||g.nations[s.owner].ally[m.a]||s.cd>g.tick||(s.x-m.tx)**2+(s.y-m.ty)**2>SH_R(s.level)**2)continue;
       const mt=.95,d=Math.hypot(m.tx-m.sx,m.ty-m.sy),mx=lerp(m.sx,m.tx,mt)+.5,my=lerp(m.sy,m.ty,mt)+.5-Math.sin(Math.PI*mt)*d*.28,ms=Math.max(250,(mt-m.t)*m.dur*100/Math.max(1,UI.speed||1));
       (R.iv||(R.iv=[])).push({tx:m.tx,ty:m.ty,mx,my,until:performance.now()+ms+1500});addFx('intc',s.x,s.y,{mx,my,dur:ms});addFx('flash',s.x,s.y,{dur:300});break;}}
     const h=mslPos(m,m.t),tp=w2s(m.tx+.5,m.ty+.5);
+    // launch: a flash and a cloud of smoke rolling out at the silo, and the missile grows out of it instead of popping in
+    if(!m._seen){m._seen=1;const q=R.q==null?2:R.q;addFx('flash',m.sx,m.sy,{dur:450});addFx('ring',m.sx,m.sy,{r:2.2,dur:700,col:'rgba(255,200,140,.9)'});
+      const n=q===2?14:q===1?6:0;for(let i=0;i<n;i++){const a=i/n*6.28;puff(m.sx+.5+Math.cos(a)*.9,m.sy+.5+Math.sin(a)*.5,.7+Math.random()*.5,5000+Math.random()*3000,false);}}
+    const grow=Math.min(1,.25+m.t/.05*.75);
     {const b=mslPos(m,Math.max(0,m.t-.01)),ang=Math.atan2(h.y-b.y,h.x-b.x),sp=mslSprite(m.type),base=Math.max(16,Math.min(44,12+z*2)),L=base*(m.type==='doom'?2:m.type==='nuke'?1.35:1),Hh=L*sp.height/sp.width,ts=performance.now();
-      c.save();c.translate(h.x,h.y);c.rotate(ang);
+      c.save();c.translate(h.x,h.y);c.rotate(ang);c.scale(grow,grow);
       if(m.type==='doom'){const pu=.6+.4*Math.sin(ts/160),ag=c.createRadialGradient(-L*.2,0,0,-L*.2,0,L*.9);ag.addColorStop(0,`rgba(255,40,20,${.38*pu})`);ag.addColorStop(1,'rgba(120,0,0,0)');c.globalCompositeOperation='lighter';c.fillStyle=ag;c.beginPath();c.arc(-L*.2,0,L*.9,0,7);c.fill();c.globalCompositeOperation='source-over';}
       {const ng=c.createRadialGradient(-L*.6,0,0,-L*.6,0,L*.85);ng.addColorStop(0,'rgba(255,235,170,.95)');ng.addColorStop(.35,'rgba(255,150,40,.6)');ng.addColorStop(1,'rgba(255,70,10,0)');c.globalCompositeOperation='lighter';c.fillStyle=ng;c.beginPath();c.arc(-L*.6,0,L*.85,0,7);c.fill();c.globalCompositeOperation='source-over';}
       mslFlame(c,L*(m.type==='doom'?1.5:1.35),Hh*(m.type==='doom'?.42:.5),ts,m.type==='doom'?'rgba(255,90,30,.95)':'rgba(255,170,50,.95)');

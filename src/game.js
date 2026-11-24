@@ -187,7 +187,7 @@ function tileCost(g,k,i,A,D){
     return c*g.sCost/(A.mAtk*(1+(k.tb||0)));}
   const dens=D.troops/Math.max(D.tiles,25),ds=defOf(g,D);let z=1;
   for(let j=0;j<ds.length;j+=4){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy>ds[j+2])continue;const m=ds[j+3]>=9?1+(4+ds[j+3]-9)*fortF(k,ds[j+3]-9):ds[j+3];if(m>z)z=m;}
-  return(T_COST[t]+dens*T_DEF[t]*z*D.mDef+garrison(g,i,D)*D.mDef)*g.sCost/(A.mAtk*(1+(k.tb||0)));
+  return(T_COST[t]*.3+dens*T_DEF[t]*z*D.mDef+garrison(g,i,D)*D.mDef)*g.sCost/(A.mAtk*(1+(k.tb||0)));
 }
 // a city is held by a share of its nation's whole army: sieges need real force
 function garrison(g,i,D){const si=g.structAt[i];if(!si||!D)return 0;const s=g.structs[si-1];return s.type==='city'?D.troops*(.07+.02*s.level)*(s.capital?2:1)*(s.ruin>g.tick?.4:1):0;}
