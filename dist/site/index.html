@@ -467,16 +467,12 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .home{display:flex;flex-direction:column;gap:12px;width:100%;max-width:440px}
 .hero{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:18px 16px 16px;border-radius:20px;color:inherit;text-align:start;overflow:hidden;
   background:linear-gradient(160deg,rgba(60,42,12,.92),rgba(20,30,44,.92) 60%);border:1px solid rgba(241,207,110,.55);box-shadow:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,240,200,.18)}
-/* two swords on the battle card: they swing in, clash with a glint, swing back, rest five seconds, again and again */
-.hero .sw{position:absolute;top:2px;inset-inline-end:14px;width:110px;height:110px;pointer-events:none;opacity:.2}
-.hero .sw i{position:absolute;left:24px;top:22px;font-style:normal;font-size:60px;line-height:1;transform-origin:50% 50%}
-.hero .sw i:first-child{animation:swA 6.4s ease-in-out infinite}
-.hero .sw i:nth-child(2){animation:swB 6.4s ease-in-out infinite}
-.hero .sw b{position:absolute;left:43px;top:30px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#fff 0,#ffe7a6 35%,rgba(255,200,90,0) 70%);opacity:0;animation:swK 6.4s linear infinite}
-@keyframes swA{0%,24%,100%{transform:translateX(0) rotate(90deg)}8%{transform:translateX(-16px) rotate(60deg)}13%{transform:translateX(4px) rotate(108deg)}16%{transform:translateX(0) rotate(96deg)}}
-@keyframes swB{0%,24%,100%{transform:translateX(0) scaleX(-1) rotate(90deg)}8%{transform:translateX(16px) scaleX(-1) rotate(60deg)}13%{transform:translateX(-4px) scaleX(-1) rotate(108deg)}16%{transform:translateX(0) scaleX(-1) rotate(96deg)}}
-@keyframes swK{0%,12.5%{opacity:0;transform:scale(.3)}13.5%{opacity:1;transform:scale(1.6)}18%,100%{opacity:0;transform:scale(2.1)}}
-@media (prefers-reduced-motion:reduce){.hero .sw i,.hero .sw b{animation:none}}
+/* the crossed swords on the battle card: a wind-up, a strike with a glint, back to rest, five seconds' pause, again and again */
+.hero::after{content:'⚔️';position:absolute;inset-inline-end:-6px;top:-14px;font-size:96px;opacity:.13;transform:rotate(-12deg);pointer-events:none;animation:swX 6.4s ease-in-out infinite}
+.hero::before{content:'';position:absolute;inset-inline-end:42px;top:40px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle,#fff 0,#ffe7a6 35%,rgba(255,200,90,0) 70%);opacity:0;pointer-events:none;animation:swK 6.4s linear infinite}
+@keyframes swX{0%,24%,100%{transform:rotate(-12deg) scale(1);opacity:.13}8%{transform:rotate(-30deg) scale(.94);opacity:.16}13%{transform:rotate(6deg) scale(1.12);opacity:.3}16%{transform:rotate(-4deg) scale(1.04);opacity:.2}}
+@keyframes swK{0%,12.5%{opacity:0;transform:scale(.3)}13.5%{opacity:.9;transform:scale(1.6)}18%,100%{opacity:0;transform:scale(2.1)}}
+@media (prefers-reduced-motion:reduce){.hero::after,.hero::before{animation:none}}
 .hero .hb{display:flex;flex-direction:column;gap:2px}.hero .hb b{font-size:24px;color:#ffe7a6}.hero .hb small{color:#d9c79c;font-size:13px}
 .hero .play{display:block;text-align:center;padding:13px;border-radius:14px;background:linear-gradient(180deg,#f6dc8a,#c9952d);color:#1a1205;font-weight:700;font-size:20px;box-shadow:0 6px 20px rgba(227,185,90,.35)}
 .hero:active{transform:scale(.985)}
@@ -524,8 +520,9 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob #feed{right:var(--g)}
 .mob #atk{right:var(--g)}
 .mob #card{right:var(--g)}
-/* two swords on the battle card: they swing in, clash with a glint, swing back, rest five seconds, again and again */
-.hero .sw{left:14px}}
+/* the crossed swords on the battle card: a wind-up, a strike with a glint, back to rest, five seconds' pause, again and again */
+.hero::after{left:-6px}
+.hero::before{left:42px}}
 </style>
 </head>
 <body>
@@ -543,7 +540,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='6e6a6727c4';
+const BUILD_ID='77b5f92162';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2681,7 +2678,7 @@ function renderMenu(){
     <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
-    <button class="hero" data-a="quick"><span class="sw" aria-hidden="true"><i>🗡️</i><i>🗡️</i><b></b></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
+    <button class="hero" data-a="quick"><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><a href="${TIKTOK}" target="_blank" rel="noopener">${TT} ${t('d_tt')}</a></div>
   </div>
