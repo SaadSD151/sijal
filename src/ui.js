@@ -105,7 +105,7 @@ function renderMenu(){
     <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
-    <button class="hero" data-a="quick"><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
+    <button class="hero" data-a="quick"><span class="sw" aria-hidden="true"><i>🗡️</i><i>🗡️</i><b></b></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><a href="${TIKTOK}" target="_blank" rel="noopener">${TT} ${t('d_tt')}</a></div>
   </div>
