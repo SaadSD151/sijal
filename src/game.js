@@ -172,12 +172,12 @@ function adjOwn(g,i,a){const W=g.W,own=g.owner,x=i%W;return(x>0&&own[i-1]===a)||
 // a fort is at full strength against attacks of up to 70K troops, then fades, and is useless (and razed) at 700K
 function fortF(k,lv){lv=lv||1;return clamp(1-(k.troops-70000*lv)/(630000*lv),0,1);}
 function tileDelay(g,k,n,par){
-  let dl=T_DELAY[g.M.ter[n]];if(k.d)dl*=1.35;
+  let dl=T_DELAY[g.M.ter[n]];
   if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
   // an attack that outnumbers the defenders sweeps through: twice their army is 2.5x the pace, four times 4x, at most 6x
   if(k.d){const D=g.nations[k.d],r=(k.troops+g.nations[k.a].troops*.25)/Math.max(1000,D.troops);if(r>1)dl/=Math.min(4,1+1.3*Math.log2(r));}
-  return dl*(.55+g.rng()*.9)*g.sSpd*g.nations[k.a].mSpd;
+  return dl*(.7+g.rng()*.6)*g.sSpd*g.nations[k.a].mSpd;
 }
 function tileCost(g,k,i,A,D){
   const t=g.M.ter[i],W=g.W,x=i%W,y=(i/W)|0;
@@ -203,8 +203,9 @@ function seedAttack(g,k){
   return seeds.length;
 }
 function inCor(k,x,y){const dx=k.tx-k.ox,dy=k.ty-k.oy,L=dx*dx+dy*dy;let t=L?((x-k.ox)*dx+(y-k.oy)*dy)/L:0;t=t<0?0:t>1?1:t;const ex=k.ox+dx*t-x,ey=k.oy+dy*t-y;return ex*ex+ey*ey<=64||(x-k.tx)**2+(y-k.ty)**2<=100;}
-function pushNb(g,k,i){
-  const W=g.W,own=g.owner,ter=g.M.ter,x=i%W,h=k.heap,now=g.tick,f=k.focus;let n;
+// each newly reached tile is timed from when its neighbour fell, not from the current tick, so a strong attack can cross several tiles per tick
+function pushNb(g,k,i,base){
+  const W=g.W,own=g.owner,ter=g.M.ter,x=i%W,h=k.heap,now=base==null?g.tick:Math.max(base,g.tick-1),f=k.focus;let n;
   if(x>0&&own[n=i-1]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
   if(x<W-1&&own[n=i+1]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
   if(i>=W&&own[n=i-W]===k.d&&ter[n]>1&&(!f||inCor(k,n%W,(n/W)|0)))h.push(now+tileDelay(g,k,n,i),n);
@@ -238,8 +239,8 @@ function tickAttacks(g){
     let done=!A.alive||(D&&(!D.alive||A.ally[k.d]))||k.troops<=0||k.cancel;
     if(!done){
       let pops=0;
-      while(h.size&&h.peek()<=now&&pops++<700){
-        const i=h.pop();if(own[i]!==k.d)continue;
+      while(h.size&&h.peek()<=now&&pops++<1500){
+        const pr=h.peek(),i=h.pop();if(own[i]!==k.d)continue;
         if(g.fall[i]>now){h.push(g.fall[i]+1,i);continue;}
         if(!adjOwn(g,i,k.a))continue;
         const c=tileCost(g,k,i,A,D);if(k.troops<c){done=true;break;}
@@ -248,7 +249,7 @@ function tickAttacks(g){
         if(g.structAt[i]){const fs=g.structs[g.structAt[i]-1];if(fs.type==='fort'&&k.troops>=60000*fs.level)killStruct(g,fs);}
         setOwner(g,i,k.a);
         if(D&&!D.alive){done=true;break;}
-        pushNb(g,k,i);
+        pushNb(g,k,i,pr);
       }
       if(!done&&!h.size){if(k.focus)done=true;else if(now-k.reseed>2){k.reseed=now;if(!seedAttack(g,k))done=true;}}
     }
