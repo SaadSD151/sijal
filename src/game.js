@@ -3,6 +3,12 @@ const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SH
 
 function newGame(o){
   const M=genMap(o),N=M.N;
+  // how hard each tile is to push through: flat green is fast but rises and falls with the small bumps of the land,
+  // forest a little slower, hills slower, high mountains slowest of all (and the higher, the slower)
+  {const mv=new Float32Array(N),hh=M.hHill<1e8?M.hHill:Math.max(1e-6,M.hmax),hm=M.hMnt<1e8?M.hMnt:hh*1.5,top=Math.max(hm+1e-6,M.hmax);
+    for(let i=0;i<N;i++){const t=M.ter[i];if(t<2)continue;const e=Math.max(0,M.elev[i]),h=Math.min(1,e/hh),b=h*h;
+      mv[i]=t===2?1.2*(1+.85*b):t===3?1.6*(1+.5*b):t===4?1.5*(1+.6*b):t===7?2*(1+.5*b):t===5?2.3+1.2*Math.min(1,Math.max(0,(e-hh)/Math.max(1e-6,hm-hh))):4.5+2*Math.min(1,Math.max(0,(e-hm)/(top-hm)));}
+    M.mv=mv;}
   const g={o,M,W:M.W,H:M.H,N,tick:0,rng:mulberry32((o.seed^0x9e3779b9)>>>0),owner:new Uint8Array(N),fall:new Int32Array(N),fgen:new Uint8Array(N),structAt:new Int16Array(N),
     nations:[null],structs:[],attacks:[],boats:[],missiles:[],pending:[],proposals:[],trades:[],trains:[],rails:[],fills:[],tanks:[],ruins:[],fallList:[],dirty:[],ev:[],snaps:[],snapEvery:40,aid:0,
     season:0,sSpd:1,sCost:1,sGrow:1.3,sGold:1,nextEvent:1100,over:null,started:false,hegemon:0,coalition:0,human:0,
@@ -172,7 +178,7 @@ function adjOwn(g,i,a){const W=g.W,own=g.owner,x=i%W;return(x>0&&own[i-1]===a)||
 // a fort is at full strength against attacks of up to 70K troops, then fades, and is useless (and razed) at 700K
 function fortF(k,lv){lv=lv||1;return clamp(1-(k.troops-70000*lv)/(630000*lv),0,1);}
 function tileDelay(g,k,n,par){
-  let dl=T_DELAY[g.M.ter[n]];
+  let dl=g.M.mv?g.M.mv[n]:T_DELAY[g.M.ter[n]];
   if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
   // an attack that outnumbers the defenders sweeps through: twice their army is 2.5x the pace, four times 4x, at most 6x
