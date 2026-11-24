@@ -431,6 +431,40 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .sttip{margin-top:10px}.sttip .tip{margin-top:6px;padding:8px 10px;border-radius:9px;border:1px solid var(--line2);background:rgba(0,0,0,.25);border-inline-start:4px solid #7fb8ff}.sttip .tip b{display:block;margin-bottom:3px}.sttip .tip p{margin:0;font-size:.85em;line-height:1.7;color:var(--dim)}
 .sttip .bad{border-inline-start-color:#ff6b6b;background:rgba(255,80,80,.08)}.sttip .mid{border-inline-start-color:#f1cf6e;background:rgba(241,207,110,.07)}.sttip .good{border-inline-start-color:#33d17a;background:rgba(40,200,120,.08)}
 
+/* home screen: player bar on top, a battle card, three modes, quiet links, tabs at the bottom */
+.topbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;max-width:520px;margin-bottom:-6px}
+.pchip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:999px;background:rgba(8,18,30,.72);border:1px solid rgba(227,185,90,.25);color:inherit;min-width:0;max-width:62%;backdrop-filter:blur(8px)}
+[dir=rtl] .pchip{padding:6px 6px 6px 14px}
+.pchip .av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(180deg,#f6dc8a,#b8862a);color:#1a1205;font-weight:700;font-size:18px;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+.pchip .pi{display:flex;flex-direction:column;align-items:flex-start;min-width:0;gap:1px}
+.pchip .pi b{font-size:14px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pchip .pi small{font-size:11.5px;color:var(--dim);white-space:nowrap}
+.xpb{display:block;width:110px;height:4px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:3px}.xpb u{display:block;height:100%;background:linear-gradient(90deg,#c9952d,#f6dc8a);text-decoration:none}
+.tbi{display:flex;gap:6px}
+.ibn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:18px;background:rgba(8,18,30,.72);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px)}
+.ibn.adm{border-color:rgba(255,154,138,.55);background:rgba(90,22,22,.7)}
+#menu .logo .l1{font-size:clamp(76px,17vw,150px)}#menu .logo .l2{margin-top:-18px}
+.home{display:flex;flex-direction:column;gap:12px;width:100%;max-width:440px}
+.hero{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:18px 16px 16px;border-radius:20px;color:inherit;text-align:start;overflow:hidden;
+  background:linear-gradient(160deg,rgba(60,42,12,.92),rgba(20,30,44,.92) 60%);border:1px solid rgba(241,207,110,.55);box-shadow:0 10px 34px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,240,200,.18)}
+.hero::after{content:'⚔️';position:absolute;inset-inline-end:-6px;top:-14px;font-size:96px;opacity:.13;transform:rotate(-12deg);pointer-events:none}
+.hero .hb{display:flex;flex-direction:column;gap:2px}.hero .hb b{font-size:24px;color:#ffe7a6}.hero .hb small{color:#d9c79c;font-size:13px}
+.hero .play{display:block;text-align:center;padding:13px;border-radius:14px;background:linear-gradient(180deg,#f6dc8a,#c9952d);color:#1a1205;font-weight:700;font-size:20px;box-shadow:0 6px 20px rgba(227,185,90,.35)}
+.hero:active{transform:scale(.985)}
+.mtiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mtile{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px 10px;border-radius:16px;background:rgba(14,30,48,.78);border:1px solid rgba(255,255,255,.08);color:var(--parch);backdrop-filter:blur(6px)}
+.mtile:active{transform:scale(.96)}.mtile:hover{background:rgba(24,48,72,.85)}
+.mtile i{font-style:normal;font-size:26px;line-height:1.2}.mtile b{font-size:14px;font-weight:600;white-space:nowrap}.mtile small{font-size:11.5px;color:var(--dim);white-space:nowrap}
+.mtile.dn small{color:#7ee08a}
+.lnk{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
+.lnk button,.lnk a{display:inline-flex;align-items:center;gap:5px;padding:7px 11px;white-space:nowrap;border-radius:999px;background:rgba(8,18,30,.6);border:1px solid rgba(255,255,255,.08);color:var(--dim);font-size:13px;text-decoration:none}
+.lnk .ls{color:#e2ccff;border-color:rgba(176,132,255,.45);background:rgba(76,37,150,.35)}
+.bnav{position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:4px;padding:5px;border-radius:20px;background:rgba(8,16,28,.88);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 26px rgba(0,0,0,.5);backdrop-filter:blur(10px);width:min(440px,calc(100% - 32px))}
+.bnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border-radius:15px;border:0;background:none;color:var(--dim);font:inherit;cursor:pointer}
+.bnav button i{font-style:normal;font-size:20px;filter:grayscale(.6);opacity:.8}.bnav button span{font-size:11.5px;font-weight:600;white-space:nowrap}
+.bnav button.on{background:linear-gradient(180deg,rgba(241,207,110,.22),rgba(201,149,45,.12));color:#ffe3a0}.bnav button.on i{filter:none;opacity:1}
+.screen:has(.bnav){padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+#menu .mf .made{font-size:11.5px;opacity:.6}
+
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
 #bHome{left:var(--g)}
@@ -444,7 +478,8 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob #bHome{left:var(--g)}
 .mob #feed{right:var(--g)}
 .mob #atk{right:var(--g)}
-.mob #card{right:var(--g)}}
+.mob #card{right:var(--g)}
+.hero::after{left:-6px}}
 </style>
 <div id="app" dir="rtl" lang="ar">
   <canvas id="cv"></canvas><div id="vig"></div>
@@ -460,7 +495,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='aae06c97f5';
+const BUILD_ID='6c9f4a77e5';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2062,7 +2097,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  help:[['Cities are the heart of war','Each city rules the province around it. When a city falls, its province surrenders to the conqueror. Lose your last city and your whole realm collapses.'],['The spearhead','Tap enemy or neutral land and your attack drives toward the point you tapped. Aim it at cities.'],['Attack force','The slider sets how much of your army each attack takes. Send everything and your homeland is left thin.'],['Sieges','A city is held by a share of its realm\'s whole army, so mass your troops first. A landlocked pocket that is fully encircled falls by itself.'],['Building','Cities add troops and gold, forts double defense, ports bring gold and ships.'],['Seasons','Spring for growth, summer for attack, autumn for gold, and winter slows every army.'],['Ages','Advance from swords to the atom to unlock ports, missiles, the air shield and the bomb.'],['Politics','Alliances last two minutes, and before they end you choose whether to renew. Gift gold and call your allies to war. Grow too large and the world unites against you, and your army grows more slowly.'],['Two roads to victory','Rule 70% of the world\'s land, or raise the Eternal Monument and hold it for 150 seconds.']],
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the left button to aim an attack arrow, drag with the right button to move the map, right-click opens a realm card. On mobile: long-press a realm to open its card.'}};
 // Saudi-dialect wording for the Arabic interface
-Object.assign(TX.ar,{ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
+Object.assign(TX.ar,{d_how:'الشرح',d_sug:'اقترح',d_sup:'ادعم',d_tt:'تيك توك',h_quick:'خريطة جديدة كل مرة · جاهزة على طول',h_play:'العب',h_onl:'مع أخوياك',h_left:'باقي {0} س',h_done:'خلّصته',h_cus:'على كيفك',ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
  faction:'اختر حضارتك',realm:'اسم دولتك',world:'شكل العالم',foes:'عدد الخصوم',
  pick:'اختر مكان «{0}» داخل أرضك',aim:'اختر الهدف على الخريطة',spawn:'اختر مكان عاصمتك: اضغط على أي أرض فاضية',
  e_gold:'الذهب ما يكفي',e_era:'يبي له عصر أحدث',e_own:'ابنِ داخل أرضك',e_busy:'المكان مشغول',e_near:'قريب مرة من مبنى ثاني',e_cnear:'قريب مرة من مدينة ثانية',e_coast:'الميناء يبي له ساحل مفتوح',
@@ -2084,7 +2119,7 @@ Object.assign(TX.ar,{ruinLeft:'المدينة متضررة · تتصلح بعد 
  lobbyHost:'أنت المضيف. عط الكود لأخوياك، ولما يدخلون ابدأ المعركة. إعدادات العالم هي اللي اخترتها في المعركة المخصّصة.',lobbyWait:'ننتظر المضيف يبدأ المعركة…',
  mpSpawn:'اختر حضارتك ومكان عاصمتك. المعركة تبدأ لما الكل يختار أو بعد دقيقة',mpWait:'ننتظر باقي اللاعبين…',mpLeft:'{0} طلع من المعركة والحاسوب مسك دولته',mpDead:'طاحت دولتك. تتفرج الحين على باقي الحرب',
  e_room:'ما قدرنا نوصل للغرفة. تأكد من الكود، وإذا ما ضبط جرّب شبكة ثانية (واي فاي أو بيانات الجوال)',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
-Object.assign(TX.en,{ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
+Object.assign(TX.en,{d_how:'Guide',d_sug:'Ideas',d_sup:'Support',d_tt:'TikTok',h_quick:'A new map every time · ready now',h_play:'Play',h_onl:'With friends',h_left:'{0} h left',h_done:'Done',h_cus:'Your rules',ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
  mpSpawn:'Choose your civilization and found your capital. The battle starts when everyone has chosen, or after one minute',
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the right button to move the map, right-click opens a realm card.'});
 TX.en.help[1]=['Attacking','Pick from the Attack type list: “At a point” focuses your army in a narrow corridor toward the spot you tap, “Along every border” strikes across your whole shared border. You can hide the list and bring it back. On mobile the realm\'s options open first: attack, ally or gift.'];
@@ -2503,12 +2538,23 @@ function show(name){if(name)radClose();
   $('#hud').hidden=!(G&&!G.o.demo&&(!name||name==='pause'));
 }
 function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
-const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins','tSkins']].map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="${k}">${k==='pass'?'🎖️ ':k==='skins'?'🎨 ':'🏠 '}${t(l)}</button>`).join('')}</div><div class="mtsp"></div>`;
+const mtabs=cur=>`<nav class="bnav">${[['menu','tMenu','🏠'],['pass','bp','🎖️'],['skins','tSkins','🎨']].map(([k,l,ic])=>`<button class="${cur===k?'on':''}" data-a="${k}"><i>${ic}</i><span>${t(l)}</span></button>`).join('')}</nav>`;
 function renderMenu(){
-  const p=UI.prof,rk=rankOf(p);
-  $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><button class="btn supb" data-a="supMenu">💜 ${t('supMenu')}</button>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div><a class="btn tkb" href="${TIKTOK}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg> ${t('tiktok')}</a></div>
-  <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
+  const p=UI.prof,rk=rankOf(p),f=p.fb||{},nm=p.name||f.user||t('defName'),d=new Date(),dk=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
+  const left=Math.max(1,Math.ceil((new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)-d)/36e5)),done=p.dailyDone===dk;
+  const nx=PASS_AT,xp=p.xp|0,pct=Math.max(4,Math.min(100,Math.round(xp/nx*100)));
+  const TT='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>';
+  const tile=(a,ic,lb,sub,cls)=>`<button class="mtile${cls?' '+cls:''}" data-a="${a}"><i>${ic}</i><b>${lb}</b><small>${sub}</small></button>`;
+  // a game-style home: who you are on top, one big battle card, three modes, a few quiet links, and the tabs at the bottom
+  $('#menu').innerHTML=`<div class="topbar"><button class="pchip" data-a="account"><span class="av">${esc([...nm][0]||'?')}</span><span class="pi"><b>${hasBadge(p)?BADGE:''}${esc(nm)}</b><small>${t('ranks')[rk]} · ${p.wins|0} ${t('wins')}</small><em class="xpb"><u style="width:${pct}%"></u></em></span></button>
+    <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
+  <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
+  <div class="home">
+    <button class="hero" data-a="quick"><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
+    <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
+    <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><a href="${TIKTOK}" target="_blank" rel="noopener">${TT} ${t('d_tt')}</a></div>
+  </div>
+  <div class="mf"><span class="made">${t('made')}</span></div>${mtabs('menu')}`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
