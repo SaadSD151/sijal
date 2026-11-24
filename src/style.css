@@ -452,7 +452,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mtile i{font-style:normal;font-size:26px;line-height:1.2}.mtile b{font-size:14px;font-weight:600;white-space:nowrap}.mtile small{font-size:11.5px;color:var(--dim);white-space:nowrap}
 .mtile.dn small{color:#7ee08a}
 .lnk{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px}
-.lnk button,.lnk a{display:inline-flex;align-items:center;gap:5px;padding:7px 11px;white-space:nowrap;border-radius:999px;background:rgba(8,18,30,.6);border:1px solid rgba(255,255,255,.08);color:var(--dim);font-size:13px;text-decoration:none}
+.lnk button,.lnk a{display:inline-flex;align-items:center;gap:5px;padding:7px 11px;white-space:nowrap;border-radius:999px;background:rgba(8,18,30,.92);border:1px solid rgba(255,255,255,.08);color:var(--dim);font-size:13px;text-decoration:none}
 .lnk .ls{color:#e2ccff;border-color:rgba(176,132,255,.45);background:rgba(76,37,150,.35)}
 .bnav{position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:4px;padding:5px;border-radius:20px;background:rgba(8,16,28,.88);border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 26px rgba(0,0,0,.5);backdrop-filter:blur(10px);width:min(440px,calc(100% - 32px))}
 .bnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border-radius:15px;border:0;background:none;color:var(--dim);font:inherit;cursor:pointer}
@@ -460,3 +460,13 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .bnav button.on{background:linear-gradient(180deg,rgba(241,207,110,.22),rgba(201,149,45,.12));color:#ffe3a0}.bnav button.on i{filter:none;opacity:1}
 .screen:has(.bnav){padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
 #menu .mf .made{font-size:11.5px;opacity:.6}
+
+/* home on a computer: the player bar sits at the top corners of the window, the map behind is dimmed so the menu reads calmly */
+#menu{background:radial-gradient(ellipse at 50% 52%,rgba(5,12,21,.74) 0%,rgba(5,12,21,.66) 38%,rgba(4,10,18,.9) 80%)}
+#app:not(.mob) .topbar{position:fixed;top:18px;left:24px;right:24px;width:auto;max-width:none;margin:0;z-index:12}
+#app:not(.mob) .home{max-width:480px}#app:not(.mob) .hero .hb b{font-size:28px}#app:not(.mob) .hero .play{font-size:22px;padding:15px}
+#app:not(.mob) .mtile{padding:16px 8px 13px}#app:not(.mob) .mtile i{font-size:30px}#app:not(.mob) .mtile b{font-size:15.5px}
+#app:not(.mob) .bnav{width:min(480px,calc(100% - 32px))}
+#app:not(.mob) .ibn{width:54px;height:54px;font-size:23px}#app:not(.mob) .tbi{gap:10px}
+#app:not(.mob) .pchip{padding:8px 18px 8px 8px;gap:12px}[dir=rtl] #app:not(.mob) .pchip{padding:8px 8px 8px 18px}
+#app:not(.mob) .pchip .av{width:52px;height:52px;font-size:22px}#app:not(.mob) .pchip .pi b{font-size:17px}#app:not(.mob) .pchip .pi small{font-size:13.5px}#app:not(.mob) .xpb{width:160px;height:5px}
