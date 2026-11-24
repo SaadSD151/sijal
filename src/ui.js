@@ -95,10 +95,22 @@ function show(name){if(name)radClose();
 function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
 const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins','tSkins']].map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="${k}">${k==='pass'?'🎖️ ':k==='skins'?'🎨 ':'🏠 '}${t(l)}</button>`).join('')}</div><div class="mtsp"></div>`;
 function renderMenu(){
-  const p=UI.prof,rk=rankOf(p);
-  $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><button class="btn supb" data-a="supMenu">💜 ${t('supMenu')}</button>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div><a class="btn tkb" href="${TIKTOK}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg> ${t('tiktok')}</a></div>
-  <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
+  const p=UI.prof,rk=rankOf(p),f=p.fb||{},nm=p.name||f.user||t('defName'),d=new Date(),dk=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(),done=p.dailyDone===dk;
+  const TT='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>';
+  const row=(a,ic,lb,cls)=>`<button class="dr${cls?' '+cls:''}" data-a="${a}"><i>${ic}</i><span>${lb}</span><em>›</em></button>`;
+  // the live map is the hero: a slim top bar, then everything to start a battle in one glass sheet at the bottom; the rest lives in the side menu
+  $('#menu').innerHTML=`<div class="v3top"><button class="v3ic" data-a="drw" aria-label="${t('more')}">☰</button><div class="v3logo">${t('title')}</div><button class="v3me" data-a="account"><span>${esc([...nm][0]||'?')}</span></button></div>
+  <div class="v3sp"></div>
+  <div class="sheet"><div class="grip"></div>
+    <div class="shd"><div><b>${t('v3hi',esc(nm))}</b><small>${hasBadge(p)?BADGE:''}${t('ranks')[rk]} · ${p.wins|0} ${t('wins')}</small></div><button class="shlb" data-a="board">🏆</button></div>
+    <button class="go" data-a="quick"><span>⚔️ ${t('quick')}</span><small>${t('v3qs')}</small></button>
+    <div class="seg"><button data-a="online"><i>🌐</i>${t('online')}</button><button data-a="daily"${done?' class="dn"':''}><i>${done?'✅':'🎯'}</i>${t('daily')}</button><button data-a="custom"><i>🛠️</i>${t('custom')}</button></div>
+    <div class="shtabs"><button data-a="pass">🎖️ ${t('bp')}</button><button data-a="skins">🎨 ${t('tSkins')}</button></div>
+  </div>
+  <div class="drw" id="drw"><div class="drbg" data-a="drw"></div><div class="drp"><div class="drh"><b>${t('title')}</b><button class="v3ic" data-a="drw" aria-label="close">✕</button></div>
+    ${UI.admin?row('admin',UI.owner?'👑':'🛠️',UI.owner?t('owner'):t('admin'),'adm'):''}${row('account','👤',t('account'))}${row('how','❓',t('how'))}${row('settings','⚙️',t('settings'))}${row('news','🔔',t('news'))}${row('suggest','💬',t('suggest'))}${row('supMenu','💜',t('supMenu'),'dsup')}
+    <a class="dr tt" href="${TIKTOK}" target="_blank" rel="noopener"><i>${TT}</i><span>${t('tiktok')}</span><em>›</em></a>
+    <p class="drf">${t('made')}<br>${t('beta')}</p></div></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -744,7 +756,7 @@ function act(a){
   switch(k){
     case'quick':renderQuick();show('help');break;case'go':startMatch({});break;case'goQ':startMatch({quick:true});break;case'cfm':placeAt(UI.pend);break;case'cfx':setMode(null);break;case'again':if(NET.on)return toMenu();startMatch({same:true});break;
     case'online':renderNet();show('net');break;case'joinR':netJoin(v);break;case'rematch':netRematch();break;case'lobbyBack':renderLobby();show('net');break;case'pub':p.pub=v==='1';if(NET.on&&NET.host){NET.pub=p.pub;if(NET.pub)regSend();else regUnreg();}renderSetup();break;case'hostRoom':netHost();break;case'join':netJoin(($('#inCode')||{}).value);break;case'netStart':hostStart();break;case'leave':netClose();renderMenu();show('menu');break;case'daily':renderDaily();show('help');break;case'dailyGo':if(p.dailyDone===dayKey()){renderDaily();break;}startMatch({daily:true});break;
-    case'custom':UI.setupMode='solo';renderSetup();show('setup');break;case'hostSetup':UI.setupMode='host';renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'toMenu':toMenu();break;
+    case'custom':UI.setupMode='solo';renderSetup();show('setup');break;case'hostSetup':UI.setupMode='host';renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'drw':{const d=$('#drw');if(d)d.classList.toggle('open');}break;case'toMenu':toMenu();break;
     case'how':UI.helpBack=UI.screen;renderHelp();show('help');break;case'helpBack':show(UI.helpBack==='pause'?'pause':'menu');break;
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
@@ -950,7 +962,7 @@ function bindInput(){
 // ── main loop ──
 function frame(ts){
   requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(UI.rad&&(UI.screen||UI.phase!=='play'||!g||g.o.demo))radClose();if(g&&!g.o.demo&&g.started&&UI.statG!==g){UI.statG=g;stat('games');stat('g_'+(NET.on?'o':g.o.daily?'d':UI.mType||'c'));}if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);SQ.ms+=dt;if(g.o.daily&&p.dailyDone!==g.o.daily){p.dailyDone=g.o.daily;saveProf();}if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
-  if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=fitZoom(g)*1.5;if(g.over||g.tick>7000){startDemo();return;}}
+  if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=Math.max(fitZoom(g)*1.5,view.h/g.H*1.04);if(g.over||g.tick>7000){startDemo();return;}}
   else if(!UI.screen){const K=UI.keys,s=dt*.55/cam.z;if(K.a||K.arrowleft)cam.tx-=s;if(K.d||K.arrowright)cam.tx+=s;if(K.w||K.arrowup)cam.ty-=s;if(K.s||K.arrowdown)cam.ty+=s;}
   if(g.started&&!g.over&&!g.o.mp&&(g.o.demo||(!UI.paused&&!UI.screen))){acc+=dt*(g.o.demo?2:UI.speed);let n=0;while(acc>=100&&n<10){tick(g);acc-=100;n++;}if(n===10)acc=0;}
   handleEvents();draw(g,dt,ts);

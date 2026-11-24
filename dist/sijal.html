@@ -439,6 +439,40 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .sttip{margin-top:10px}.sttip .tip{margin-top:6px;padding:8px 10px;border-radius:9px;border:1px solid var(--line2);background:rgba(0,0,0,.25);border-inline-start:4px solid #7fb8ff}.sttip .tip b{display:block;margin-bottom:3px}.sttip .tip p{margin:0;font-size:.85em;line-height:1.7;color:var(--dim)}
 .sttip .bad{border-inline-start-color:#ff6b6b;background:rgba(255,80,80,.08)}.sttip .mid{border-inline-start-color:#f1cf6e;background:rgba(241,207,110,.07)}.sttip .good{border-inline-start-color:#33d17a;background:rgba(40,200,120,.08)}
 
+/* home v3: the live map is the background, a slim top bar, one glass sheet at the bottom, extras in a side menu */
+#menu:has(.sheet){background:linear-gradient(180deg,rgba(4,10,18,.85) 0%,rgba(4,10,18,.45) 9%,rgba(4,10,18,0) 20%,rgba(4,10,18,0) 48%,rgba(4,10,18,.75) 100%);justify-content:space-between;gap:0;padding-top:max(14px,env(safe-area-inset-top,0px));padding-bottom:0}
+#menu:has(.sheet)>:first-child{margin-top:0}#menu:has(.sheet)>:last-child{margin-bottom:0}
+.v3top{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:560px;flex:none}
+.v3logo{font-family:var(--disp);font-weight:700;font-size:44px;line-height:1.3;background:linear-gradient(180deg,#fff6d0,#e3b95a 55%,#9a6a1c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 rgba(0,0,0,.45))}
+.v3ic,.v3me{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:19px;background:rgba(6,14,24,.6);border:1px solid rgba(255,255,255,.12);color:var(--parch);backdrop-filter:blur(10px)}
+.v3me{border-radius:50%;padding:0;border-color:rgba(241,207,110,.6)}.v3me span{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#f6dc8a,#b8862a);color:#1a1205;font-weight:700;font-size:16px}
+.v3sp{flex:1 1 auto;min-height:24px}
+.sheet{width:100%;max-width:560px;flex:none;display:flex;flex-direction:column;gap:12px;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));border-radius:26px 26px 0 0;
+  background:linear-gradient(180deg,rgba(12,24,38,.78),rgba(6,14,24,.92));border:1px solid rgba(255,255,255,.1);border-bottom:0;box-shadow:0 -12px 40px rgba(0,0,0,.45);backdrop-filter:blur(18px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.2)}
+#app:not(.mob) .sheet{border-radius:26px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:22px;padding-bottom:16px}
+.grip{width:40px;height:5px;border-radius:9px;background:rgba(255,255,255,.18);align-self:center}
+.shd{display:flex;align-items:center;justify-content:space-between;gap:10px}.shd b{display:block;font-size:19px;color:#fff}.shd small{color:var(--dim);font-size:13px}
+.shlb{width:44px;height:44px;border-radius:14px;font-size:20px;background:rgba(241,207,110,.12);border:1px solid rgba(241,207,110,.3)}
+.go{display:flex;flex-direction:column;align-items:center;gap:1px;padding:15px 14px 12px;border-radius:18px;border:1px solid #ffe9a8;background:linear-gradient(180deg,#f6dc8a,#c9952d);color:#1a1205;box-shadow:0 8px 26px rgba(227,185,90,.33)}
+.go span{font-size:21px;font-weight:700}.go small{font-size:12.5px;color:#4a3608;font-weight:600}.go:active{transform:scale(.98)}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px;border-radius:16px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06)}
+.seg button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;border-radius:12px;color:var(--parch);font-size:13px;font-weight:600;white-space:nowrap}
+.seg button i{font-style:normal;font-size:21px}.seg button:hover{background:rgba(255,255,255,.06)}.seg button:active{background:rgba(255,255,255,.1)}
+.seg button.dn{color:#8be39a}
+.shtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.shtabs button{padding:10px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);color:var(--dim);font-size:13.5px;font-weight:600}
+.drw{position:fixed;top:0;right:0;bottom:0;left:0;z-index:40;pointer-events:none}.drw.open{pointer-events:auto}
+.drbg{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .2s}.drw.open .drbg{opacity:1}
+.drp{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(320px,84vw);display:flex;flex-direction:column;gap:4px;padding:max(16px,env(safe-area-inset-top,0px)) 14px 16px;background:linear-gradient(180deg,#0e1c2c,#08121e);border-inline-end:1px solid rgba(255,255,255,.08);box-shadow:0 0 40px rgba(0,0,0,.6);transform:translateX(105%);transition:transform .22s ease;overflow-y:auto}
+[dir=ltr] .drp{transform:translateX(-105%)}.drw.open .drp{transform:none}
+.drh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.drh b{font-family:var(--disp);font-size:30px;color:var(--gold)}
+.dr{display:flex;align-items:center;gap:12px;padding:12px 10px;border-radius:14px;color:var(--parch);text-decoration:none;font-size:15px;font-weight:600;text-align:start}
+.dr:hover{background:rgba(255,255,255,.05)}.dr i{font-style:normal;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.06);font-size:18px;flex:none}
+.dr span{flex:1}.dr em{font-style:normal;color:var(--dim)}
+.dr.dsup i{background:linear-gradient(180deg,#7c4ddb,#4c2596)}.dr.dsup span{color:#e2ccff}.dr.adm i{background:rgba(122,31,31,.7)}.dr.tt i{background:#000;color:#fff}
+.drf{margin-top:auto;padding-top:14px;color:var(--dim);font-size:11.5px;text-align:center;line-height:1.7}
+#app:not(.mob) .v3logo{font-size:60px}#app:not(.mob) .v3top{max-width:760px}
+
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
 #bHome{left:var(--g)}
@@ -452,7 +486,8 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob #bHome{left:var(--g)}
 .mob #feed{right:var(--g)}
 .mob #atk{right:var(--g)}
-.mob #card{right:var(--g)}}
+.mob #card{right:var(--g)}
+.drp{right:0}}
 </style>
 </head>
 <body>
@@ -470,7 +505,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='aae06c97f5';
+const BUILD_ID='fccb4a4af4';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2072,7 +2107,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  help:[['Cities are the heart of war','Each city rules the province around it. When a city falls, its province surrenders to the conqueror. Lose your last city and your whole realm collapses.'],['The spearhead','Tap enemy or neutral land and your attack drives toward the point you tapped. Aim it at cities.'],['Attack force','The slider sets how much of your army each attack takes. Send everything and your homeland is left thin.'],['Sieges','A city is held by a share of its realm\'s whole army, so mass your troops first. A landlocked pocket that is fully encircled falls by itself.'],['Building','Cities add troops and gold, forts double defense, ports bring gold and ships.'],['Seasons','Spring for growth, summer for attack, autumn for gold, and winter slows every army.'],['Ages','Advance from swords to the atom to unlock ports, missiles, the air shield and the bomb.'],['Politics','Alliances last two minutes, and before they end you choose whether to renew. Gift gold and call your allies to war. Grow too large and the world unites against you, and your army grows more slowly.'],['Two roads to victory','Rule 70% of the world\'s land, or raise the Eternal Monument and hold it for 150 seconds.']],
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the left button to aim an attack arrow, drag with the right button to move the map, right-click opens a realm card. On mobile: long-press a realm to open its card.'}};
 // Saudi-dialect wording for the Arabic interface
-Object.assign(TX.ar,{ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
+Object.assign(TX.ar,{more:'المزيد',v3hi:'هلا {0} 👋',v3qs:'خريطة جديدة · ابدأ على طول',ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
  faction:'اختر حضارتك',realm:'اسم دولتك',world:'شكل العالم',foes:'عدد الخصوم',
  pick:'اختر مكان «{0}» داخل أرضك',aim:'اختر الهدف على الخريطة',spawn:'اختر مكان عاصمتك: اضغط على أي أرض فاضية',
  e_gold:'الذهب ما يكفي',e_era:'يبي له عصر أحدث',e_own:'ابنِ داخل أرضك',e_busy:'المكان مشغول',e_near:'قريب مرة من مبنى ثاني',e_cnear:'قريب مرة من مدينة ثانية',e_coast:'الميناء يبي له ساحل مفتوح',
@@ -2094,7 +2129,7 @@ Object.assign(TX.ar,{ruinLeft:'المدينة متضررة · تتصلح بعد 
  lobbyHost:'أنت المضيف. عط الكود لأخوياك، ولما يدخلون ابدأ المعركة. إعدادات العالم هي اللي اخترتها في المعركة المخصّصة.',lobbyWait:'ننتظر المضيف يبدأ المعركة…',
  mpSpawn:'اختر حضارتك ومكان عاصمتك. المعركة تبدأ لما الكل يختار أو بعد دقيقة',mpWait:'ننتظر باقي اللاعبين…',mpLeft:'{0} طلع من المعركة والحاسوب مسك دولته',mpDead:'طاحت دولتك. تتفرج الحين على باقي الحرب',
  e_room:'ما قدرنا نوصل للغرفة. تأكد من الكود، وإذا ما ضبط جرّب شبكة ثانية (واي فاي أو بيانات الجوال)',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
-Object.assign(TX.en,{ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
+Object.assign(TX.en,{more:'More',v3hi:'Hi {0} 👋',v3qs:'New map · start right away',ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
  mpSpawn:'Choose your civilization and found your capital. The battle starts when everyone has chosen, or after one minute',
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the right button to move the map, right-click opens a realm card.'});
 TX.en.help[1]=['Attacking','Pick from the Attack type list: “At a point” focuses your army in a narrow corridor toward the spot you tap, “Along every border” strikes across your whole shared border. You can hide the list and bring it back. On mobile the realm\'s options open first: attack, ally or gift.'];
@@ -2515,10 +2550,22 @@ function show(name){if(name)radClose();
 function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
 const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins','tSkins']].map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="${k}">${k==='pass'?'🎖️ ':k==='skins'?'🎨 ':'🏠 '}${t(l)}</button>`).join('')}</div><div class="mtsp"></div>`;
 function renderMenu(){
-  const p=UI.prof,rk=rankOf(p);
-  $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><button class="btn supb" data-a="supMenu">💜 ${t('supMenu')}</button>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div><a class="btn tkb" href="${TIKTOK}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg> ${t('tiktok')}</a></div>
-  <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
+  const p=UI.prof,rk=rankOf(p),f=p.fb||{},nm=p.name||f.user||t('defName'),d=new Date(),dk=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(),done=p.dailyDone===dk;
+  const TT='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>';
+  const row=(a,ic,lb,cls)=>`<button class="dr${cls?' '+cls:''}" data-a="${a}"><i>${ic}</i><span>${lb}</span><em>›</em></button>`;
+  // the live map is the hero: a slim top bar, then everything to start a battle in one glass sheet at the bottom; the rest lives in the side menu
+  $('#menu').innerHTML=`<div class="v3top"><button class="v3ic" data-a="drw" aria-label="${t('more')}">☰</button><div class="v3logo">${t('title')}</div><button class="v3me" data-a="account"><span>${esc([...nm][0]||'?')}</span></button></div>
+  <div class="v3sp"></div>
+  <div class="sheet"><div class="grip"></div>
+    <div class="shd"><div><b>${t('v3hi',esc(nm))}</b><small>${hasBadge(p)?BADGE:''}${t('ranks')[rk]} · ${p.wins|0} ${t('wins')}</small></div><button class="shlb" data-a="board">🏆</button></div>
+    <button class="go" data-a="quick"><span>⚔️ ${t('quick')}</span><small>${t('v3qs')}</small></button>
+    <div class="seg"><button data-a="online"><i>🌐</i>${t('online')}</button><button data-a="daily"${done?' class="dn"':''}><i>${done?'✅':'🎯'}</i>${t('daily')}</button><button data-a="custom"><i>🛠️</i>${t('custom')}</button></div>
+    <div class="shtabs"><button data-a="pass">🎖️ ${t('bp')}</button><button data-a="skins">🎨 ${t('tSkins')}</button></div>
+  </div>
+  <div class="drw" id="drw"><div class="drbg" data-a="drw"></div><div class="drp"><div class="drh"><b>${t('title')}</b><button class="v3ic" data-a="drw" aria-label="close">✕</button></div>
+    ${UI.admin?row('admin',UI.owner?'👑':'🛠️',UI.owner?t('owner'):t('admin'),'adm'):''}${row('account','👤',t('account'))}${row('how','❓',t('how'))}${row('settings','⚙️',t('settings'))}${row('news','🔔',t('news'))}${row('suggest','💬',t('suggest'))}${row('supMenu','💜',t('supMenu'),'dsup')}
+    <a class="dr tt" href="${TIKTOK}" target="_blank" rel="noopener"><i>${TT}</i><span>${t('tiktok')}</span><em>›</em></a>
+    <p class="drf">${t('made')}<br>${t('beta')}</p></div></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -3164,7 +3211,7 @@ function act(a){
   switch(k){
     case'quick':renderQuick();show('help');break;case'go':startMatch({});break;case'goQ':startMatch({quick:true});break;case'cfm':placeAt(UI.pend);break;case'cfx':setMode(null);break;case'again':if(NET.on)return toMenu();startMatch({same:true});break;
     case'online':renderNet();show('net');break;case'joinR':netJoin(v);break;case'rematch':netRematch();break;case'lobbyBack':renderLobby();show('net');break;case'pub':p.pub=v==='1';if(NET.on&&NET.host){NET.pub=p.pub;if(NET.pub)regSend();else regUnreg();}renderSetup();break;case'hostRoom':netHost();break;case'join':netJoin(($('#inCode')||{}).value);break;case'netStart':hostStart();break;case'leave':netClose();renderMenu();show('menu');break;case'daily':renderDaily();show('help');break;case'dailyGo':if(p.dailyDone===dayKey()){renderDaily();break;}startMatch({daily:true});break;
-    case'custom':UI.setupMode='solo';renderSetup();show('setup');break;case'hostSetup':UI.setupMode='host';renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'toMenu':toMenu();break;
+    case'custom':UI.setupMode='solo';renderSetup();show('setup');break;case'hostSetup':UI.setupMode='host';renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'drw':{const d=$('#drw');if(d)d.classList.toggle('open');}break;case'toMenu':toMenu();break;
     case'how':UI.helpBack=UI.screen;renderHelp();show('help');break;case'helpBack':show(UI.helpBack==='pause'?'pause':'menu');break;
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
@@ -3370,7 +3417,7 @@ function bindInput(){
 // ── main loop ──
 function frame(ts){
   requestAnimationFrame(frame);const dt=Math.min(100,(ts-lastTs)||16);lastTs=ts;const g=G;if(UI.rad&&(UI.screen||UI.phase!=='play'||!g||g.o.demo))radClose();if(g&&!g.o.demo&&g.started&&UI.statG!==g){UI.statG=g;stat('games');stat('g_'+(NET.on?'o':g.o.daily?'d':UI.mType||'c'));}if(g&&!g.o.demo&&g.started&&!g.over&&UI.phase==='play'&&!document.hidden){const p=UI.prof;addStat('ms',dt);SQ.ms+=dt;if(g.o.daily&&p.dailyDone!==g.o.daily){p.dailyDone=g.o.daily;saveProf();}if(p.ms-(UI.msSaved||0)>3e4){UI.msSaved=p.ms;saveProf();if(Date.now()-(UI.lbPushed||0)>3e5){UI.lbPushed=Date.now();lbPush();}}}if(!g||!R.land)return;
-  if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=fitZoom(g)*1.5;if(g.over||g.tick>7000){startDemo();return;}}
+  if(g.o.demo){cam.tx=g.W/2+Math.sin(ts/21000)*g.W*.16;cam.ty=g.H/2+Math.cos(ts/27000)*g.H*.12;cam.tz=Math.max(fitZoom(g)*1.5,view.h/g.H*1.04);if(g.over||g.tick>7000){startDemo();return;}}
   else if(!UI.screen){const K=UI.keys,s=dt*.55/cam.z;if(K.a||K.arrowleft)cam.tx-=s;if(K.d||K.arrowright)cam.tx+=s;if(K.w||K.arrowup)cam.ty-=s;if(K.s||K.arrowdown)cam.ty+=s;}
   if(g.started&&!g.over&&!g.o.mp&&(g.o.demo||(!UI.paused&&!UI.screen))){acc+=dt*(g.o.demo?2:UI.speed);let n=0;while(acc>=100&&n<10){tick(g);acc-=100;n++;}if(n===10)acc=0;}
   handleEvents();draw(g,dt,ts);
