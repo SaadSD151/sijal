@@ -515,11 +515,11 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='e787dd3560';
+const BUILD_ID='170911630f';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
-const T_DELAY=[0,0,1.5,2.3,1.8,3,6.5,2.9],T_COST=[0,0,11,17,14,26,60,22],T_DEF=[0,0,1,1.3,.9,1.6,2.6,1.25],T_VAL=[0,0,1,.75,.3,.5,.12,.22];
+const T_DELAY=[0,0,1.3,1.6,1.5,2.4,4.6,2.2],T_COST=[0,0,11,17,14,26,60,22],T_DEF=[0,0,1,1.3,.9,1.6,2.6,1.25],T_VAL=[0,0,1,.75,.3,.5,.12,.22];
 // each further building of a kind costs `mul` times the previous one
 const ST={city:{era:1,cost:400,mul:1.4},fort:{era:1,cost:200,mul:1.25},port:{era:2,cost:400,mul:1.35},factory:{era:2,cost:650,mul:1.3},camp:{era:3,cost:2500,mul:1.5},coast:{era:2,cost:350,mul:1.25},silo:{era:3,cost:1500,mul:1.3},shield:{era:3,cost:900,mul:1.3},mon:{era:4,cost:15000,mul:1}};
 const MSL={rocket:{era:3,cost:900,r:4,cd:50},nuke:{era:4,cost:6000,r:10,cd:50},doom:{era:4,cost:18000,r:20,cd:50}};
@@ -845,8 +845,8 @@ function tileDelay(g,k,n,par){
   let dl=T_DELAY[g.M.ter[n]];if(k.d)dl*=1.35;
   if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
-  // an attack that outnumbers the defenders moves faster: twice their army is about 1.6x the pace, four times about 2.2x
-  if(k.d){const D=g.nations[k.d],r=k.troops/Math.max(1000,D.troops);if(r>1)dl/=Math.min(2.6,1+.6*Math.log2(r));}
+  // an attack that outnumbers the defenders sweeps through: twice their army is 2.5x the pace, four times 4x, at most 6x
+  if(k.d){const D=g.nations[k.d],r=(k.troops+g.nations[k.a].troops*.25)/Math.max(1000,D.troops);if(r>1)dl/=Math.min(6,1+1.5*Math.log2(r));}
   return dl*(.55+g.rng()*.9)*g.sSpd*g.nations[k.a].mSpd;
 }
 function tileCost(g,k,i,A,D){
@@ -1860,11 +1860,6 @@ function draw(g,dt,ts){
   if(me)for(const b of g.boats){if(b.a!==me&&g.owner[b.ti]!==me)continue;const W=g.W,q=w2s(b.ti%W+.5,((b.ti/W)|0)+.5);if(q.x<-30||q.y<-30||q.x>cw+30||q.y>ch+30)continue;
     const r=Math.max(9,z*2.4)+Math.sin(ts/220)*2;c.strokeStyle=b.a===me?'rgba(255,233,168,.95)':'rgba(255,90,70,.95)';c.lineWidth=2.5;c.setLineDash([5,4]);c.lineDashOffset=-ts/60;c.beginPath();c.arc(q.x,q.y,r,0,7);c.stroke();c.setLineDash([]);
     c.beginPath();c.arc(q.x,q.y,r*.35,0,7);c.stroke();}
-  // troops pushing on each front that involves me
-  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
-    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa+=da*.1;F.ss+=(F.sz-F.ss)*.1;
-    const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
-    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
   // trade ships: small, white-sailed, shuttling between ports
   for(const b of g.trades){
     const W=g.W,i0=Math.floor(b.p),i1=Math.min(i0+1,b.path.length-1),f=b.p-i0,a=b.path[i0],d=b.path[i1],p=w2s(lerp(a%W,d%W,f)+.5,lerp((a/W)|0,(d/W)|0,f)+.5);
@@ -1942,12 +1937,18 @@ function draw(g,dt,ts){
   }
   R.lb=LB;
   // missiles and pending strikes
+  // troops pushing on each front that involves me, drawn over the cities so the number is always readable
+  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
+    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa+=da*.1;F.ss+=(F.sz-F.ss)*.1;
+    const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
+    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
   for(const m of g.missiles){
-    {const dm=m.type==='doom',nk=m.type==='nuke',span=dm?.6:nk?.5:.42,N=dm?60:nk?48:40,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?3.4:nk?2.4:1.6)*zs;
-      for(let k=N;k>=1;k--){const t0=m.t-span*k/N;if(t0<0)continue;const a=mslPos(m,t0),age=k/N,w=Math.sin(k*12.9898+m.sx)*.5,r=r0*(1+age*(dm?5:4)),al=Math.pow(1-age,1.4)*(dm?.62:.5);
-        const sh=dm?40+age*50:nk?128+age*70:142+age*68;c.fillStyle=`rgba(${sh|0},${(sh*(dm?.85:1))|0},${(sh*(dm?.85:1.02))|0},${al})`;c.beginPath();c.arc(a.x+w*r*.5,a.y+w*r*.3,r,0,7);c.fill();}
+    {const dm=m.type==='doom',nk=m.type==='nuke',span=dm?.6:nk?.5:.42,N=dm?60:nk?48:40,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs;
+      for(let k=N;k>=1;k--){const t0=m.t-span*k/N;if(t0<0)continue;const a=mslPos(m,t0),age=k/N,w=Math.sin(k*12.9898+m.sx)*.5,r=r0*(1+age*(dm?5:4)),al=Math.pow(1-age,1.2)*(dm?.8:.72);
+        const sh=dm?40+age*50:nk?128+age*70:142+age*68;c.fillStyle=`rgba(30,32,38,${al*.35})`;c.beginPath();c.arc(a.x+w*r*.5,a.y+w*r*.3+r*.12,r*1.12,0,7);c.fill();
+        c.fillStyle=`rgba(${sh|0},${(sh*(dm?.85:1))|0},${(sh*(dm?.85:1.02))|0},${al})`;c.beginPath();c.arc(a.x+w*r*.5,a.y+w*r*.3,r,0,7);c.fill();}
       // fire close behind the missile
-      c.globalCompositeOperation='lighter';for(let k=1;k<=6;k++){const t0=m.t-span*k/N;if(t0<0)break;const a=mslPos(m,t0),f=1-k/7;c.fillStyle=`rgba(255,${130+k*12},${40+k*6},${.5*f})`;c.beginPath();c.arc(a.x,a.y,r0*(1.1+k*.25),0,7);c.fill();}c.globalCompositeOperation='source-over';}
+      c.globalCompositeOperation='lighter';for(let k=1;k<=9;k++){const t0=m.t-span*k/N;if(t0<0)break;const a=mslPos(m,t0),f=1-k/10;c.fillStyle=`rgba(255,${120+k*12},${30+k*6},${.75*f})`;c.beginPath();c.arc(a.x,a.y,r0*(1.3+k*.3),0,7);c.fill();}c.globalCompositeOperation='source-over';}
     if(!m.iv&&m.t>.72){m.iv=1;for(const s of g.structs){if(s.dead||s.build||s.type!=='shield'||s.owner===m.a||g.nations[s.owner].ally[m.a]||s.cd>g.tick||(s.x-m.tx)**2+(s.y-m.ty)**2>SH_R(s.level)**2)continue;
       const mt=.95,d=Math.hypot(m.tx-m.sx,m.ty-m.sy),mx=lerp(m.sx,m.tx,mt)+.5,my=lerp(m.sy,m.ty,mt)+.5-Math.sin(Math.PI*mt)*d*.28,ms=Math.max(250,(mt-m.t)*m.dur*100/Math.max(1,UI.speed||1));
       (R.iv||(R.iv=[])).push({tx:m.tx,ty:m.ty,mx,my,until:performance.now()+ms+1500});addFx('intc',s.x,s.y,{mx,my,dur:ms});addFx('flash',s.x,s.y,{dur:300});break;}}
@@ -1955,8 +1956,8 @@ function draw(g,dt,ts){
     {const b=mslPos(m,Math.max(0,m.t-.01)),ang=Math.atan2(h.y-b.y,h.x-b.x),sp=mslSprite(m.type),base=Math.max(16,Math.min(44,12+z*2)),L=base*(m.type==='doom'?2:m.type==='nuke'?1.35:1),Hh=L*sp.height/sp.width,ts=performance.now();
       c.save();c.translate(h.x,h.y);c.rotate(ang);
       if(m.type==='doom'){const pu=.6+.4*Math.sin(ts/160),ag=c.createRadialGradient(-L*.2,0,0,-L*.2,0,L*.9);ag.addColorStop(0,`rgba(255,40,20,${.38*pu})`);ag.addColorStop(1,'rgba(120,0,0,0)');c.globalCompositeOperation='lighter';c.fillStyle=ag;c.beginPath();c.arc(-L*.2,0,L*.9,0,7);c.fill();c.globalCompositeOperation='source-over';}
-      {const ng=c.createRadialGradient(-L*.55,0,0,-L*.55,0,L*.5);ng.addColorStop(0,'rgba(255,220,140,.75)');ng.addColorStop(1,'rgba(255,90,20,0)');c.globalCompositeOperation='lighter';c.fillStyle=ng;c.beginPath();c.arc(-L*.55,0,L*.5,0,7);c.fill();c.globalCompositeOperation='source-over';}
-      mslFlame(c,L*(m.type==='doom'?1.1:.95),Hh*(m.type==='doom'?.3:.36),ts,m.type==='doom'?'rgba(255,90,30,.95)':'rgba(255,170,50,.95)');
+      {const ng=c.createRadialGradient(-L*.6,0,0,-L*.6,0,L*.85);ng.addColorStop(0,'rgba(255,235,170,.95)');ng.addColorStop(.35,'rgba(255,150,40,.6)');ng.addColorStop(1,'rgba(255,70,10,0)');c.globalCompositeOperation='lighter';c.fillStyle=ng;c.beginPath();c.arc(-L*.6,0,L*.85,0,7);c.fill();c.globalCompositeOperation='source-over';}
+      mslFlame(c,L*(m.type==='doom'?1.5:1.35),Hh*(m.type==='doom'?.42:.5),ts,m.type==='doom'?'rgba(255,90,30,.95)':'rgba(255,170,50,.95)');
       c.translate(-L*.08,0);c.drawImage(sp,-L*.5,-Hh/2,L,Hh);c.restore();}
     c.strokeStyle='rgba(255,84,64,.85)';c.setLineDash([6,5]);c.lineWidth=1.6;c.beginPath();c.arc(tp.x,tp.y,MSL[m.type].r*z,0,7);c.stroke();c.setLineDash([]);
   }
@@ -2249,7 +2250,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200']},
+ {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650','⚡ الجيش الكبير صار يكتسح بسرعة: إذا جيشك أكبر بأربع مرات يمسح المنطقة خلال ثواني. الغابة تبطّئه شوي بس، والجبال تبطّئه أكثر','🔢 عدد الجنود على الجبهة صار يطلع فوق المدن بدل ما ينغطى تحتها'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200','⚡ Big armies sweep fast: four times the enemy army clears the area in seconds. Forest slows it only a little, mountains more','🔢 The troop count on a front now shows above cities instead of hiding under them']},
  {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
  {v:'5.1',d:'2026-11-22',ar:['🎵 صار للعبة حساب على تيك توك: @sijal_2، تلقاه في القائمة الرئيسية. تابعنا!'],en:['🎵 Sijal is on TikTok: @sijal_2, linked from the main menu. Follow us!']},
  {v:'5.0',d:'2026-11-22',ar:['⚔️ لما تقضي على دولة تاخذ أرضها كاملة، ما يبقى منها شي فاضي','🪖 شكل جديد للدبابات: جنازير وعجلات تتحرك، وهيكل مموّه بلون دولتك، وبرج ومدفع، ولهب من المدفع وغبار وهي تمشي','🛡️ خطوط مدى الحصون صارت تطلع بس لما تختار الحصن أو تبني، عشان ما تتلخبط مع الحدود','🚀 القبة الدفاعية صارت تطلق صاروخ اعتراض يطلع للسما ويفجّر الصاروخ الجاي، والدفاع البحري يطلق قذيفة بلهب من المدفع وترشّ الموية مكان ما تطيح','📏 تطوير الحصن والقبة والدفاع البحري صار يكبّر مداهم بشكل أكبر: الحصن من 8 لين 18، القبة من 19 لين 35، والدفاع البحري من 17 لين 33'],en:['⚔️ Wiping out a realm now gives you all of its land, with nothing left empty','🪖 New tank look: moving tracks and wheels, a camouflaged hull in your colour, turret and gun, muzzle flash and dust on the move','🛡️ Fort range outlines only show when you select a fort or build, so they are not mistaken for borders','🚀 Shield domes now launch an interceptor that climbs and bursts the incoming missile, and coastal guns fire a shell with a muzzle flash and a splash where it lands','📏 Upgrading forts, domes and coastal guns now grows their range much more: fort 8 to 18, dome 19 to 35, coastal gun 17 to 33']},

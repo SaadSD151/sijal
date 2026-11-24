@@ -175,8 +175,8 @@ function tileDelay(g,k,n,par){
   let dl=T_DELAY[g.M.ter[n]];if(k.d)dl*=1.35;
   if(k.d){const ds=defOf(g,g.nations[k.d]),W=g.W,x=n%W,y=(n/W)|0;for(let j=0;j<ds.length;j+=4)if(ds[j+3]>=9){const dx=x-ds[j],dy=y-ds[j+1];if(dx*dx+dy*dy<=ds[j+2]){const lv=ds[j+3]-9;dl*=1+3*(1+.25*(lv-1))*fortF(k,lv);break;}}}
   if(k.tx>=0&&par>=0){const W=g.W;dl*=1+(k.d?.75:.4)*(hyp(n%W-k.tx,((n/W)|0)-k.ty)-hyp(par%W-k.tx,((par/W)|0)-k.ty));}
-  // an attack that outnumbers the defenders moves faster: twice their army is about 1.6x the pace, four times about 2.2x
-  if(k.d){const D=g.nations[k.d],r=k.troops/Math.max(1000,D.troops);if(r>1)dl/=Math.min(2.6,1+.6*Math.log2(r));}
+  // an attack that outnumbers the defenders sweeps through: twice their army is 2.5x the pace, four times 4x, at most 6x
+  if(k.d){const D=g.nations[k.d],r=(k.troops+g.nations[k.a].troops*.25)/Math.max(1000,D.troops);if(r>1)dl/=Math.min(6,1+1.5*Math.log2(r));}
   return dl*(.55+g.rng()*.9)*g.sSpd*g.nations[k.a].mSpd;
 }
 function tileCost(g,k,i,A,D){
