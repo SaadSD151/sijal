@@ -95,10 +95,17 @@ function show(name){if(name)radClose();
 function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
 const mtabs=cur=>`<div class="mtabs">${[['menu','tMenu'],['pass','bp'],['skins','tSkins']].map(([k,l])=>`<button class="${cur===k?'on':''}" data-a="${k}">${k==='pass'?'🎖️ ':k==='skins'?'🎨 ':'🏠 '}${t(l)}</button>`).join('')}</div><div class="mtsp"></div>`;
 function renderMenu(){
-  const p=UI.prof,rk=rankOf(p);
-  $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div><div class="l3">${t('tag')}</div></div>
-  <div class="mb"><button class="btn big" data-a="quick">${t('quick')}</button><div class="m2"><button class="btn" data-a="custom">${t('custom')}</button><button class="btn" data-a="online">${t('online')}</button></div><div class="m2"><button class="btn" data-a="daily">${t('daily')}</button><button class="btn" data-a="board">${t('lb')}</button></div><button class="btn supb" data-a="supMenu">💜 ${t('supMenu')}</button>${UI.admin?`<button class="btn admb" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}<div class="m3"><button class="btn" data-a="how">${t('how')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="suggest">${t('suggest')}</button></div><div class="m2 m4"><button class="btn acc" data-a="account">${t('account')}</button><button class="btn news" data-a="news">${t('news')}</button></div><a class="btn tkb" href="${TIKTOK}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg> ${t('tiktok')}</a></div>
-  <div class="mf"><span class="rk">${hasBadge(p)?BADGE:''}${t('rank')}: <b>${t('ranks')[rk]}</b> · ${p.wins} ${t('wins')}</span><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>`;
+  const p=UI.prof,rk=rankOf(p),f=p.fb||{},nm=p.name||f.user||t('defName');
+  const TT='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>';
+  const mode=(a,ic,lb)=>`<button class="mode" data-a="${a}"><i>${ic}</i><b>${lb}</b></button>`,dk=(a,ic,lb,cls)=>`<button class="dk${cls?' '+cls:''}" data-a="${a}"><i>${ic}</i><span>${lb}</span></button>`;
+  // one big way in, four modes, your card, and everything else as small icons
+  $('#menu').innerHTML=`${mtabs('menu')}<div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
+  <div class="mnu"><button class="btn big play" data-a="quick">⚔️ ${t('quick')}</button>
+    <div class="modes">${mode('online','🌐',t('online'))}${mode('custom','🛠️',t('custom'))}${mode('daily','📅',t('daily'))}${mode('board','🏆',t('lb'))}</div>
+    <button class="mecard" data-a="account"><span class="av">${esc([...nm][0]||'?')}</span><span class="mi"><b>${hasBadge(p)?BADGE:''}${esc(nm)}</b><small>${t('ranks')[rk]} · ${p.wins|0} ${t('wins')}</small></span><span class="mgo">${f.user?t('d_acc'):t('d_accNew')} ›</span></button>
+    ${UI.admin?`<button class="admchip" data-a="admin">${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</button>`:''}
+    <div class="dock">${dk('how','❓',t('d_how'))}${dk('settings','⚙️',t('d_set'))}${dk('news','📰',t('d_news'))}${dk('suggest','💬',t('d_sug'))}${dk('supMenu','💜',t('d_sup'),'dsup')}<a class="dk tt" href="${TIKTOK}" target="_blank" rel="noopener"><i>${TT}</i><span>${t('d_tt')}</span></a></div></div>
+  <div class="mf"><span class="made">${t('made')} · ${t('beta')}</span></div>`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
