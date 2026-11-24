@@ -83,6 +83,32 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
       // the cocky ending
       for(let t=endS;t<end;t+=.25){const i=Math.round((t-endS)/.25);if(i%8===0||i%8===3)kick(t);if(i%8===4)clap(t);hat(t,.7);if(i%8===0)sub(t,46.25,1.8,.45);}
       outroHits();
+    }else if(M.story==='swarm'){
+      // three alarms and a racing heart, a held breath, then a war march that hits harder with each realm that falls
+      const hold=m('hold'),sw=m('sweep'),endS=m('end');siren(0,hold||2.2);for(let t=0;t<(hold||2.2);t+=.5)heart(t,.9);taiko(0);taiko(.5,.8);taiko(1,.9);sub(0,36.7,hold||2.2,.35);
+      if(hold){impact(hold,.7);brass(hold,[146.83,220],1,.15);for(let t=hold;t<sw;t+=.3){const i=Math.round((t-hold)/.3);if(i%4===0)kick(t);if(i%4===2)snare(t);hat(t+.15,.7);}}
+      if(sw){riser(sw-.6,.6,.2);for(let t=sw;t<end;t+=.25){const i=Math.round((t-sw)/.25);if(i%4===0)taiko(t,.8);if(i%4===2)snare(t);hat(t,.6);if(i%8===0)sub(t,i%16?55:73.42,2,.35);if(i%4===0)brass(t,[[146.83,220],[155.56,233.08],[146.83,220],[130.81,196]][(i/4)%4],.9,.1);}}
+      for(const k of['k1','k2','k3'])if(m(k)){impact(m(k),.7);chime(m(k)+.05);}
+      if(endS)pad(endS,[146.83,185,220,293.66],end-endS+.4,.07);
+      outroHits();
+    }else if(M.story==='betray'){
+      // a warm, trusting tune; then silence, a knife's whisper and the drums of war
+      const gf=m('gift'),pr=m('prep'),st=m('stab'),kl=m('kill'),endS=m('end');
+      pad(0,[146.83,220,293.66],st,.06);const mel=[9,10,9,7,8,9,7,6];for(let t=.2,i=0;t<(pr||4);t+=.55,i++)pluck(t,H[mel[i%8]],.14);
+      if(gf){chime(gf);chime(gf+.25);}
+      if(pr){for(let t=pr;t<st;t+=.55)heart(t,.6);sub(pr,36.7,st-pr,.3);}
+      if(st){mus.gain.setValueAtTime(1,Math.max(0,st-.5));mus.gain.linearRampToValueAtTime(.0001,st-.05);whoosh(st-.4,.4);impact(st,1);mus.gain.setValueAtTime(1,st+.02);
+        for(let t=st;t<end;t+=.25){const i=Math.round((t-st)/.25);if(i%4===0)taiko(t);if(i%4===2)snare(t);hat(t,.7);if(i%8===0)sub(t,46.25,2,.45);if(i%4===0)brass(t,[155.56,233.08],.8,.12);}}
+      if(kl){impact(kl,.8);chime(kl+.1);}
+      if(endS)pad(endS,[155.56,233.08,311.13],end-endS+.4,.07);
+      outroHits();
+    }else if(M.story==='speed'){
+      // a ticking clock over a driving beat from the first frame to the last
+      for(let t=0;t<end;t+=.5)osc(t,1800,.03,'square',.05,{lp:4000,dst:fx});taiko(0);taiko(.4,.8);
+      for(let t=1.2;t<end;t+=.25){const i=Math.round((t-1.2)/.25);if(i%4===0)kick(t);if(i%4===2)clap(t,.8);hat(t,.6);if(i%8===0)sub(t,[55,61.74,65.41,73.42][(i/8)%4],2,.35);if(i%2===0)pluck(t,H[[7,9,10,9,8,7,6,7][(i/2)%8]],.1);}
+      for(const k of Object.keys(M))if(/^kill\d+$/.test(k))chime(M[k]);
+      if(m('done'))impact(m('done'),.8);
+      outroHits();
     }else{
       const p=m('port'),bt=m('boats'),ld=m('land'),as=m('assault'),cap=m('capital'),endS=m('end');
       // hook: the sea and a ship horn
