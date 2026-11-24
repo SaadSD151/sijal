@@ -95,6 +95,17 @@ function show(name){if(name)radClose();
 function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
 const mtabs=cur=>`<nav class="bnav">${[['menu','tMenu','🏠'],['pass','bp','🎖️'],['skins','tSkins','🎨']].map(([k,l,ic])=>`<button class="${cur===k?'on':''}" data-a="${k}"><i>${ic}</i><span>${t(l)}</span></button>`).join('')}</nav>`;
 function renderMenu(){
+  if(!document.getElementById('swdefs')){const d=document.createElement('div');d.id='swdefs';d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
+    d.innerHTML=`<svg width="0" height="0"><defs>
+      <linearGradient id="swSteel" x1="0" x2="1"><stop offset="0" stop-color="#7d8893"/><stop offset=".45" stop-color="#eef3f7"/><stop offset=".55" stop-color="#c3ccd4"/><stop offset="1" stop-color="#5d6772"/></linearGradient>
+      <linearGradient id="swGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".5" stop-color="#e3b95a"/><stop offset="1" stop-color="#8a5f17"/></linearGradient>
+      <linearGradient id="swGrip" x1="0" x2="1"><stop offset="0" stop-color="#3a2212"/><stop offset=".5" stop-color="#7a4a26"/><stop offset="1" stop-color="#2c190c"/></linearGradient>
+      <g id="swd"><path d="M20 2 L27 16 L26.2 110 L13.8 110 L13 16 Z" fill="url(#swSteel)" stroke="#3d4650" stroke-width=".8"/>
+        <path d="M20 14 L20 106" stroke="#5f6a75" stroke-width="2.2" stroke-linecap="round" opacity=".55"/><path d="M21.6 18 L21.6 104" stroke="#fff" stroke-width=".8" opacity=".7"/>
+        <rect x="2" y="108" width="36" height="8" rx="4" fill="url(#swGold)" stroke="#6b4710" stroke-width=".8"/><circle cx="3.5" cy="112" r="4" fill="url(#swGold)" stroke="#6b4710" stroke-width=".7"/><circle cx="36.5" cy="112" r="4" fill="url(#swGold)" stroke="#6b4710" stroke-width=".7"/>
+        <path d="M17 108 L20 101 L23 108 Z" fill="url(#swGold)"/>
+        <rect x="16" y="116" width="8" height="30" rx="2" fill="url(#swGrip)"/>${[0,1,2,3,4,5].map(k=>`<path d="M16 ${119+k*4.6} L24 ${121.5+k*4.6}" stroke="#1d0f06" stroke-width="1.1" opacity=".7"/>`).join('')}
+        <circle cx="20" cy="151" r="6.5" fill="url(#swGold)" stroke="#6b4710" stroke-width=".8"/><circle cx="18.5" cy="149.5" r="1.8" fill="#fff6d6" opacity=".8"/></g></defs></svg>`;document.body.appendChild(d);}
   const p=UI.prof,rk=rankOf(p),f=p.fb||{},nm=p.name||f.user||t('defName'),d=new Date(),dk=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
   const left=Math.max(1,Math.ceil((new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)-d)/36e5)),done=p.dailyDone===dk;
   const nx=PASS_AT,xp=p.xp|0,pct=Math.max(4,Math.min(100,Math.round(xp/nx*100)));
@@ -105,7 +116,7 @@ function renderMenu(){
     <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
-    <button class="hero" data-a="quick"><span class="sx" aria-hidden="true"><i class="a">⚔️</i><i class="b">⚔️</i><em></em></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
+    <button class="hero" data-a="quick"><span class="sx" aria-hidden="true"><svg class="a" viewBox="0 0 40 160"><use href="#swd"/></svg><svg class="b" viewBox="0 0 40 160"><use href="#swd"/></svg><em></em></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><a href="${TIKTOK}" target="_blank" rel="noopener">${TT} ${t('d_tt')}</a></div>
   </div>
