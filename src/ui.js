@@ -1045,6 +1045,6 @@ function boot(){
   statBoot();
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
-  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,stat:{flush:statFlush,ping:statPing},run:n=>{for(let i=0;i<n;i++)tick(G);}};
+  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,setOwnerX:(i,o)=>setOwner(G,i,o),stat:{flush:statFlush,ping:statPing},run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
 boot();

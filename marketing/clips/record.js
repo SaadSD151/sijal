@@ -4,8 +4,8 @@
 // Writes <outdir>/f/00000.jpg… (1080x1920) and <outdir>/marks.json (scene name -> frame index).
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path');
 const STORY=process.argv[2]||'empire',OUT=path.resolve(process.argv[3]||'clip-'+STORY),FPS=30;
-const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66},SEED=+(process.argv[4]||SEEDS[STORY]);
-const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'}}[STORY];
+const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99},SEED=+(process.argv[4]||SEEDS[STORY]);
+const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'}}[STORY];
 
 // helpers that live in the page
 function lib(){
@@ -140,6 +140,58 @@ const STORIES={
         for(const n of g.nations)if(n&&!n.alive&&!n.__seen){n.__seen=1;if(!n.minor)KL.mark('kill'+(window.__kc=(window.__kc||0)+1));}
         window.__ser[window.__F]=[g.tick/10,me.tiles/g.M.land];KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.15));return me.tiles/g.M.land>.55;}},
     {name:'end',max:50,tpf:2,start:()=>{KL.mark('done');},frame:k=>{const g=__sijal.G,me=KL.me();window.__ser[window.__F]=[g.tick/10,me.tiles/g.M.land];KL.cam(g.W/2,g.H/2,.1);return false;}}
+  ],
+  // ── 'can the dome stop it?': a rocket and a nuke are shot down, the doomsday bomb is not ──
+  dome:[
+    {name:'aim',max:40,tpf:1,start:()=>{const g=__sijal.G,me=KL.spawn({x:.4,y:.5});KL.preroll(180,.3);me.era=4;me.gold=1e7;
+        const foes=g.structs.filter(s=>!s.dead&&s.type==='city'&&s.owner&&s.owner!==me.id&&!g.nations[s.owner].minor).sort((a,b)=>KL.d2(a,me.cap)-KL.d2(b,me.cap));
+        const T=foes.find(s=>KL.d2(s,me.cap)>500&&KL.d2(s,me.cap)<3500)||foes[2]||foes[0];window.__T={x:T.x,y:T.y,i:T.i,o:T.owner};const O=g.nations[T.owner];O.era=4;O.gold=1e7;
+        let put=null;for(let r=3;r<9&&!put;r++)for(let a=0;a<12&&!put;a++){const i=Math.round(T.y+Math.sin(a/12*6.28)*r)*g.W+Math.round(T.x+Math.cos(a/12*6.28)*r);if(!__sijal.cb(g,O,'shield',i)){__sijal.fn.build(g,O,'shield',i);put=g.structs[g.structAt[i]-1];}}
+        put.build=0;put.level=5;window.__sh=put.i;KL.placeNear(me,'silo',me.cap.x,me.cap.y,4);KL.placeNear(me,'silo',me.cap.x,me.cap.y,6);
+        for(const n of g.nations)if(n&&!n.human){n.ai.nextWar=1e9;}KL.cam(T.x,T.y-2,5.5);window.__CT.snap=1;}},
+    {name:'rocket',max:false?150:75,tpf:1,slow:false?(k=>window.__bAt!=null&&k>=window.__bAt-3&&k<window.__bAt+45?.33:1):null,
+      start:()=>{const g=__sijal.G,me=KL.me(),T=window.__T,si=g.structAt[window.__sh],sh=si?g.structs[si-1]:null;if(sh){sh.cd=0;if(false)sh.level=2;}
+        for(const s of g.structs)if(s.type==='silo'&&s.owner===me.id){s.build=0;s.cd=0;}me.gold=1e7;__sijal.fn.launchMissile(g,me.id,'rocket',T.i);window.__bAt=null;KL.cam((T.x*2+me.cap.x)/3,(T.y*2+me.cap.y)/3-2,3.6);},
+      frame:k=>{const T=window.__T,fx=__sijal.R.fx;if(k===0)window.__ab0=new Set(fx.filter(f=>f.type==='airburst'));if(fx.some(f=>f.type==='airburst'&&!window.__ab0.has(f)))KL.mark('stop0');if(window.__bAt==null&&fx.some(f=>f.type==='boom')){window.__bAt=k;KL.mark('hit0');}
+        if(k>12)KL.cam(T.x,T.y-2,false&&window.__bAt!=null?3.4:5);const g=__sijal.G;return k>20&&!g.missiles.length&&(window.__bAt!=null?k>window.__bAt+(false?70:12):k>40);}},
+    {name:'nuke',max:false?150:75,tpf:1,slow:false?(k=>window.__bAt!=null&&k>=window.__bAt-3&&k<window.__bAt+45?.33:1):null,
+      start:()=>{const g=__sijal.G,me=KL.me(),T=window.__T,si=g.structAt[window.__sh],sh=si?g.structs[si-1]:null;if(sh){sh.cd=0;if(false)sh.level=2;}
+        for(const s of g.structs)if(s.type==='silo'&&s.owner===me.id){s.build=0;s.cd=0;}me.gold=1e7;__sijal.fn.launchMissile(g,me.id,'nuke',T.i);window.__bAt=null;KL.cam((T.x*2+me.cap.x)/3,(T.y*2+me.cap.y)/3-2,3.6);},
+      frame:k=>{const T=window.__T,fx=__sijal.R.fx;if(k===0)window.__ab0=new Set(fx.filter(f=>f.type==='airburst'));if(fx.some(f=>f.type==='airburst'&&!window.__ab0.has(f)))KL.mark('stop1');if(window.__bAt==null&&fx.some(f=>f.type==='boom')){window.__bAt=k;KL.mark('hit1');}
+        if(k>12)KL.cam(T.x,T.y-2,false&&window.__bAt!=null?3.4:5);const g=__sijal.G;return k>20&&!g.missiles.length&&(window.__bAt!=null?k>window.__bAt+(false?70:12):k>40);}},
+    {name:'doom',max:true?150:75,tpf:1,slow:true?(k=>window.__bAt!=null&&k>=window.__bAt-3&&k<window.__bAt+45?.33:1):null,
+      start:()=>{const g=__sijal.G,me=KL.me(),T=window.__T,si=g.structAt[window.__sh],sh=si?g.structs[si-1]:null;if(sh){sh.cd=0;if(true)sh.level=2;}
+        for(const s of g.structs)if(s.type==='silo'&&s.owner===me.id){s.build=0;s.cd=0;}me.gold=1e7;__sijal.fn.launchMissile(g,me.id,'doom',T.i);window.__bAt=null;KL.cam((T.x*2+me.cap.x)/3,(T.y*2+me.cap.y)/3-2,3.6);},
+      frame:k=>{const T=window.__T,fx=__sijal.R.fx;if(k===0)window.__ab0=new Set(fx.filter(f=>f.type==='airburst'));if(fx.some(f=>f.type==='airburst'&&!window.__ab0.has(f)))KL.mark('stop2');if(window.__bAt==null&&fx.some(f=>f.type==='boom')){window.__bAt=k;KL.mark('hit2');}
+        if(k>12)KL.cam(T.x,T.y-2,true&&window.__bAt!=null?3.4:5);const g=__sijal.G;return k>20&&!g.missiles.length&&(window.__bAt!=null?k>window.__bAt+(true?70:12):k>40);}},
+    {name:'end',max:40,tpf:2,start:()=>{},frame:k=>{const T=window.__T;KL.cam(T.x,T.y-2,3);return false;}}
+  ],
+  // ── 'same army, one upgraded': the same attack twice, without and with maxed tanks and planes (UPG=1 for the upgraded run) ──
+  upgrades:[
+    {name:'go',max:420,tpf:1,start:()=>{const g=__sijal.G,me=KL.spawn({x:.45,y:.5});KL.preroll(520,.3);const K=g.nations.length;let o=null;for(const n of g.nations)if(KL.major(n)&&g.nb[me.id*K+n.id]>3&&(!o||n.tiles>o.tiles))o=n;window.__o=o.id;
+        for(const n of g.nations)if(n&&!n.human){n.ai.nextWar=1e9;}o.troops=45000;me.troops=110000;me.era=4;if(window.__UPG)me.up={sol:0,tank:5,air:5,nav:0,def:0};
+        __sijal.fn.launchAttack(g,me.id,o.id,.8,-1,-1);KL.cam(o.cx,o.cy,Math.max(2.6,KL.zFor(o.tiles*1.3)));window.__CT.snap=1;KL.mark('go');},
+      frame:k=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];if(!o.alive){KL.mark('kill');window.__d=window.__d||k;return k>window.__d+20;}
+        if(!KL.atkOn(o.id))__sijal.fn.launchAttack(g,me.id,o.id,.6,-1,-1);KL.cam(o.cx,o.cy,Math.max(2.6,KL.zFor(o.tiles*1.3)));return false;}}
+  ],
+  // ── 'I lost everything but the capital': squeezed to one city, then one bomb on his capital and his whole realm falls ──
+  comeback:[
+    {name:'lose',max:75,tpf:2,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});KL.preroll(220,.3);const K=g.nations.length;
+        let o=null;for(const n of g.nations)if(KL.major(n)&&g.nb[me.id*K+n.id]>3&&(!o||n.tiles>o.tiles))o=n;window.__o=o.id;
+        // only his capital stands, so the bomb brings the whole realm down
+        for(const s of g.structs)if(!s.dead&&s.owner===o.id&&s.type==='city'&&s!==o.cap){s.dead=true;g.structAt[s.i]=0;}
+        const W=g.W;for(let i=0;i<g.N;i++)if(g.owner[i]===me.id&&((i%W-me.cap.x)**2+(((i/W)|0)-me.cap.y)**2)>64)__sijal.setOwnerX(i,o.id);
+        for(const n of g.nations)if(n&&!n.human){n.ai.nextWar=1e9;}o.troops=70000;o.gold=0;o.ai.nextBuild=1e9;me.troops=2500;me.era=4;me.gold=1e7;__sijal.fn.launchAttack(g,o.id,me.id,.45,-1,-1);
+        KL.cam(me.cap.x,me.cap.y,6);window.__CT.snap=1;KL.mark('lose');},
+      frame:k=>{const me=KL.me();if(KL.me().troops<800)KL.me().troops=800;KL.cam(me.cap.x,me.cap.y,6-k*.02);return false;}},
+    {name:'silo',max:36,tpf:1,start:()=>{const me=KL.me();const s=KL.placeNear(me,'silo',me.cap.x,me.cap.y,2);if(s)s.cd=0;KL.cam(me.cap.x,me.cap.y,6.5);KL.mark('silo');}},
+    {name:'doom',max:170,tpf:1,slow:k=>window.__bAt!=null&&k>=window.__bAt-3&&k<window.__bAt+50?.33:1,
+      start:()=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];for(const c of g.structs)if(!c.dead&&c.owner===o.id&&c.type==='city'&&c!==o.cap){c.dead=true;g.structAt[c.i]=0;}o.gold=0;o.ai.nextBuild=1e9;for(const q of g.attacks)if(q.a===o.id)q.cancel=true;o.ai.nextWar=1e9;for(const s of g.structs)if(s.type==='silo'&&s.owner===me.id){s.build=0;s.cd=0;}window.__oc={x:o.cap.x,y:o.cap.y};__sijal.fn.launchMissile(g,me.id,'doom',o.cap.i);window.__bAt=null;
+        KL.cam((o.cap.x+me.cap.x)/2,(o.cap.y+me.cap.y)/2,Math.max(2.4,KL.zFor(o.tiles)));KL.mark('launch');},
+      frame:k=>{const g=__sijal.G,o=g.nations[window.__o],c=window.__oc;if(window.__bAt==null&&o.cap)for(const q of g.structs)if(!q.dead&&q.owner===o.id&&q.type==='city'&&q!==o.cap){q.dead=true;g.structAt[q.i]=0;}if(window.__bAt==null&&__sijal.R.fx.some(f=>f.type==='boom')){window.__bAt=k;KL.mark('doom');}if(window.__bAt!=null&&k===window.__bAt+8)window.__dbg={alive:o.alive,cap:o.cap&&{dead:o.cap.dead,x:o.cap.x,y:o.cap.y},cities:g.structs.filter(s=>!s.dead&&s.type==='city'&&s.owner===o.id).length,tgt:window.__oc,ms:g.missiles.length};if(!o.alive)KL.mark('fall');
+        if(k>16)KL.cam(c.x,c.y,window.__bAt!=null?2.8:3.6);return window.__bAt!=null&&!o.alive&&k>window.__bAt+75;}},
+    {name:'retake',max:150,tpf:3,start:()=>{const me=KL.me();me.troops=Math.max(me.troops,60000);KL.mark('retake');},
+      frame:k=>{const me=KL.me();if(k%2===0)KL.expand(.5);KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.6));return false;}}
   ]
 };
 
@@ -149,8 +201,8 @@ const STORIES={
   const ctx=await b.newContext({viewport:{width:360,height:640},deviceScaleFactor:3,isMobile:true,hasTouch:true});
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   await pg.clock.install({time:new Date('2026-11-23T20:00:00')});await pg.clock.pauseAt(new Date('2026-11-23T20:00:01'));
-  await pg.addInitScript(([seed,fac])=>{let a=seed;Math.random=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
-    try{localStorage.setItem('sijal.v1',JSON.stringify({seen:'9.9',sound:false,music:false,games:9,gfx:2,fac,skin:{pat:'',bld:'gold'},passT:20}));}catch(e){}},[SEED,SETUP.fac]);
+  await pg.addInitScript(([seed,fac,process_UPG])=>{let a=seed;Math.random=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+    window.__UPG=!!+(process_UPG);try{localStorage.setItem('sijal.v1',JSON.stringify({seen:'9.9',sound:false,music:false,games:9,gfx:2,fac,skin:{pat:'',bld:'gold'},passT:20}));}catch(e){}},[SEED,SETUP.fac,process.env.UPG||'0']);
   await pg.goto('file://'+path.resolve(__dirname,'../../dist/sijal.html'));
   await pg.waitForTimeout(2500);await pg.clock.runFor(500);
   await pg.evaluate(lib);
@@ -161,7 +213,7 @@ const STORIES={
   await pg.clock.runFor(400);await pg.evaluate(()=>{__sijal.R.q=2;});
   const marks={};let f=0;
   for(const sc of STORIES[STORY]){
-    await pg.evaluate(fn=>{eval('('+fn+')')();__sijal.UI.paused=true;},sc.start.toString());marks[sc.name]=f;
+    await pg.evaluate(([fn,nm])=>{window.__SC=nm;eval('('+fn+')')();__sijal.UI.paused=true;},[sc.start.toString(),sc.name]);marks[sc.name]=f;
     for(let k=0;k<sc.max;k++){
       const r=await pg.evaluate(([fn,k,tpf,F])=>{const S=__sijal;window.__F=F;S.UI.paused=true;if(tpf)S.run(tpf);const done=fn?eval('('+fn+')')(k):false;
         // camera: critically damped spring toward the target, zooming out a little while it travels far, never past the map edge
@@ -180,7 +232,7 @@ const STORIES={
   }
   marks.total=f;
   // extra moments the editor and the music need
-  const extra=await pg.evaluate(()=>({ser:window.__ser||null,M:window.__M||{},boomAt:window.__boomAt,fall:window.__fall,dead:window.__dead,landK:window.__landK,took:window.__took,state:(()=>{const g=__sijal.G,me=g.nations[g.human];return{alive:me.alive,tiles:me.tiles};})()}));
+  const extra=await pg.evaluate(()=>({dbg:window.__dbg,ser:window.__ser||null,M:window.__M||{},boomAt:window.__boomAt,fall:window.__fall,dead:window.__dead,landK:window.__landK,took:window.__took,state:(()=>{const g=__sijal.G,me=g.nations[g.human];return{alive:me.alive,tiles:me.tiles};})()}));
   marks.extra=extra;
   fs.writeFileSync(path.join(OUT,'marks.json'),JSON.stringify(marks));
   console.log('\n'+STORY,JSON.stringify(marks),errs.length?'ERR '+errs.join('|'):'no errors');

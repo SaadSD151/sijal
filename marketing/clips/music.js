@@ -47,6 +47,16 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
     const horn=(t)=>{for(const f of[98,146.8])osc(t,f,1.6,'sawtooth',.12,{a:.08,lp:700,dst:fx});};
     const waves=(t,d,v=.12)=>{for(let k=0;k<d;k+=2.4)nz(t+k,2.6,v,'lowpass',900,{to:300,a:1.1});};
     const H=[146.83,155.56,185,196,220,233.08,261.63,293.66,311.13,369.99,392,440];// D Hijaz
+    // cinematic toolkit: a trailer 'braam', swelling strings, a string ostinato, a low choir-like pad and a sub drop
+    const braam=(t,v=1,root=36.71)=>{if(!ok(t))return;for(const m of[1,1.5,2,3])for(const det of[-14,-5,5,14]){const s=ac.createOscillator(),g=ac.createGain(),l=ac.createBiquadFilter();s.type='sawtooth';s.frequency.value=root*m;s.detune.value=det;
+        l.type='lowpass';l.Q.value=6;l.frequency.setValueAtTime(140,t);l.frequency.exponentialRampToValueAtTime(1600,t+.25);l.frequency.exponentialRampToValueAtTime(220,t+2.6);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.09*v/m,t+.05);g.gain.exponentialRampToValueAtTime(.0001,t+3);
+        s.connect(l);l.connect(g);g.connect(fx);s.start(t);s.stop(t+3.1);}osc(t,36.71,2.6,'sine',.7*v,{to:30,dst:fx});nz(t,1.2,.25*v,'lowpass',600,{to:60,dst:fx});};
+    const swell=(t,d,fs,v=.07)=>{for(const f of fs)for(const det of[-8,0,8])osc(t,f,d,'sawtooth',v/3,{a:d*.8,lp:900,lpTo:3200,det});};
+    const ost=(a,z,notes,step=.15,v=.05)=>{for(let t=a,i=0;t<z;t+=step,i++)osc(t,notes[i%notes.length],step*.9,'sawtooth',v,{lp:1800,lpTo:600});};
+    const choir=(t,d,fs,v=.05)=>{for(const f of fs)for(const det of[-6,6])osc(t,f,d,'triangle',v/2,{a:Math.min(1.2,d/3),lp:1400,det});};
+    const drop=(t)=>{osc(t,80,1.2,'sine',1,{to:28,tt:1,dst:fx});};
+    const silence=(t,d)=>{mus.gain.setValueAtTime(1,Math.max(0,t-.15));mus.gain.linearRampToValueAtTime(.0001,t);mus.gain.setValueAtTime(.0001,t+d-.05);mus.gain.linearRampToValueAtTime(1,t+d);};
+    const D=[73.42,110,146.83,174.61,220],Dm=[36.71,55,73.42];
     const m=k=>M[k]!=null&&isFinite(M[k])?M[k]:null,end=M.outro;
     const outroHits=()=>{impact(end,.9);brass(end+.05,[146.83,220,293.66],1.6,.16);pad(end,[73.42,146.83,220],2.6,.08);taiko(end+.9,.7);taiko(end+1.5,.9);chime(end+.3);};
 
@@ -82,6 +92,29 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
       boom(doom);mus.gain.setValueAtTime(.0001,doom+1.6);mus.gain.linearRampToValueAtTime(1,doom+2.2);
       // the cocky ending
       for(let t=endS;t<end;t+=.25){const i=Math.round((t-endS)/.25);if(i%8===0||i%8===3)kick(t);if(i%8===4)clap(t);hat(t,.7);if(i%8===0)sub(t,46.25,1.8,.45);}
+      outroHits();
+    }else if(M.story==='dome'){
+      // a question hanging in the air, two denials, then the bomb lands in silence and the orchestra crashes in
+      const s0=m('stop0'),s1=m('stop1'),dm=m('hit2')||m('doom'),l2=m('doom')||m('nuke');braam(0,1);choir(0,(m('rocket')||2.5),[146.83,220],.05);
+      ost(m('rocket')||1.5,(l2||8),[73.42,73.42,87.31,73.42,110,73.42,87.31,98],.16,.04);for(let t=m('rocket')||1.5;t<(l2||8);t+=.64)taiko(t,.6);
+      if(s0){impact(s0,.6);braam(s0+.05,.5);}if(s1){impact(s1,.7);braam(s1+.05,.6);}
+      if(l2){riser(l2,Math.max(.6,(dm||l2+2)-l2-.4),.35);swell(l2,Math.max(.6,(dm||l2+2)-l2),[146.83,174.61,220],.06);}
+      if(dm){silence(dm-.4,.4);boom(dm);braam(dm,1.3);drop(dm);swell(dm+.3,end-dm,[73.42,110,146.83,220],.08);for(let t=dm+1.2;t<end;t+=.4)taiko(t,.7);}
+      outroHits();
+    }else if(M.story==='upgrades'){
+      // a confident march; each side's win lands with its own hit
+      braam(0,1);for(let t=.6;t<end;t+=.3){const i=Math.round((t-.6)/.3);if(i%4===0)taiko(t,.8);if(i%4===2)snare(t,.6);hat(t+.15,.5);}
+      ost(.6,end,[73.42,110,98,110,73.42,110,87.31,110],.15,.045);swell(.6,end-.6,[146.83,220,293.66],.05);
+      if(m('killB'))impact(m('killB'),.9),chime(m('killB')),braam(m('killB'),.7);if(m('killA'))impact(m('killA'),.5);
+      outroHits();
+    }else if(M.story==='comeback'){
+      // dread, a heartbeat and a sinking drone; a silo rising; silence; the bomb; then a triumphant swell
+      const si=m('silo'),la=m('launch'),dm=m('doom'),fa=m('fall'),rt=m('retake');braam(0,1,34.65);for(let t=.3;t<(si||3);t+=.6)heart(t,.9);choir(0,(si||3),[69.3,103.83,138.59],.06);sub(0,34.65,(si||3),.35);
+      if(si){impact(si,.6);ost(si,(la||si+1),[73.42,87.31,98,110],.12,.05);}
+      if(la){riser(la,Math.max(.6,(dm||la+2)-la-.3),.35);swell(la,Math.max(.6,(dm||la+2)-la),[146.83,174.61,220],.06);}
+      if(dm){silence(dm-.45,.45);boom(dm);braam(dm,1.4);drop(dm);}
+      if(fa){impact(fa,.8);chime(fa+.1);}
+      if(rt){swell(rt,end-rt+.5,[146.83,185,220,293.66,369.99],.09);for(let t=rt;t<end;t+=.3){const i=Math.round((t-rt)/.3);if(i%2===0)taiko(t,.75);hat(t,.5);}brass(rt,[146.83,220,293.66],2,.15);}
       outroHits();
     }else if(M.story==='swarm'){
       // three alarms and a racing heart, a held breath, then a war march that hits harder with each realm that falls

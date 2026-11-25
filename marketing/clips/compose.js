@@ -14,9 +14,10 @@ if(STORY==='empire'){
   // the payoff first: the finished empire, then a fast rewind to the first city
   seg(TOT-46,TOT-1,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(TOT-1,0,-(TOT/18),'rew');const R=(frames.length-r0)/FPS;H+=R;
 }
-const main0=frames.length;seg(0,TOT-1,1,'main');
+if(STORY==='upgrades'){for(let i=0;i<Math.round(2.6*FPS);i++)frames.push({s:0,fx:'hook'});}
+const STEP=STORY==='upgrades'?.4:1,main0=frames.length;seg(0,TOT-1,STEP,'main');
 const outro=frames.length/FPS;for(let i=0;i<Math.round(2.9*FPS);i++)frames.push({s:TOT-1,fx:'out'});
-const LEN=frames.length/FPS,T=raw=>(main0+raw)/FPS;
+const LEN=frames.length/FPS,T=raw=>(main0+raw/STEP)/FPS;
 
 // ── words on screen: [from s, to s, text, style] ──
 const C={
@@ -34,12 +35,18 @@ const C={
   betray:[[0,T(m('gift')),'وثق فيني… 🤝','hook'],[.9,T(m('gift')),'وهذي كانت <r>غلطته</r> 😈','hook2'],[T(m('gift')),T(m('prep')),'حتى عطيته <y>هدية</y> 🎁'],[T(m('prep')),T(m('stab')),'وأنا أجهّز بصمت… 🤫'],
     [T(m('stab')),T(m('kill')||m('end')),'<r>غدرت فيه</r> 🗡️'],[T(m('kill')),T(m('end')),'دولته راحت بثواني 💀'],[T(m('end')),outro,'لا تثق بأحد في سِجال 😈']].filter(c=>isFinite(c[0])&&isFinite(c[1])),
   speed:[[0,2.4,'كم ثانية أحتاج','hook'],[.6,2.4,'عشان <y>أسيطر على الخريطة</y>؟ ⏱️','hook2'],[2.4,4.6,'من مدينة وحدة…'],
-    ...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),T(X[k])+1.1,'+ دولة 💀','pop']),[T(m('done')),outro,'والخريطة <y>صارت لي</y> 👑']]
+    ...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),T(X[k])+1.1,'+ دولة 💀','pop']),[T(m('done')),outro,'والخريطة <y>صارت لي</y> 👑']],
+  dome:[[0,T(m('rocket')),'القبة الدفاعية 🛡️','hook'],[.7,T(m('rocket')),'تقدر توقف <y>كل شي</y>؟ 🤔','hook2'],[T(m('rocket')),T(m('stop0')||m('nuke')),'صاروخ؟ 🚀'],[T(m('stop0')),T(m('nuke')),'<r>❌ صدّته</r>','big'],
+    [T(m('nuke')),T(m('stop1')||m('doom')),'نووي؟ ☢️'],[T(m('stop1')),T(m('doom')),'<r>❌ صدّته بعد</r>','big'],[T(m('doom')),T(m('hit2'))-.15,'طيب… <y>قنبلة الفناء</y>؟ 💀'],[T(m('hit2'))+1.3,T(m('end')),'💀💀💀','big'],[T(m('end')),outro,'ما فيه شي يوقفها 😈']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  comeback:[[0,T(m('silo')),'خسرت كل شي… 😰','hook'],[.8,T(m('silo')),'إلا <y>العاصمة</y>','hook2'],[T(m('silo')),T(m('launch')),'بقت لي ورقة وحدة 🃏'],[T(m('launch')),T(m('doom'))-.15,'على <r>عاصمته</r> مباشرة ☢️'],
+    [T(m('fall')),T(m('retake')),'دولته كلها <r>انهارت</r> 💀'],[T(m('retake')),outro,'والأرض <y>رجعت لي</y> 👑']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  upgrades:[[0,2.6,'نفس الجيش… ⚔️','hook'],[.8,2.6,'بس واحد <y>طوّر</y> 🎖️','hook2'],[2.6,outro,'بدون تطوير','tA'],[2.6,outro,'🎖️ دبابات 5 + طيارات 5','tB'],
+    [T(m('killB')),outro,'✅ خلّص','dB'],[T(m('killA')),outro,'✅ خلّص','dA']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0])
 }[STORY];
-const SER=M.extra.ser||null,T0hold=STORY==='swarm'?T(m('hold')):0;
-const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️'}[STORY];
+const SER=M.extra.ser||null,T0hold=STORY==='swarm'?T(m('hold')):STORY==='comeback'?T(m('silo')):0;
+const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔'}[STORY];
 // big moments: white flash, punch-in and shake
-const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]]}[STORY].filter(h=>isFinite(h[0]));
+const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]]}[STORY].filter(h=>isFinite(h[0]));
 
 (async()=>{
   fs.rmSync(OUT,{recursive:true,force:true});fs.mkdirSync(path.join(OUT,'f'),{recursive:true});
@@ -64,14 +71,19 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
     #out .b{color:#ffd23f;font-weight:700;font-size:19px;-webkit-text-stroke:3px #000;paint-order:stroke fill}
     #hud2{position:absolute;left:50%;top:6%;transform:translateX(-50%);display:flex;gap:10px;opacity:0;direction:ltr}#hud2 span{padding:6px 14px;border-radius:14px;background:rgba(6,12,22,.78);border:1.5px solid rgba(241,207,110,.7);color:#ffe7a6;font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;box-shadow:0 6px 18px rgba(0,0,0,.5)}
     .pop{top:42%;font-size:30px}
+    .tA,.tB{font-size:19px;top:3.5%;left:4%;right:auto;padding:4px 12px;border-radius:12px;background:rgba(6,12,22,.72);-webkit-text-stroke:0;border:1px solid rgba(255,255,255,.2)}.tB{top:53.5%;border-color:#f1cf6e;color:#ffe7a6}
+    .dA,.dB{font-size:28px;top:18%;color:#8be39a}.dB{top:68%}
+    #split{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;background:linear-gradient(90deg,rgba(241,207,110,0),#f1cf6e,rgba(241,207,110,0));opacity:0}
+    #ua,#ub{position:absolute;right:4%;padding:4px 10px;border-radius:12px;background:rgba(6,12,22,.72);color:#fff;font-weight:700;font-size:18px;direction:ltr;font-variant-numeric:tabular-nums;opacity:0}#ua{top:3.5%}#ub{top:53.5%;color:#ffe7a6}
     #brand{position:absolute;left:10px;bottom:12px;width:74px;opacity:.85;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}
   </style></head><body><img id="bg"><div id="vig"></div><div id="red"></div><div id="scan"></div>
     ${C.map((c,i)=>`<div class="cap ${c[3]||''}" id="c${i}">${c[2]}</div>`).join('')}<img id="brand" src="${LOGO}">
-    <div id="out"><img src="${LOGO}"><div class="q">${CTA}</div><div class="s">العبها مجاناً من المتصفح · بدون تحميل</div><div class="l">saadsd151.github.io/sijal</div><div class="b">🔗 الرابط في البايو</div></div><div id="hud2"><span id="tmr">⏱️ 0:00</span><span id="pct">🗺️ 0%</span></div><div id="fl"></div></body></html>`);await pg.goto('file://'+page);
+    <div id="out"><img src="${LOGO}"><div class="q">${CTA}</div><div class="s">العبها مجاناً من المتصفح · بدون تحميل</div><div class="l">saadsd151.github.io/sijal</div><div class="b">🔗 الرابط في البايو</div></div><div id="split"></div><div id="ua"></div><div id="ub"></div><div id="hud2"><span id="tmr">⏱️ 0:00</span><span id="pct">🗺️ 0%</span></div><div id="fl"></div></body></html>`);await pg.goto('file://'+page);
   await pg.waitForTimeout(1500);await pg.evaluate(()=>document.fonts.ready);
   for(let i=0;i<frames.length;i++){
     const F=frames[i],t=i/FPS,src='file://'+path.join(RAW,'f',String(F.s).padStart(5,'0')+'.jpg');
-    await pg.evaluate(async([src,t,F,C,HITS,outro,STORY,H,ser,T0hold])=>{
+    await pg.evaluate(async([src,t,F,C,HITS,outro,STORY,H,ser,T0hold,UPK])=>{
+      if(STORY==='upgrades'){const on=t>=2.6&&t<outro;document.getElementById('split').style.opacity=t<outro?1:0;for(const [id,k] of [['ua','killA'],['ub','killB']]){const e=document.getElementById(id),kt=UPK[k];e.style.opacity=on?1:0;const v=Math.max(0,Math.min(kt!=null&&isFinite(kt)?kt:t,t)-2.6);e.textContent='⏱️ '+v.toFixed(1)+'s';}}
       if(STORY==='speed'){const h=document.getElementById('hud2');h.style.opacity=t>=.2&&t<outro?1:0;if(ser){document.getElementById('tmr').textContent='⏱️ '+Math.floor(ser[0]/60)+':'+String(Math.floor(ser[0]%60)).padStart(2,'0');document.getElementById('pct').textContent='🗺️ '+Math.round(ser[1]*100)+'%';}}
       const bg=document.getElementById('bg');if(bg.dataset.s!==src){bg.src=src;bg.dataset.s=src;await bg.decode().catch(()=>{});}
       // flashes, punch-in and shake on the big moments
@@ -79,13 +91,13 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
       if(F.fx==='rew'){sc=1.04;}
       bg.style.transform=`translate(${sx}px,${sy}px) scale(${sc})`;bg.style.filter=F.fx==='rew'?'saturate(.4) contrast(1.15) blur(.6px)':F.fx==='out'?'blur(3px) saturate(.7)':'none';
       document.getElementById('fl').style.opacity=fl;document.getElementById('scan').style.opacity=F.fx==='rew'?1:0;
-      document.getElementById('red').style.opacity=(STORY==='revenge'&&t<2.1)||(STORY==='swarm'&&t<T0hold)?.55+.45*Math.sin(t*9):0;
+      document.getElementById('red').style.opacity=(STORY==='revenge'&&t<2.1)||(STORY==='swarm'&&t<T0hold)||(STORY==='comeback'&&t<T0hold)?.55+.45*Math.sin(t*9):0;
       C.forEach((c,j)=>{const e=document.getElementById('c'+j),on=t>=c[0]&&t<c[1];if(!on){e.style.opacity=0;return;}
         const a=t-c[0],o=Math.min(1,a/.12,(c[1]-t)/.12),pop=a<.1?.7+3*a:a<.2?1.08-(a-.1)*.8:1;e.style.opacity=o;e.style.transform=`scale(${pop})`;});
       const ou=Math.max(0,Math.min(1,(t-outro)/.35));const o=document.getElementById('out');o.style.opacity=ou;
       o.querySelectorAll('.q,.s,.l,.b').forEach((e,k)=>{const v=Math.max(0,Math.min(1,(t-outro-.25-k*.22)/.25));e.style.opacity=v;e.style.transform=`translateY(${(1-v)*10}px)`;});
       document.getElementById('brand').style.opacity=t<outro?.85:0;
-    },[src,t,F,C,HITS,outro,STORY,H,SER?(SER[F.s]||SER.slice(0,F.s+1).filter(Boolean).pop()||null):null,T0hold]);
+    },[src,t,F,C,HITS,outro,STORY,H,SER?(SER[F.s]||SER.slice(0,F.s+1).filter(Boolean).pop()||null):null,T0hold,{killA:T(m('killA')),killB:T(m('killB'))}]);
     await pg.screenshot({path:path.join(OUT,'f',String(i).padStart(5,'0')+'.jpg'),type:'jpeg',quality:92});
     if(i%90===0)process.stdout.write((i/FPS).toFixed(0)+'s ');
   }
