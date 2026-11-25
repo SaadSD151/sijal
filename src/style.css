@@ -526,3 +526,34 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .fc.on{background:rgba(var(--fc),.22);border-color:rgb(var(--fc));box-shadow:0 0 12px rgba(var(--fc),.35)}
 .fpk{margin:0;font-size:13px;color:#ffe3a0}
 #app.spawning #amode,#app.spawning #atk,#app.spawning #bottom,#app.spawning #bArmy{display:none!important}
+
+/* ── phone match screen: four big buttons at the bottom, everything else in a sheet with large tiles ── */
+.mob #bottom,.mob #amode,.mob #bArmy{display:none}
+#dock{position:absolute;left:0;right:0;bottom:0;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px max(12px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,rgba(8,16,28,.6),rgba(8,16,28,.96));border-top:1px solid var(--line2)}
+#dock button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:62px;border-radius:16px;background:rgba(20,40,62,.9);border:1px solid var(--line2);color:var(--parch);min-width:0}
+#dock button i{font-style:normal;font-size:24px;line-height:1}#dock button span{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 4px}
+#dock button.on{background:linear-gradient(180deg,rgba(241,207,110,.3),rgba(201,149,45,.18));border-color:var(--gold);color:#ffe7a6}
+#dock .dka{background:linear-gradient(180deg,rgba(120,40,30,.85),rgba(70,20,15,.9));border-color:rgba(255,140,110,.5)}#dock .dka span{color:#ffd2c4;direction:ltr}
+#sheet{position:absolute;inset:0;z-index:15}#sheet .shbg{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+#sheet .shp{position:absolute;left:0;right:0;bottom:0;max-height:72%;overflow:auto;padding:8px max(14px,env(safe-area-inset-left,0px)) calc(86px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;
+  background:linear-gradient(180deg,rgba(16,30,48,.98),rgba(8,15,26,.99));border-top:1px solid rgba(241,207,110,.35);box-shadow:0 -14px 40px rgba(0,0,0,.5);animation:shUp .18s ease-out}
+@keyframes shUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.shg{width:42px;height:5px;border-radius:9px;background:rgba(255,255,255,.2);margin:2px auto 8px}
+.shh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.shh b{font-size:18px;color:#ffe7a6}
+#shB #bar{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0;border:0;background:none;box-shadow:none;max-width:none;overflow:visible}
+#shB .bb{flex:none;width:auto;height:96px;border-radius:16px}#shB .bb img{width:34px;height:34px}#shB .bb .nm{font-size:13px}#shB .bb .ct{font-size:14px}#shB .bb kbd{display:none}
+#sheet[data-k=build] #bb_rocket,#sheet[data-k=build] #bb_nuke,#sheet[data-k=build] #bb_doom,#sheet[data-k=build] #bb_ult{display:none}
+#sheet[data-k=arms] .bb:not(#bb_rocket):not(#bb_nuke):not(#bb_doom):not(#bb_ult){display:none}#sheet[data-k=arms] #bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+#shB #amode{position:static;display:flex!important;flex-direction:row;transform:none;padding:0;border:0;background:none;box-shadow:none;gap:8px;margin-bottom:14px}
+#shB #amode .amh{display:none}#shB #amode .chip{flex:1;height:54px;font-size:16px;border-radius:14px}
+#shB #ratio{position:static;display:flex!important;width:auto;margin:0;padding:12px 14px;border-radius:14px;border:1px solid var(--line2);font-size:14px}
+#shB #ratio input{height:40px}#shB #ratio b{font-size:16px}
+#shB #ratio input::-webkit-slider-thumb{width:30px;height:30px}
+.rq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.rq button{height:48px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid var(--line2);color:var(--parch);font-weight:700;font-size:15px}
+.mob #spd{border:0;gap:6px;overflow:visible}.mob #spd button{width:46px;height:40px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.05);font-size:16px;padding:0}
+.mob #spd button.on{background:var(--gold);color:#1c1405;border-color:var(--gold)}
+.mob #card button,.mob #card .ca{min-height:44px}
+.mob #mini,.mob #bHome{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+/* computer: same layout, roomier small targets */
+#app:not(.mob) #spd button{padding:8px 13px;font-size:14px}#app:not(.mob) #amode .chip{padding:8px 14px;font-size:14px}#app:not(.mob) #ratio input{height:28px}
