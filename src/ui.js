@@ -4,7 +4,7 @@ let G=null,acc=0,lastTs=0;
 // online leaderboard (Firebase Realtime Database + anonymous sign-in); empty = turned off
 const LB_DB='https://sijal-fa367-default-rtdb.firebaseio.com',LB_KEY='AIzaSyABuacot7I8S6r-7bsTHbYgMWhQC7OHXi4';
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
-const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
+const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[594,374],[764,480],[962,606],[1188,746]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
@@ -316,8 +316,10 @@ function renderNews(latest){
   $('#help').innerHTML=`<h2>${t(latest?'newsNew':'news')}</h2><div class="nl">${L.map(e=>`<div><b>${t('ver')} ${e.v}</b><small dir="ltr">${e.d}</small><ul>${(e[UI.lang]||e.ar).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`;
 }
 function renderFac(){
-  const e=$('#fpick'),p=UI.prof;if(!e)return;e.hidden=UI.phase!=='spawn';if(e.hidden)return;
-  e.innerHTML=`<h4>${t('faction')}</h4><div class="chips">${FKEYS.map(f=>`<button class="chip${p.fac===f?' on':''}" data-a="fac:${f}"><i style="background:rgb(${FAC[f].c})"></i>${t('f_'+f)}</button>`).join('')}</div><small>${t('fp_'+p.fac)} · ${t('fu_'+p.fac)}: ${t('fd_'+p.fac)}</small>`;
+  const e=$('#fpick'),p=UI.prof;{const ap=$('#app');if(ap)ap.classList.toggle('spawning',UI.phase==='spawn');}if(!e)return;e.hidden=UI.phase!=='spawn';if(e.hidden)return;
+  // a compact grid: an icon and a name per realm, and only the chosen one's main perk underneath
+  const FI={hawks:'🦅',bastion:'🏰',merchants:'💰',mariners:'⚓',scholars:'📜',horde:'🐺'};
+  e.innerHTML=`<h4>${t('faction')}</h4><div class="fgrid">${FKEYS.map(f=>`<button class="fc${p.fac===f?' on':''}" data-a="fac:${f}" style="--fc:${FAC[f].c}"><span>${FI[f]||'⚑'}</span><b>${t('f_'+f)}</b></button>`).join('')}</div><p class="fpk">✨ ${t('fp_'+p.fac)}</p>`;
 }
 function renderPause(){
   const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="how">${t('how')}</button>

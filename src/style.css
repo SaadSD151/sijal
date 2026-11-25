@@ -517,3 +517,12 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob .apc>button,.mob .apm,.mob .apl{grid-area:b}
 @media (max-width:1000px){#app:not(.mob) .apg{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .ap2{display:inline-flex;align-items:center;gap:5px}
+
+/* start of a battle: one thing on screen — pick a realm, then tap your capital */
+#fpick{gap:8px;padding:12px}
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fc{display:flex;align-items:center;gap:7px;padding:8px 8px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--parch);min-width:0}
+.fc span{font-size:18px;flex:none}.fc b{font-size:13px;font-weight:600;line-height:1.25;text-align:start}
+.fc.on{background:rgba(var(--fc),.22);border-color:rgb(var(--fc));box-shadow:0 0 12px rgba(var(--fc),.35)}
+.fpk{margin:0;font-size:13px;color:#ffe3a0}
+#app.spawning #amode,#app.spawning #atk,#app.spawning #bottom,#app.spawning #bArmy{display:none!important}

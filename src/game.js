@@ -199,7 +199,11 @@ function tileCost(g,k,i,A,D){
 function garrison(g,i,D){const si=g.structAt[i];if(!si||!D)return 0;const s=g.structs[si-1];return s.type==='city'?D.troops*(.07+.02*s.level)*(s.capital?2:1)*(s.ruin>g.tick?.4:1):0;}
 function seedAttack(g,k){
   const own=g.owner,ter=g.M.ter,W=g.W,N=g.N,now=g.tick,seeds=[];let dmin=1e9,ob=-1;
-  for(let i=0;i<N;i++){if(own[i]!==k.d||ter[i]<2||!adjOwn(g,i,k.a))continue;seeds.push(i);
+  // only look where the two realms can touch: the attacker's box (refreshed every second, so with a wide margin) cut by the defender's
+  const A=g.nations[k.a],D=k.d?g.nations[k.d]:null,H=g.H,mg=30;let bx0=0,by0=0,bx1=W-1,by1=H-1;
+  if(A&&A.bbOk&&A.x1>=A.x0){bx0=Math.max(0,A.x0-mg);by0=Math.max(0,A.y0-mg);bx1=Math.min(W-1,A.x1+mg);by1=Math.min(H-1,A.y1+mg);}
+  if(D&&D.bbOk&&D.x1>=D.x0){bx0=Math.max(bx0,D.x0-mg);by0=Math.max(by0,D.y0-mg);bx1=Math.min(bx1,D.x1+mg);by1=Math.min(by1,D.y1+mg);}
+  for(let y=by0;y<=by1;y++)for(let i=y*W+bx0,ie=y*W+bx1;i<=ie;i++){if(own[i]!==k.d||ter[i]<2||!adjOwn(g,i,k.a))continue;seeds.push(i);
     if(k.tx>=0){const d=hyp(i%W-k.tx,((i/W)|0)-k.ty);if(d<dmin){dmin=d;ob=i;}}}
   if(!seeds.length)return 0;
   if(ob<0)ob=seeds[(g.rng()*seeds.length)|0];k.ox=ob%W;k.oy=(ob/W)|0;
@@ -592,7 +596,7 @@ function seasonTick(g){const s=Math.floor(g.tick/SEASON_LEN)%4;if(s!==g.season){
 function statsPass(g){
   const K=g.nations.length,W=g.W,H=g.H,own=g.owner,ter=g.M.ter,cd=g.M.coastD,ns=g.nations;
   const nb=g.nb&&g.nb.length===K*K?g.nb.fill(0):(g.nb=new Int32Array(K*K)),sx=new Float64Array(K),sy=new Float64Array(K),ct=new Int32Array(K);
-  for(const n of ns)if(n){n.x0=W;n.y0=H;n.x1=0;n.y1=0;n.coast=0;}
+  for(const n of ns)if(n){n.x0=W;n.y0=H;n.x1=0;n.y1=0;n.coast=0;n.bbOk=1;}
   for(let y=0,i=0;y<H;y++)for(let x=0;x<W;x++,i++){
     if(ter[i]<2)continue;const o=own[i];
     if(o){const n=ns[o];sx[o]+=x;sy[o]+=y;ct[o]++;if(x<n.x0)n.x0=x;if(x>n.x1)n.x1=x;if(y<n.y0)n.y0=y;if(y>n.y1)n.y1=y;if(cd[i]===1)n.coast++;}

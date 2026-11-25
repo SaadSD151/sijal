@@ -530,6 +530,15 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 @media (max-width:1000px){#app:not(.mob) .apg{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .ap2{display:inline-flex;align-items:center;gap:5px}
 
+/* start of a battle: one thing on screen — pick a realm, then tap your capital */
+#fpick{gap:8px;padding:12px}
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.fc{display:flex;align-items:center;gap:7px;padding:8px 8px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--parch);min-width:0}
+.fc span{font-size:18px;flex:none}.fc b{font-size:13px;font-weight:600;line-height:1.25;text-align:start}
+.fc.on{background:rgba(var(--fc),.22);border-color:rgb(var(--fc));box-shadow:0 0 12px rgba(var(--fc),.35)}
+.fpk{margin:0;font-size:13px;color:#ffe3a0}
+#app.spawning #amode,#app.spawning #atk,#app.spawning #bottom,#app.spawning #bArmy{display:none!important}
+
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
 #bHome{left:var(--g)}
@@ -561,7 +570,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='mobile';(function(){"use strict";
-const BUILD_ID='58753d6917';
+const BUILD_ID='f46f94fb24';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -915,7 +924,11 @@ function tileCost(g,k,i,A,D){
 function garrison(g,i,D){const si=g.structAt[i];if(!si||!D)return 0;const s=g.structs[si-1];return s.type==='city'?D.troops*(.07+.02*s.level)*(s.capital?2:1)*(s.ruin>g.tick?.4:1):0;}
 function seedAttack(g,k){
   const own=g.owner,ter=g.M.ter,W=g.W,N=g.N,now=g.tick,seeds=[];let dmin=1e9,ob=-1;
-  for(let i=0;i<N;i++){if(own[i]!==k.d||ter[i]<2||!adjOwn(g,i,k.a))continue;seeds.push(i);
+  // only look where the two realms can touch: the attacker's box (refreshed every second, so with a wide margin) cut by the defender's
+  const A=g.nations[k.a],D=k.d?g.nations[k.d]:null,H=g.H,mg=30;let bx0=0,by0=0,bx1=W-1,by1=H-1;
+  if(A&&A.bbOk&&A.x1>=A.x0){bx0=Math.max(0,A.x0-mg);by0=Math.max(0,A.y0-mg);bx1=Math.min(W-1,A.x1+mg);by1=Math.min(H-1,A.y1+mg);}
+  if(D&&D.bbOk&&D.x1>=D.x0){bx0=Math.max(bx0,D.x0-mg);by0=Math.max(by0,D.y0-mg);bx1=Math.min(bx1,D.x1+mg);by1=Math.min(by1,D.y1+mg);}
+  for(let y=by0;y<=by1;y++)for(let i=y*W+bx0,ie=y*W+bx1;i<=ie;i++){if(own[i]!==k.d||ter[i]<2||!adjOwn(g,i,k.a))continue;seeds.push(i);
     if(k.tx>=0){const d=hyp(i%W-k.tx,((i/W)|0)-k.ty);if(d<dmin){dmin=d;ob=i;}}}
   if(!seeds.length)return 0;
   if(ob<0)ob=seeds[(g.rng()*seeds.length)|0];k.ox=ob%W;k.oy=(ob/W)|0;
@@ -1308,7 +1321,7 @@ function seasonTick(g){const s=Math.floor(g.tick/SEASON_LEN)%4;if(s!==g.season){
 function statsPass(g){
   const K=g.nations.length,W=g.W,H=g.H,own=g.owner,ter=g.M.ter,cd=g.M.coastD,ns=g.nations;
   const nb=g.nb&&g.nb.length===K*K?g.nb.fill(0):(g.nb=new Int32Array(K*K)),sx=new Float64Array(K),sy=new Float64Array(K),ct=new Int32Array(K);
-  for(const n of ns)if(n){n.x0=W;n.y0=H;n.x1=0;n.y1=0;n.coast=0;}
+  for(const n of ns)if(n){n.x0=W;n.y0=H;n.x1=0;n.y1=0;n.coast=0;n.bbOk=1;}
   for(let y=0,i=0;y<H;y++)for(let x=0;x<W;x++,i++){
     if(ter[i]<2)continue;const o=own[i];
     if(o){const n=ns[o];sx[o]+=x;sy[o]+=y;ct[o]++;if(x<n.x0)n.x0=x;if(x>n.x1)n.x1=x;if(y<n.y0)n.y0=y;if(y>n.y1)n.y1=y;if(cd[i]===1)n.coast++;}
@@ -2352,6 +2365,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
+ {v:'5.5',d:'2026-11-25',ar:['🗺️ الخرائط صارت أكبر بالضعف تقريباً بمربعات أصغر، والفرق بين الأحجام صار واضح، واللعبة صارت أخف على الجوال رغم الحجم','🧭 بداية المعركة صارت أبسط: اختر حضارتك وحط عاصمتك بس، وباقي الأزرار تطلع بعدها'],en:['🗺️ Maps are about twice as big with smaller tiles, sizes now feel different, and the game runs lighter on phones despite the size','🧭 A simpler battle start: pick your realm and place your capital; the other controls appear after']},
  {v:'5.4',d:'2026-11-25',ar:['🎖️ قائمة جديدة «تطوير الجيش» من زر «الجيش» فوق: طوّر الجنود (جيش أكبر وأسرع نمو)، والدبابات (هجمات أقوى بخسائر أقل)، والطيارات (هجمات أسرع)، لكل وحدة 5 مستويات','🪖 شلنا معسكر الدبابات، والدبابات صارت جزء من تطوير الجيش','🗡️ سيفين جديدين يتحركون في بطاقة المعركة السريعة','⚓ تطويرين جدد في الجيش: البحرية (سفن إنزال أسرع وأكثر) والدفاع (أرضك أصعب على العدو)، والقائمة صارت أوضح بالأرقام الفعلية قبل وبعد التطوير'],en:['🎖️ New Army upgrades menu from the Army button at the top: upgrade Soldiers (a bigger, faster-growing army), Tanks (stronger attacks, fewer losses) and Planes (faster attacks), five levels each','🪖 The tank camp is gone; tanks are now part of the army upgrades','🗡️ New animated swords on the quick battle card','⚓ Two new army upgrades: Navy (faster, more landing boats) and Defence (your land is harder to take); the menu now shows the real numbers before and after each upgrade']},
  {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650','⚡ الجيش الكبير صار يكتسح بسرعة: إذا جيشك أكبر بأربع مرات يمسح المنطقة خلال ثواني. الغابة تبطّئه شوي بس، والجبال تبطّئه أكثر','🔢 عدد الجنود على الجبهة صار يطلع فوق المدن بدل ما ينغطى تحتها','💥 لكل سلاح انفجاره: الصاروخ انفجار صغير بشرار، والنووي سحابة فطر صغيرة، والفناء سحابة فطر كبيرة بموجة صدمة','🌫️ دخان الصواريخ والانفجارات يبقى في الجو ويختفي شوي شوي، وأخف في الجرافيكس المتوسط، وما يطلع في المنخفض عشان الجوالات الضعيفة','⏳ دائرة البناء صارت تبدأ من الصفر','🚀 الصاروخ يطلع من المنصة بوميض ودخان ويكبر شوي شوي بدل ما يطلع فجأة','⚔️ الجيش ما عاد يذوب بسرعة على أرض العدو: الخسائر صارت أغلبها من قتال جنوده، فـ120 ألف ضد 50 ألف يمسح الدولة كاملة ويبقى معك جيش','🔢 رقم الجنود صار يطلع على الجبهة الرئيسية إذا هجمت من أكثر من جهة، بدل ما يطلع بالنص بينهم','⚡ تحسّن الهجوم: الجبهة تمشي كخط واحد، والجيش الأقوى بكثير ياخذ دولة صغيرة في حوالي 6 ثواني، وسرعته تتغير حسب ارتفاع الأرض: الأخضر الفاتح سريع ويهدأ شوي عند المرتفعات الصغيرة، والغابات أبطأ شوي، والمرتفعات أبطأ، والجبال العالية أبطأ شي'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200','⚡ Big armies sweep fast: four times the enemy army clears the area in seconds. Forest slows it only a little, mountains more','🔢 The troop count on a front now shows above cities instead of hiding under them','💥 Each weapon has its own blast: a small burst with sparks for the rocket, a small mushroom cloud for the nuke, a big one with a shockwave for doom','🌫️ Missile and blast smoke stays in the air and fades slowly; lighter on Medium graphics and off on Low for weaker phones','⏳ The building progress ring now starts from zero','🚀 Missiles leave the silo with a flash and smoke and grow into view instead of popping in','⚔️ Armies no longer melt on enemy land: losses now come mostly from fighting their soldiers, so 120K against 50K wipes the realm out with an army to spare','🔢 When you attack on several sides the troop count sits on the main front, not between them','⚡ Better attacks: the front advances as one line, a much stronger army takes a small realm in about 6 seconds, and its pace follows the height of the land: fast on open green, easing over small rises, a little slower in forest, slower on hills, slowest on high mountains']},
  {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
@@ -2390,7 +2404,7 @@ function applyCmd(pid,c){
   }
   if(c.k==='go'){
     if(g.started)return;for(const m of g.nations)if(m&&m.human&&!m.spawned){const i=pickSpawn(g,12);if(i>=0)spawn(g,m,i);else m.alive=false;}
-    startGame(g);UI.phase='play';UI.hintT=performance.now();hint(null);const me=g.nations[g.human];if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(fitZoom(g)*2.4,UI.mob?5:6));return;
+    startGame(g);UI.phase='play';renderFac();UI.hintT=performance.now();hint(null);const me=g.nations[g.human];if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(fitZoom(g)*2.4,UI.mob?5:6));return;
   }
   if(c.k==='drop'){if(n.human){n.human=false;feed(t('mpLeft',nmh(n)),'warn');}return;}
   if(!g.started||!n.alive)return;
@@ -2605,7 +2619,7 @@ let G=null,acc=0,lastTs=0;
 // online leaderboard (Firebase Realtime Database + anonymous sign-in); empty = turned off
 const LB_DB='https://sijal-fa367-default-rtdb.firebaseio.com',LB_KEY='AIzaSyABuacot7I8S6r-7bsTHbYgMWhQC7OHXi4';
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
-const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
+const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[594,374],[764,480],[962,606],[1188,746]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
@@ -2917,8 +2931,10 @@ function renderNews(latest){
   $('#help').innerHTML=`<h2>${t(latest?'newsNew':'news')}</h2><div class="nl">${L.map(e=>`<div><b>${t('ver')} ${e.v}</b><small dir="ltr">${e.d}</small><ul>${(e[UI.lang]||e.ar).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`;
 }
 function renderFac(){
-  const e=$('#fpick'),p=UI.prof;if(!e)return;e.hidden=UI.phase!=='spawn';if(e.hidden)return;
-  e.innerHTML=`<h4>${t('faction')}</h4><div class="chips">${FKEYS.map(f=>`<button class="chip${p.fac===f?' on':''}" data-a="fac:${f}"><i style="background:rgb(${FAC[f].c})"></i>${t('f_'+f)}</button>`).join('')}</div><small>${t('fp_'+p.fac)} · ${t('fu_'+p.fac)}: ${t('fd_'+p.fac)}</small>`;
+  const e=$('#fpick'),p=UI.prof;{const ap=$('#app');if(ap)ap.classList.toggle('spawning',UI.phase==='spawn');}if(!e)return;e.hidden=UI.phase!=='spawn';if(e.hidden)return;
+  // a compact grid: an icon and a name per realm, and only the chosen one's main perk underneath
+  const FI={hawks:'🦅',bastion:'🏰',merchants:'💰',mariners:'⚓',scholars:'📜',horde:'🐺'};
+  e.innerHTML=`<h4>${t('faction')}</h4><div class="fgrid">${FKEYS.map(f=>`<button class="fc${p.fac===f?' on':''}" data-a="fac:${f}" style="--fc:${FAC[f].c}"><span>${FI[f]||'⚑'}</span><b>${t('f_'+f)}</b></button>`).join('')}</div><p class="fpk">✨ ${t('fp_'+p.fac)}</p>`;
 }
 function renderPause(){
   const p=UI.prof;$('#pause').innerHTML=`<h2>${t('paused')}</h2><div class="mb"><button class="btn big" data-a="resume">${t('resume')}</button><button class="btn" data-a="settings">${t('settings')}</button><button class="btn" data-a="how">${t('how')}</button>
