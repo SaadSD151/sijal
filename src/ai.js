@@ -69,7 +69,7 @@ function aiBuild(g,n,threat){
   if(!hostile){let w=-30;for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!n.ally[m.id]&&g.nb[n.id*K+m.id]>2&&n.att[m.id]<w){w=n.att[m.id];hostile=m.id;}}
   for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!n.ally[m.id]&&m.cnt.silo)enemySilo=true;
   // spare gold buys army upgrades now and then, cheapest first
-  if(g.rng()<.1){let bk=null,bc=1e18;for(const k of["sol","tank","air"])if(!canArmy(g,n,k)){const c=ARMY_UP[k].cost[n.up[k]|0];if(c<bc){bc=c;bk=k;}}if(bk&&n.gold>bc*4.5){armyUp(g,n,bk);return;}}
+  if(g.rng()<.1){let bk=null,bc=1e18;for(const k of["sol","tank","air","def","nav"])if(!canArmy(g,n,k)){const c=ARMY_UP[k].cost[n.up[k]|0];if(c<bc){bc=c;bk=k;}}if(bk&&n.gold>bc*4.5){armyUp(g,n,bk);return;}}
   // rebuild a bombed city first when there is gold to spare, the capital before the rest
   {const rs=g.structs.filter(s=>!s.dead&&s.owner===n.id&&s.type==='city'&&s.ruin>g.tick).sort((a,b)=>(b.capital?1:0)-(a.capital?1:0)||b.level-a.level);if(rs.length&&n.gold>repairCost(g,rs[0])*2.5&&!repairCity(g,n,rs[0]))return;}
   const wantCity=n.cnt.city<1+Math.floor(n.tiles/600),G=n.gold;

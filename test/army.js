@@ -15,6 +15,7 @@ const g=newGame({w:200,h:120,seed:6,type:'flat',bots:0,diff:1,demo:true,minors:0
 A.era=1;A.gold=100;ok(armyUp(g,A,'sol')==='gold','not enough gold');A.gold=1e6;ok(armyUp(g,A,'tank')==='era','tanks need a later age');
 ok(armyUp(g,A,'sol')===0&&A.up.sol===1&&A.gold===1e6-600,'soldiers level 1 costs 600');
 for(let i=0;i<4;i++)armyUp(g,A,'sol');ok(A.up.sol===2,'age gates soldiers level 3 at age 2');A.era=4;for(let i=0;i<5;i++)armyUp(g,A,'sol');ok(A.up.sol===5&&armyUp(g,A,'sol')==='lvmax','caps at level 5');
+A.era=4;A.gold=1e6;ok(armyUp(g,A,'nav')===0&&armyUp(g,A,'def')===0,'navy and defence can be bought');const sl0=boatSlots(A);A.up.nav=5;ok(boatSlots(A)===sl0+2,'navy 5 gives two more landing boats');
 structPass(g);const m5=A.maxT;A.up.sol=0;structPass(g);ok(m5>A.maxT*1.7,'soldiers 5: army cap +75% ('+Math.round(A.maxT)+' -> '+Math.round(m5)+')');
 })();`);
 // the panel in the real game: buying sends a command and the level goes up

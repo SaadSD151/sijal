@@ -23,7 +23,7 @@ function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
     att:new Float32Array(192),ally:new Uint8Array(192),allyAt:new Int32Array(192),allyUntil:new Int32Array(192),allyRen:new Uint8Array(192),allyWarn:new Uint8Array(192),truce:new Int32Array(192),lastHit:new Int32Array(192).fill(-9999),lastAtk:new Int32Array(192).fill(-9999),pg:new Float32Array(192),emb:new Uint8Array(192),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(192).fill(-9999),lastHitAny:-9999,
-    blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,up:{sol:0,tank:0,air:0},cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
+    blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,up:{sol:0,tank:0,air:0,nav:0,def:0},cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,factory:0,camp:0,coast:0,silo:0,shield:0,mon:0},bc:{},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
     st:{conq:0,lost:0,cities:0,kills:0,peak:0,nukes:0}};
@@ -264,7 +264,7 @@ function tickAttacks(g){
 }
 
 // ── naval landings ──
-function boatSlots(n){return 2+n.cnt.port+(FAC[n.fac].slots||0);}
+function boatSlots(n){const v=n.up?n.up.nav|0:0;return 2+n.cnt.port+(FAC[n.fac].slots||0)+(v>=3?1:0)+(v>=5?1:0);}
 function waterPath(g,a,ti){
   const W=g.W,H=g.H,ter=g.M.ter,prev=g.prev,q=g.q;prev.fill(-1);let qh=0,qt=0;const tx=ti%W,ty=(ti/W)|0;
   for(let d=0;d<8;d++){const x=tx+DX8[d],y=ty+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]<2&&prev[j]<0){prev[j]=j;q[qt++]=j;}}
@@ -287,7 +287,7 @@ function launchBoat(g,a,ti,ratio){
   let c=0;for(const b of g.boats)if(b.a===a)c++;if(c>=boatSlots(A))return'maxb';
   const tr=Math.floor(A.troops*ratio);if(tr<200)return'few';
   const path=waterPath(g,a,ti);if(!path)return'nopath';
-  A.troops-=tr;const b={a,troops:tr,path,p:0,ti,spd:.5*(FAC[A.fac].boat||1)};g.boats.push(b);emit(g,'boat',{a,d:o});return b;
+  A.troops-=tr;const b={a,troops:tr,path,p:0,ti,spd:.5*(FAC[A.fac].boat||1)*(1+.15*(A.up?A.up.nav|0:0))};g.boats.push(b);emit(g,'boat',{a,d:o});return b;
 }
 function landing(g,b){
   const i=b.ti,o=g.owner[i],A=g.nations[b.a],D=o?g.nations[o]:null,now=g.tick;
@@ -394,8 +394,8 @@ function repairCost(g,s){const left=Math.max(0,(s.ruin||0)-g.tick);return left?M
 function repairCity(g,n,s){if(!s||s.dead||s.owner!==n.id||s.type!=='city'||!(s.ruin>g.tick))return'no';const c=repairCost(g,s);if(n.gold<c)return'gold';
   n.gold-=c;s.ruin=g.tick;n.defDirty=true;emit(g,'repair',{s,a:n.id});return 0;}
 // army upgrades: soldiers (a bigger, faster-growing army), tanks (stronger attacks), planes (faster attacks); five levels each
-const ARMY_UP={sol:{cost:[600,1400,3000,5600,9500],era:[1,1,2,3,4]},tank:{cost:[1500,3200,5800,9500,15000],era:[2,3,3,4,4]},air:{cost:[2500,5200,8500,13000,20000],era:[3,3,4,4,4]}};
-function canArmy(g,n,k){const A=ARMY_UP[k];if(!A||!n||!n.alive)return'no';const lv=(n.up||(n.up={sol:0,tank:0,air:0}))[k]|0;if(lv>=5)return'lvmax';if(n.era<A.era[lv])return'era';if(n.gold<A.cost[lv])return'gold';return 0;}
+const ARMY_UP={sol:{cost:[600,1400,3000,5600,9500],era:[1,1,2,3,4]},tank:{cost:[1500,3200,5800,9500,15000],era:[2,3,3,4,4]},air:{cost:[2500,5200,8500,13000,20000],era:[3,3,4,4,4]},nav:{cost:[1200,2600,4800,8000,12500],era:[2,2,3,3,4]},def:{cost:[800,1800,3600,6500,10500],era:[1,2,2,3,4]}};
+function canArmy(g,n,k){const A=ARMY_UP[k];if(!A||!n||!n.alive)return'no';const lv=(n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0}))[k]|0;if(lv>=5)return'lvmax';if(n.era<A.era[lv])return'era';if(n.gold<A.cost[lv])return'gold';return 0;}
 function armyUp(g,n,k){const r=canArmy(g,n,k);if(r)return r;const lv=n.up[k]|0;n.gold-=ARMY_UP[k].cost[lv];n.up[k]=lv+1;emit(g,'armyUp',{a:n.id,k,lv:lv+1});return 0;}
 function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
 // is the target reached sooner by sea? walks the land from the target to our realm (breadth-first) and compares that
@@ -564,7 +564,7 @@ function callArms(g,a,target){
 // ── economy, seasons, world ──
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
-    const U=n.up||(n.up={sol:0,tank:0,air:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1);
+    const U=n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1)*(1+.1*(U.def|0));
     const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0046*x*(1-x):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(1+.15*(n.up?n.up.sol:0))*(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
     n.troops+=gr;n.gold+=n.income/TPS;

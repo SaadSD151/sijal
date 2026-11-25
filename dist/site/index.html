@@ -512,26 +512,36 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob .topbar .pchip{flex:1 1 auto;max-width:none;min-width:0}.mob .topbar .tbi{flex:none}
 @media (max-width:400px){.mob .ibn{width:36px;height:36px;font-size:15px}.mob .tbi{gap:4px}.mob .pchip .av{width:34px;height:34px;font-size:15px}.mob .xpb{width:70px}.mob .pchip .pi small{font-size:10.5px}}
 
-/* army upgrades */
-.armyb{padding:6px 12px;border-radius:10px;background:linear-gradient(180deg,#3a2c0e,#22190a);border:1px solid rgba(241,207,110,.6);color:#ffe3a0;font-weight:700;font-size:13px;white-space:nowrap}
-#armyP{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;width:min(640px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;padding:16px;border-radius:20px;
-  background:linear-gradient(180deg,rgba(14,26,42,.97),rgba(8,15,26,.98));border:1px solid rgba(241,207,110,.35);box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.aph{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}.aph b{display:block;font-size:20px;color:#ffe7a6}.aph small{color:var(--dim);font-size:13px}
-.apg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+
+/* army upgrades: one glowing card per branch, level badge on the art, real numbers now and after, and a pop when you upgrade */
+.armyb{padding:6px 12px;border-radius:10px;background:linear-gradient(180deg,#4a3710,#22190a);border:1px solid rgba(241,207,110,.7);color:#ffe3a0;font-weight:700;font-size:13px;white-space:nowrap;box-shadow:0 0 14px rgba(241,207,110,.25)}
+#armyP{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;width:min(940px,calc(100% - 20px));max-height:calc(100% - 20px);overflow:auto;padding:16px;border-radius:22px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(80,60,20,.35),rgba(0,0,0,0) 60%),linear-gradient(180deg,rgba(14,26,42,.98),rgba(7,13,23,.99));border:1px solid rgba(241,207,110,.4);box-shadow:0 24px 70px rgba(0,0,0,.7)}
+.aph{display:flex;align-items:center;gap:12px;margin-bottom:14px}.aph>div:first-child{flex:1;min-width:0}.aph b{display:block;font-size:21px;color:#ffe7a6}.aph small{color:var(--dim);font-size:13px}
+.apg2{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.3);border:1px solid rgba(241,207,110,.3)}.apg2 b{font-size:16px;color:#fff}
+.apg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.apc{--c:241,207,110;position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 10px 12px;border-radius:18px;text-align:center;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 0%,rgba(var(--c),.18),rgba(var(--c),0) 65%),rgba(255,255,255,.035);border:1px solid rgba(var(--c),.28)}
+.apc.sol{--c:150,190,110}.apc.tank{--c:200,170,90}.apc.air{--c:110,170,255}.apc.nav{--c:90,200,210}.apc.def{--c:190,160,255}
+.apc .api{position:relative;width:84px;height:84px;border-radius:22px;display:grid;place-items:center;background:radial-gradient(circle,rgba(var(--c),.35),rgba(var(--c),.06) 70%);box-shadow:inset 0 0 0 1px rgba(var(--c),.4)}
+.apc .api svg{width:60px;height:60px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}.apc .api img{width:56px;height:56px;filter:brightness(1.7) drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+.lvb{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);padding:1px 8px;border-radius:999px;background:linear-gradient(180deg,#f6dc8a,#c9952d);color:#1a1205;font-size:11px;font-weight:800;direction:ltr}
+.apt b{display:block;font-size:16px}.apt small{display:block;font-size:11.5px;color:var(--dim);line-height:1.5;min-height:3em}
+.apn{display:flex;flex-direction:column;align-items:center}.apn em{font-style:normal;font-size:24px;font-weight:800;color:#fff;direction:ltr;text-shadow:0 0 14px rgba(var(--c),.5)}.apn small{font-size:11px;color:var(--dim)}
+.apd{display:flex;gap:4px;justify-content:center}.apd i{width:15px;height:5px;border-radius:9px;background:rgba(255,255,255,.14)}.apd i.on{background:rgb(var(--c));box-shadow:0 0 6px rgba(var(--c),.7)}
+.apx{display:flex;flex-direction:column;gap:4px;width:100%}.apx div{display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap;padding:4px 6px;border-radius:9px;background:rgba(0,0,0,.25);font-size:11.5px}
+.apx span{color:var(--dim);width:100%}.apx b{color:#fff;font-size:13px}.apx i{font-style:normal;color:var(--dim)}.apx .nx{color:#8be39a}
+.apc>button{width:100%;margin-top:auto}.apm{margin-top:auto;color:#ffe3a0;font-weight:700;font-size:13px}.apl{margin-top:auto;color:var(--dim);font-size:12.5px;padding:7px 0}
+.apc.lk{filter:saturate(.35);opacity:.65}.apc.mx{border-color:rgba(241,207,110,.7);box-shadow:0 0 18px rgba(241,207,110,.25)}
+.apc.upd .api{animation:apPop .7s cubic-bezier(.2,1.6,.4,1)}.apc.upd::after{content:'';position:absolute;top:0;right:0;bottom:0;left:0;border-radius:18px;background:radial-gradient(circle at 50% 30%,rgba(var(--c),.55),rgba(var(--c),0) 60%);animation:apGlow .9s ease-out forwards;pointer-events:none}
+@keyframes apPop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}@keyframes apGlow{0%{opacity:1}100%{opacity:0}}
 .mob .apg{grid-template-columns:1fr}
-.apc{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px 12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:center}
-.mob .apc{display:grid;grid-template-columns:52px 1fr auto;grid-template-areas:"i b n" "i d n" "p p p" "x x x";align-items:center;text-align:start;column-gap:10px;row-gap:4px}
-.mob .apc .api{grid-area:i}.mob .apc>b{grid-area:b}.mob .apc .apn{grid-area:n;align-items:flex-end}.mob .apc .apd{grid-area:d;justify-content:flex-start}.mob .apc p{grid-area:p}.mob .apc>button,.mob .apc .apm,.mob .apc .apl{grid-area:x}
-.apc .api{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:28px;background:rgba(241,207,110,.1)}
-.apc.tank .api{background:rgba(120,190,120,.13)}.apc.air .api{background:rgba(120,180,255,.13)}
-.apc>b{font-size:16px}.apn{display:flex;flex-direction:column;align-items:center}.apn em{font-style:normal;font-size:22px;font-weight:700;color:#fff;direction:ltr}.apn small{font-size:11.5px;color:var(--dim)}
-.apd{display:flex;gap:4px;justify-content:center}.apd i{width:16px;height:5px;border-radius:9px;background:rgba(255,255,255,.14)}.apd i.on{background:linear-gradient(90deg,#c9952d,#f6dc8a)}
-.apc p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.6}
-.apc>button{width:100%}.apm{color:#8be39a;font-weight:600;font-size:13px}.apl{color:var(--dim);font-size:13px;padding:6px 0}
-.apc.lk{opacity:.6}
-.apc .api img{width:32px;height:32px;filter:brightness(1.6)}
-.apx{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;font-size:12px;color:var(--dim)}.apx span{padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.06)}.apx b{color:#fff}.apx .nx{background:rgba(110,231,160,.12);color:#9fe6b8}.apx .nx b{color:#b9f5cf}
-.mob .apc .apx{grid-area:p;justify-content:flex-start;margin-top:22px}.mob .apc{grid-template-areas:"i b n" "i d n" "p p p" "q q q" "x x x"}.mob .apc .apx{grid-area:q;margin-top:0}
+.mob .apc{display:grid;grid-template-columns:72px 1fr auto;grid-template-areas:"i t n" "i d d" "x x x" "b b b";align-items:center;text-align:start;column-gap:12px;row-gap:8px;padding:12px}
+.mob .apc .api{grid-area:i;width:72px;height:72px}.mob .apc .api svg{width:50px;height:50px}.mob .apc .api img{width:48px;height:48px}
+.mob .apt{grid-area:t}.mob .apt small{min-height:0}.mob .apn{grid-area:n;align-items:flex-end}.mob .apd{grid-area:d;justify-content:flex-start}.mob .apx{grid-area:x;flex-direction:row}.mob .apx div{flex:1}
+.mob .apc>button,.mob .apm,.mob .apl{grid-area:b}
+@media (max-width:1000px){#app:not(.mob) .apg{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ap2{display:inline-flex;align-items:center;gap:5px}
 
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
@@ -564,7 +574,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='d71e636fc2';
+const BUILD_ID='58753d6917';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -742,7 +752,7 @@ function addNation(g,p){
   const id=g.nations.length,n={id,nameIdx:p.nameIdx,color:p.color,human:!!p.human,fac:p.fac,pers:p.pers||'conq',alive:true,spawned:false,
     troops:8000,gold:150,tiles:0,val:0,maxT:20000,income:5,era:1,cap:null,
     att:new Float32Array(192),ally:new Uint8Array(192),allyAt:new Int32Array(192),allyUntil:new Int32Array(192),allyRen:new Uint8Array(192),allyWarn:new Uint8Array(192),truce:new Int32Array(192),lastHit:new Int32Array(192).fill(-9999),lastAtk:new Int32Array(192).fill(-9999),pg:new Float32Array(192),emb:new Uint8Array(192),embAll:0,emo:0,emoT:0,emoAt:-999,pAsk:new Int32Array(192).fill(-9999),lastHitAny:-9999,
-    blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,up:{sol:0,tank:0,air:0},cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
+    blitz:0,wall:0,collapse:0,ultAt:500,mSpd:1,mAtk:1,mDef:1,up:{sol:0,tank:0,air:0,nav:0,def:0},cx:0,cy:0,x0:0,y0:0,x1:0,y1:0,coast:0,defS:[],defDirty:true,
     cnt:{city:0,fort:0,port:0,factory:0,camp:0,coast:0,silo:0,shield:0,mon:0},bc:{},mon:null,
     ai:{nextBuild:40+id*3,nextDip:30+id*5,nextWar:120+g.rng()*150,nextNaval:300+g.rng()*300,nextMsl:0,focus:0,focusUntil:0,last:0,propAt:-999},
     st:{conq:0,lost:0,cities:0,kills:0,peak:0,nukes:0}};
@@ -983,7 +993,7 @@ function tickAttacks(g){
 }
 
 // ── naval landings ──
-function boatSlots(n){return 2+n.cnt.port+(FAC[n.fac].slots||0);}
+function boatSlots(n){const v=n.up?n.up.nav|0:0;return 2+n.cnt.port+(FAC[n.fac].slots||0)+(v>=3?1:0)+(v>=5?1:0);}
 function waterPath(g,a,ti){
   const W=g.W,H=g.H,ter=g.M.ter,prev=g.prev,q=g.q;prev.fill(-1);let qh=0,qt=0;const tx=ti%W,ty=(ti/W)|0;
   for(let d=0;d<8;d++){const x=tx+DX8[d],y=ty+DY8[d];if(x<0||y<0||x>=W||y>=H)continue;const j=y*W+x;if(ter[j]<2&&prev[j]<0){prev[j]=j;q[qt++]=j;}}
@@ -1006,7 +1016,7 @@ function launchBoat(g,a,ti,ratio){
   let c=0;for(const b of g.boats)if(b.a===a)c++;if(c>=boatSlots(A))return'maxb';
   const tr=Math.floor(A.troops*ratio);if(tr<200)return'few';
   const path=waterPath(g,a,ti);if(!path)return'nopath';
-  A.troops-=tr;const b={a,troops:tr,path,p:0,ti,spd:.5*(FAC[A.fac].boat||1)};g.boats.push(b);emit(g,'boat',{a,d:o});return b;
+  A.troops-=tr;const b={a,troops:tr,path,p:0,ti,spd:.5*(FAC[A.fac].boat||1)*(1+.15*(A.up?A.up.nav|0:0))};g.boats.push(b);emit(g,'boat',{a,d:o});return b;
 }
 function landing(g,b){
   const i=b.ti,o=g.owner[i],A=g.nations[b.a],D=o?g.nations[o]:null,now=g.tick;
@@ -1113,8 +1123,8 @@ function repairCost(g,s){const left=Math.max(0,(s.ruin||0)-g.tick);return left?M
 function repairCity(g,n,s){if(!s||s.dead||s.owner!==n.id||s.type!=='city'||!(s.ruin>g.tick))return'no';const c=repairCost(g,s);if(n.gold<c)return'gold';
   n.gold-=c;s.ruin=g.tick;n.defDirty=true;emit(g,'repair',{s,a:n.id});return 0;}
 // army upgrades: soldiers (a bigger, faster-growing army), tanks (stronger attacks), planes (faster attacks); five levels each
-const ARMY_UP={sol:{cost:[600,1400,3000,5600,9500],era:[1,1,2,3,4]},tank:{cost:[1500,3200,5800,9500,15000],era:[2,3,3,4,4]},air:{cost:[2500,5200,8500,13000,20000],era:[3,3,4,4,4]}};
-function canArmy(g,n,k){const A=ARMY_UP[k];if(!A||!n||!n.alive)return'no';const lv=(n.up||(n.up={sol:0,tank:0,air:0}))[k]|0;if(lv>=5)return'lvmax';if(n.era<A.era[lv])return'era';if(n.gold<A.cost[lv])return'gold';return 0;}
+const ARMY_UP={sol:{cost:[600,1400,3000,5600,9500],era:[1,1,2,3,4]},tank:{cost:[1500,3200,5800,9500,15000],era:[2,3,3,4,4]},air:{cost:[2500,5200,8500,13000,20000],era:[3,3,4,4,4]},nav:{cost:[1200,2600,4800,8000,12500],era:[2,2,3,3,4]},def:{cost:[800,1800,3600,6500,10500],era:[1,2,2,3,4]}};
+function canArmy(g,n,k){const A=ARMY_UP[k];if(!A||!n||!n.alive)return'no';const lv=(n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0}))[k]|0;if(lv>=5)return'lvmax';if(n.era<A.era[lv])return'era';if(n.gold<A.cost[lv])return'gold';return 0;}
 function armyUp(g,n,k){const r=canArmy(g,n,k);if(r)return r;const lv=n.up[k]|0;n.gold-=ARMY_UP[k].cost[lv];n.up[k]=lv+1;emit(g,'armyUp',{a:n.id,k,lv:lv+1});return 0;}
 function upgrade(g,n,s){const r=canUp(g,n,s);if(r)return r;n.gold-=upCost(s);s.upAt=g.tick+60;emit(g,'upStart',{a:n.id,s});return 0;}
 // is the target reached sooner by sea? walks the land from the target to our realm (breadth-first) and compares that
@@ -1283,7 +1293,7 @@ function callArms(g,a,target){
 // ── economy, seasons, world ──
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
-    const U=n.up||(n.up={sol:0,tank:0,air:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1);
+    const U=n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1)*(1+.1*(U.def|0));
     const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0046*x*(1-x):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(1+.15*(n.up?n.up.sol:0))*(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
     n.troops+=gr;n.gold+=n.income/TPS;
@@ -1534,7 +1544,7 @@ function aiBuild(g,n,threat){
   if(!hostile){let w=-30;for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!n.ally[m.id]&&g.nb[n.id*K+m.id]>2&&n.att[m.id]<w){w=n.att[m.id];hostile=m.id;}}
   for(const m of g.nations)if(m&&m.alive&&m.id!==n.id&&!n.ally[m.id]&&m.cnt.silo)enemySilo=true;
   // spare gold buys army upgrades now and then, cheapest first
-  if(g.rng()<.1){let bk=null,bc=1e18;for(const k of["sol","tank","air"])if(!canArmy(g,n,k)){const c=ARMY_UP[k].cost[n.up[k]|0];if(c<bc){bc=c;bk=k;}}if(bk&&n.gold>bc*4.5){armyUp(g,n,bk);return;}}
+  if(g.rng()<.1){let bk=null,bc=1e18;for(const k of["sol","tank","air","def","nav"])if(!canArmy(g,n,k)){const c=ARMY_UP[k].cost[n.up[k]|0];if(c<bc){bc=c;bk=k;}}if(bk&&n.gold>bc*4.5){armyUp(g,n,bk);return;}}
   // rebuild a bombed city first when there is gold to spare, the capital before the rest
   {const rs=g.structs.filter(s=>!s.dead&&s.owner===n.id&&s.type==='city'&&s.ruin>g.tick).sort((a,b)=>(b.capital?1:0)-(a.capital?1:0)||b.level-a.level);if(rs.length&&n.gold>repairCost(g,rs[0])*2.5&&!repairCity(g,n,rs[0]))return;}
   const wantCity=n.cnt.city<1+Math.floor(n.tiles/600),G=n.gold;
@@ -2253,7 +2263,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  help:[['Cities are the heart of war','Each city rules the province around it. When a city falls, its province surrenders to the conqueror. Lose your last city and your whole realm collapses.'],['The spearhead','Tap enemy or neutral land and your attack drives toward the point you tapped. Aim it at cities.'],['Attack force','The slider sets how much of your army each attack takes. Send everything and your homeland is left thin.'],['Sieges','A city is held by a share of its realm\'s whole army, so mass your troops first. A landlocked pocket that is fully encircled falls by itself.'],['Building','Cities add troops and gold, forts double defense, ports bring gold and ships.'],['Seasons','Spring for growth, summer for attack, autumn for gold, and winter slows every army.'],['Ages','Advance from swords to the atom to unlock ports, missiles, the air shield and the bomb.'],['Politics','Alliances last two minutes, and before they end you choose whether to renew. Gift gold and call your allies to war. Grow too large and the world unites against you, and your army grows more slowly.'],['Two roads to victory','Rule 70% of the world\'s land, or raise the Eternal Monument and hold it for 150 seconds.']],
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the left button to aim an attack arrow, drag with the right button to move the map, right-click opens a realm card. On mobile: long-press a realm to open its card.'}};
 // Saudi-dialect wording for the Arabic interface
-Object.assign(TX.ar,{ar_btn:'الجيش',ar_t:'تطوير الجيش',ar_sub:'طوّر جيشك بالذهب، كل تطوير له 5 مستويات',ar_sol:'الجنود',ar_solU:'جنود أكثر',ar_solD:'جيشك يكبر أسرع، وأقصى عدد جنود يصير أكبر',ar_now:'الحين',ar_next:'بعد التطوير',ar_tank:'الدبابات',ar_tankU:'دبابة',ar_tankD:'هجماتك أقوى، وتخسر جنود أقل وأنت تاخذ الأرض',ar_air:'الطيارات',ar_airU:'طيارة',ar_airD:'هجماتك تمشي أسرع على أرض العدو',d_how:'الشرح',d_sug:'اقترح',d_sup:'ادعم',d_tt:'تيك توك',h_quick:'خريطة جديدة كل مرة · جاهزة على طول',h_play:'العب',h_onl:'مع أخوياك',h_left:'باقي {0} س',h_done:'خلّصته',h_cus:'على كيفك',ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
+Object.assign(TX.ar,{ar_nav:'البحرية',ar_navU:'سفينة حربية',ar_navD:'سفن الإنزال أسرع، وسفينة إضافية في المستوى 3 و5',ar_def:'الدفاع',ar_defU:'دفاع أقوى',ar_defD:'أرضك أصعب، والعدو يخسر جنود أكثر لما يهجم عليك',ar_maxA:'أقصى جيش',ar_grow:'سرعة النمو',ar_loss:'خسارتك لكل 100',ar_pow:'قوة الهجوم',ar_spd:'سرعة الهجوم',ar_bspd:'سرعة السفن',ar_boats:'سفن الإنزال',ar_dfn:'قوة الدفاع',ar_upTo:'طوّر للمستوى {0}',ar_lock:'يفتح في {0}',ar_btn:'الجيش',ar_t:'تطوير الجيش',ar_sub:'طوّر جيشك بالذهب، كل تطوير له 5 مستويات',ar_sol:'الجنود',ar_solU:'جنود أكثر',ar_solD:'جيشك يكبر أسرع، وأقصى عدد جنود يصير أكبر',ar_now:'الحين',ar_next:'بعد التطوير',ar_tank:'الدبابات',ar_tankU:'دبابة',ar_tankD:'هجماتك أقوى، وتخسر جنود أقل وأنت تاخذ الأرض',ar_air:'الطيارات',ar_airU:'طيارة',ar_airD:'هجماتك تمشي أسرع على أرض العدو',d_how:'الشرح',d_sug:'اقترح',d_sup:'ادعم',d_tt:'تيك توك',h_quick:'خريطة جديدة كل مرة · جاهزة على طول',h_play:'العب',h_onl:'مع أخوياك',h_left:'باقي {0} س',h_done:'خلّصته',h_cus:'على كيفك',ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
  faction:'اختر حضارتك',realm:'اسم دولتك',world:'شكل العالم',foes:'عدد الخصوم',
  pick:'اختر مكان «{0}» داخل أرضك',aim:'اختر الهدف على الخريطة',spawn:'اختر مكان عاصمتك: اضغط على أي أرض فاضية',
  e_gold:'الذهب ما يكفي',e_era:'يبي له عصر أحدث',e_own:'ابنِ داخل أرضك',e_busy:'المكان مشغول',e_near:'قريب مرة من مبنى ثاني',e_cnear:'قريب مرة من مدينة ثانية',e_coast:'الميناء يبي له ساحل مفتوح',
@@ -2275,7 +2285,7 @@ Object.assign(TX.ar,{ar_btn:'الجيش',ar_t:'تطوير الجيش',ar_sub:'ط
  lobbyHost:'أنت المضيف. عط الكود لأخوياك، ولما يدخلون ابدأ المعركة. إعدادات العالم هي اللي اخترتها في المعركة المخصّصة.',lobbyWait:'ننتظر المضيف يبدأ المعركة…',
  mpSpawn:'اختر حضارتك ومكان عاصمتك. المعركة تبدأ لما الكل يختار أو بعد دقيقة',mpWait:'ننتظر باقي اللاعبين…',mpLeft:'{0} طلع من المعركة والحاسوب مسك دولته',mpDead:'طاحت دولتك. تتفرج الحين على باقي الحرب',
  e_room:'ما قدرنا نوصل للغرفة. تأكد من الكود، وإذا ما ضبط جرّب شبكة ثانية (واي فاي أو بيانات الجوال)',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
-Object.assign(TX.en,{ar_btn:'Army',ar_t:'Army upgrades',ar_sub:'Upgrade your army with gold, five levels each',ar_sol:'Soldiers',ar_solU:'more troops',ar_solD:'Your army grows faster and its cap gets bigger',ar_now:'Now',ar_next:'After upgrade',ar_tank:'Tanks',ar_tankU:'tanks',ar_tankD:'Your attacks hit harder and lose fewer troops',ar_air:'Planes',ar_airU:'planes',ar_airD:'Your attacks move faster across enemy land',d_how:'Guide',d_sug:'Ideas',d_sup:'Support',d_tt:'TikTok',h_quick:'A new map every time · ready now',h_play:'Play',h_onl:'With friends',h_left:'{0} h left',h_done:'Done',h_cus:'Your rules',ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
+Object.assign(TX.en,{ar_nav:'Navy',ar_navU:'warships',ar_navD:'Landing boats sail faster, with an extra boat at levels 3 and 5',ar_def:'Defence',ar_defU:'stronger defence',ar_defD:'Your land is harder to take; attackers lose more troops',ar_maxA:'Max army',ar_grow:'Growth',ar_loss:'Losses per 100',ar_pow:'Attack power',ar_spd:'Attack speed',ar_bspd:'Ship speed',ar_boats:'Landing boats',ar_dfn:'Defence power',ar_upTo:'Upgrade to level {0}',ar_lock:'Opens in {0}',ar_btn:'Army',ar_t:'Army upgrades',ar_sub:'Upgrade your army with gold, five levels each',ar_sol:'Soldiers',ar_solU:'more troops',ar_solD:'Your army grows faster and its cap gets bigger',ar_now:'Now',ar_next:'After upgrade',ar_tank:'Tanks',ar_tankU:'tanks',ar_tankD:'Your attacks hit harder and lose fewer troops',ar_air:'Planes',ar_airU:'planes',ar_airD:'Your attacks move faster across enemy land',d_how:'Guide',d_sug:'Ideas',d_sup:'Support',d_tt:'TikTok',h_quick:'A new map every time · ready now',h_play:'Play',h_onl:'With friends',h_left:'{0} h left',h_done:'Done',h_cus:'Your rules',ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
  mpSpawn:'Choose your civilization and found your capital. The battle starts when everyone has chosen, or after one minute',
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the right button to move the map, right-click opens a realm card.'});
 TX.en.help[1]=['Attacking','Pick from the Attack type list: “At a point” focuses your army in a narrow corridor toward the spot you tap, “Along every border” strikes across your whole shared border. You can hide the list and bring it back. On mobile the realm\'s options open first: attack, ally or gift.'];
@@ -2355,7 +2365,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:'5.4',d:'2026-11-25',ar:['🎖️ قائمة جديدة «تطوير الجيش» من زر «الجيش» فوق: طوّر الجنود (جيش أكبر وأسرع نمو)، والدبابات (هجمات أقوى بخسائر أقل)، والطيارات (هجمات أسرع)، لكل وحدة 5 مستويات','🪖 شلنا معسكر الدبابات، والدبابات صارت جزء من تطوير الجيش','🗡️ سيفين جديدين يتحركون في بطاقة المعركة السريعة'],en:['🎖️ New Army upgrades menu from the Army button at the top: upgrade Soldiers (a bigger, faster-growing army), Tanks (stronger attacks, fewer losses) and Planes (faster attacks), five levels each','🪖 The tank camp is gone; tanks are now part of the army upgrades','🗡️ New animated swords on the quick battle card']},
+ {v:'5.4',d:'2026-11-25',ar:['🎖️ قائمة جديدة «تطوير الجيش» من زر «الجيش» فوق: طوّر الجنود (جيش أكبر وأسرع نمو)، والدبابات (هجمات أقوى بخسائر أقل)، والطيارات (هجمات أسرع)، لكل وحدة 5 مستويات','🪖 شلنا معسكر الدبابات، والدبابات صارت جزء من تطوير الجيش','🗡️ سيفين جديدين يتحركون في بطاقة المعركة السريعة','⚓ تطويرين جدد في الجيش: البحرية (سفن إنزال أسرع وأكثر) والدفاع (أرضك أصعب على العدو)، والقائمة صارت أوضح بالأرقام الفعلية قبل وبعد التطوير'],en:['🎖️ New Army upgrades menu from the Army button at the top: upgrade Soldiers (a bigger, faster-growing army), Tanks (stronger attacks, fewer losses) and Planes (faster attacks), five levels each','🪖 The tank camp is gone; tanks are now part of the army upgrades','🗡️ New animated swords on the quick battle card','⚓ Two new army upgrades: Navy (faster, more landing boats) and Defence (your land is harder to take); the menu now shows the real numbers before and after each upgrade']},
  {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650','⚡ الجيش الكبير صار يكتسح بسرعة: إذا جيشك أكبر بأربع مرات يمسح المنطقة خلال ثواني. الغابة تبطّئه شوي بس، والجبال تبطّئه أكثر','🔢 عدد الجنود على الجبهة صار يطلع فوق المدن بدل ما ينغطى تحتها','💥 لكل سلاح انفجاره: الصاروخ انفجار صغير بشرار، والنووي سحابة فطر صغيرة، والفناء سحابة فطر كبيرة بموجة صدمة','🌫️ دخان الصواريخ والانفجارات يبقى في الجو ويختفي شوي شوي، وأخف في الجرافيكس المتوسط، وما يطلع في المنخفض عشان الجوالات الضعيفة','⏳ دائرة البناء صارت تبدأ من الصفر','🚀 الصاروخ يطلع من المنصة بوميض ودخان ويكبر شوي شوي بدل ما يطلع فجأة','⚔️ الجيش ما عاد يذوب بسرعة على أرض العدو: الخسائر صارت أغلبها من قتال جنوده، فـ120 ألف ضد 50 ألف يمسح الدولة كاملة ويبقى معك جيش','🔢 رقم الجنود صار يطلع على الجبهة الرئيسية إذا هجمت من أكثر من جهة، بدل ما يطلع بالنص بينهم','⚡ تحسّن الهجوم: الجبهة تمشي كخط واحد، والجيش الأقوى بكثير ياخذ دولة صغيرة في حوالي 6 ثواني، وسرعته تتغير حسب ارتفاع الأرض: الأخضر الفاتح سريع ويهدأ شوي عند المرتفعات الصغيرة، والغابات أبطأ شوي، والمرتفعات أبطأ، والجبال العالية أبطأ شي'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200','⚡ Big armies sweep fast: four times the enemy army clears the area in seconds. Forest slows it only a little, mountains more','🔢 The troop count on a front now shows above cities instead of hiding under them','💥 Each weapon has its own blast: a small burst with sparks for the rocket, a small mushroom cloud for the nuke, a big one with a shockwave for doom','🌫️ Missile and blast smoke stays in the air and fades slowly; lighter on Medium graphics and off on Low for weaker phones','⏳ The building progress ring now starts from zero','🚀 Missiles leave the silo with a flash and smoke and grow into view instead of popping in','⚔️ Armies no longer melt on enemy land: losses now come mostly from fighting their soldiers, so 120K against 50K wipes the realm out with an army to spare','🔢 When you attack on several sides the troop count sits on the main front, not between them','⚡ Better attacks: the front advances as one line, a much stronger army takes a small realm in about 6 seconds, and its pace follows the height of the land: fast on open green, easing over small rises, a little slower in forest, slower on hills, slowest on high mountains']},
  {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
  {v:'5.1',d:'2026-11-22',ar:['🎵 صار للعبة حساب على تيك توك: @sijal_2، تلقاه في القائمة الرئيسية. تابعنا!'],en:['🎵 Sijal is on TikTok: @sijal_2, linked from the main menu. Follow us!']},
@@ -3161,7 +3171,7 @@ function buildHud(){
   $('#mini').addEventListener('pointerdown',e=>{const r=e.target.getBoundingClientRect();lookAt((e.clientX-r.left)/r.width*g.W,(e.clientY-r.top)/r.height*g.H);});
 }
 function hudUpdate(){
-  {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human],k=me?Math.floor(me.gold/100)+'|'+me.era+'|'+JSON.stringify(me.up):'';if(k!==UI.armyK){UI.armyK=k;renderArmy();}}}
+  {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human],k=me?Math.floor(me.gold/100)+'|'+me.era+'|'+JSON.stringify(me.up):'';if(k!==UI.armyK&&!(performance.now()<(UI.armyHold||0))){UI.armyK=k;renderArmy();}}}
   const g=G;if(!g||g.o.demo||!$('#sT'))return;const me=g.nations[g.human],now=g.tick,T=$('#sT'),Gd=$('#sG');
   T.querySelector('b').textContent=fmt(me.troops);T.querySelector('small').textContent='/ '+fmt(me.maxT);T.querySelector('u').style.width=clamp(me.troops/me.maxT*100,0,100)+'%';
   Gd.querySelector('b').textContent=fmt(me.gold);Gd.querySelector('small').textContent='+'+me.income.toFixed(0);
@@ -3221,20 +3231,34 @@ function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span
 // nation card
 // your own realm: emoji, trade with everyone on/off, and automatic upgrades within the limits you set
 // ── army upgrades: soldiers, tanks and planes, five levels each, paid in gold and opened by age ──
+// art for each army upgrade (the tank keeps the game's own tank icon)
+const ART={sol:'<svg viewBox="0 0 64 64"><path fill="#4f6b3a" d="M12 30c0-12 9-20 20-20s20 8 20 20v3H12z"/><path fill="#3c5530" d="M8 33h48v4H8z"/><path fill="#e0b48a" d="M20 37h24v8c0 7-5 12-12 12s-12-5-12-12z"/><path fill="#2b3a22" d="M24 43h4v2h-4zm12 0h4v2h-4z"/><path fill="#6f8f52" d="M18 20c4-5 9-7 14-7v8c-6 0-10 2-14 5z" opacity=".55"/><path fill="#5b4a2e" d="M16 57h32l4 7H12z"/></svg>',air:'<svg viewBox="0 0 64 64"><path fill="#d6e6f5" d="M32 2c2.2 0 3.6 4.4 3.8 10l.4 12 20 12.5v5.2L36.4 35l.6 13.6 7.2 6v4.6L33.6 56l-1.6 4-1.6-4-10.6 3.2v-4.6l7.2-6 .6-13.6-19.8 6.7v-5.2l20-12.5.4-12C28.4 6.4 29.8 2 32 2z"/><path fill="#7c93ab" d="M30.4 14h3.2l.3 9h-3.8zM9.8 41.7 28 33.8v2.4L9.8 43.2zm44.4 0L36 33.8v2.4l18.2 7z"/><circle cx="32" cy="11" r="1.6" fill="#4ea4ff"/></svg>',nav:'<svg viewBox="0 0 64 64"><path fill="#9fb3c6" d="M6 38h52l-7 12H13z"/><path fill="#6f8599" d="M18 30h26v8H18z"/><path fill="#c9d6e2" d="M24 22h12v8H24z"/><path fill="#55697c" d="M29 12h2v10h-2z"/><path fill="#55697c" d="M36 26h14v2H36z"/><path fill="#3f81c6" d="M2 52c5 3 10 3 15 0s10-3 15 0 10 3 15 0 10-3 15 0v4H2z" opacity=".8"/></svg>',def:'<svg viewBox="0 0 64 64"><path fill="#7d93ab" d="M32 4 54 12v16c0 15-9 26-22 32C19 54 10 43 10 28V12z"/><path fill="#c8d6e4" d="M32 9 49 15v13c0 12-7 21-17 26-10-5-17-14-17-26V15z"/><path fill="#e3b95a" d="M29 20h6v9h9v6h-9v11h-6V35h-9v-6h9z"/></svg>'};
 const ARMY=[
-  {k:'sol',ic:'🪖',pct:15,cnt:lv=>'+'+lv*15+'%'},
-  {k:'tank',ic:'',pct:10,cnt:lv=>[0,10,25,45,70,100][lv]},
-  {k:'air',ic:'',pct:12,cnt:lv=>[0,4,10,18,28,40][lv]}].map(a=>Object.assign(a,ARMY_UP[a.k]));
+  {k:'sol',pct:15,cnt:lv=>'+'+lv*15+'%'},
+  {k:'tank',pct:10,cnt:lv=>[0,10,25,45,70,100][lv]},
+  {k:'air',pct:12,cnt:lv=>[0,4,10,18,28,40][lv]},
+  {k:'nav',pct:15,cnt:lv=>[0,3,6,10,15,20][lv]},
+  {k:'def',pct:10,cnt:lv=>'+'+lv*10+'%'}].map(a=>Object.assign(a,ARMY_UP[a.k]));
+// the real numbers each level changes, now and after the next upgrade
+function armyNums(me,k,lv){const f=(a)=>a,nx=lv+1;
+  if(k==='sol'){const base=me.maxT/(1+.15*lv);return[[t('ar_maxA'),fmt(me.maxT),fmt(base*(1+.15*nx))],[t('ar_grow'),'+'+lv*15+'%','+'+nx*15+'%']];}
+  if(k==='tank')return[[t('ar_loss'),Math.round(100/(1+.1*lv)),Math.round(100/(1+.1*nx))],[t('ar_pow'),'×'+(1+.1*lv).toFixed(1),'×'+(1+.1*nx).toFixed(1)]];
+  if(k==='air')return[[t('ar_spd'),Math.round(100*(1+.12*lv))+'%',Math.round(100*(1+.12*nx))+'%']];
+  if(k==='nav'){const sl=boatSlots(me);return[[t('ar_bspd'),Math.round(100*(1+.15*lv))+'%',Math.round(100*(1+.15*nx))+'%'],[t('ar_boats'),sl,sl+((nx===3||nx===5)?1:0)]];}
+  return[[t('ar_dfn'),'×'+(1+.1*lv).toFixed(1),'×'+(1+.1*nx).toFixed(1)]];}
 function openArmy(){const g=G,me=g.nations[g.human];if(!me||!me.alive)return;UI.bs=null;UI.sel=0;const c=$('#card');c.hidden=true;let p=$('#armyP');if(!p){p=document.createElement('div');p.id='armyP';$('#hud').appendChild(p);}
-  p.hidden=false;renderArmy();}
-function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden)return;const U=me.up||(me.up={sol:0,tank:0,air:0});
-  p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
-  <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost;
-    return `<div class="apc ${A.k}${lock?' lk':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:A.k==='air'?`<svg viewBox="0 0 64 64" width="34" height="34"><path fill="#cfe0f2" d="M32 2c2.2 0 3.6 4.4 3.8 10l.4 12 20 12.5v5.2L36.4 35l.6 13.6 7.2 6v4.6L33.6 56l-1.6 4-1.6-4-10.6 3.2v-4.6l7.2-6 .6-13.6-19.8 6.7v-5.2l20-12.5.4-12C28.4 6.4 29.8 2 32 2z"/><path fill="#7c93ab" d="M30.4 14h3.2l.3 9h-3.8zM9.8 41.7 28 33.8v2.4L9.8 43.2zm44.4 0L36 33.8v2.4l18.2 7z"/><circle cx="32" cy="11" r="1.6" fill="#4ea4ff"/></svg>`:A.ic}</div><b>${t('ar_'+A.k)}</b>
-      <div class="apn"><em>${A.cnt(lv)}</em><small>${t('ar_'+A.k+'U')}</small></div>
+  p.hidden=false;UI.armyK='';renderArmy();}
+function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden||!me)return;const U=me.up||(me.up={sol:0,tank:0,air:0,nav:0,def:0}),fx=UI.armyFx;UI.armyFx=null;
+  p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><div class="apg2"><span class="coin"></span><b>${fmt(me.gold)}</b></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
+  <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost,nums=armyNums(me,A.k,lv);
+    return `<div class="apc ${A.k}${lock?' lk':''}${mx?' mx':''}${fx===A.k?' upd':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:ART[A.k]}<span class="lvb">${lv}/5</span></div>
+      <div class="apt"><b>${t('ar_'+A.k)}</b><small>${t('ar_'+A.k+'D')}</small></div>
+      <div class="apn"><em data-to="${A.cnt(lv)}">${A.cnt(lv)}</em><small>${t('ar_'+A.k+'U')}</small></div>
       <div class="apd">${[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div>
-      <p>${t('ar_'+A.k+'D')}</p><div class="apx"><span>${t('ar_now')} <b dir="ltr">+${lv*A.pct}%</b></span>${mx?'':`<span class="nx">${t('ar_next')} <b dir="ltr">+${(lv+1)*A.pct}%</b></span>`}</div>
-      ${mx?`<div class="apm">${t('upMax')}</div>`:lock?`<div class="apl">🔒 ${t('eras')[need-1]}</div>`:`<button class="btn sm ${poor?'':'ok'}" data-a="armyUp:${A.k}"${poor?' disabled':''}>⬆ <bdi dir="ltr">${A.cnt(lv+1)}</bdi> · ${fmt(cost)}</button>`}</div>`;}).join('')}</div>`;}
+      <div class="apx">${nums.map(n=>`<div><span>${n[0]}</span><bdi class="ap2" dir="ltr"><b>${n[1]}</b>${mx?'':`<i>→</i><b class="nx">${n[2]}</b>`}</bdi></div>`).join('')}</div>
+      ${mx?`<div class="apm">✨ ${t('upMax')}</div>`:lock?`<div class="apl">🔒 ${t('ar_lock',t('eras')[need-1])}</div>`:`<button class="btn sm ${poor?'':'ok'}" data-a="armyUp:${A.k}"${poor?' disabled':''}>⬆ ${t('ar_upTo',lv+1)} · ${fmt(cost)}</button>`}</div>`;}).join('')}</div>`;
+  // the card just upgraded: its number counts up from the old value
+  if(fx){const e=p.querySelector('.apc.upd .apn em');if(e){const to=e.dataset.to,m=/^(\+?)(\d+)(%?)$/.exec(to);if(m){const end=+m[2],st=performance.now();const step=()=>{const k=Math.min(1,(performance.now()-st)/650),v=Math.round(end*(.6+.4*k));e.textContent=m[1]+v+m[3];if(k<1)requestAnimationFrame(step);};step();}}}}
 function openSelf(){
   const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
   const c=$('#card');c.hidden=false;
@@ -3441,7 +3465,7 @@ function act(a){
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
-    case'army':openArmy();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':send({k:'army',t:v});setTimeout(renderArmy,60);break;
+    case'army':openArmy();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':send({k:'army',t:v});break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
@@ -3483,6 +3507,7 @@ function handleEvents(){
       case'allyEnd':if(e.a===me||e.b===me){const P=N[e.a===me?e.b:e.a];for(const d of document.querySelectorAll('.ts[data-ally="'+P.id+'"]'))d.remove();feed(t('m_allyEnd',nmh(P)),'warn');UI.cardKey='';}break;
       case'ally':if(e.a===me||e.b===me){feed(t('m_ally',nmh(N[e.a]),nmh(N[e.b])),'good');sfx('city');sayLine(N[e.a===me?e.b:e.a],'ally');UI.cardKey='';}break;
       case'betray':if(e.a===me||e.b===me){feed(t('m_betray',nmh(N[e.a]),nmh(N[e.b])),'bad');if(e.b===me)sfx('alert');UI.cardKey='';}break;
+      case'armyUp':if(e.a===me){UI.armyFx=e.k;sfx('era');renderArmy();const M=N[me];UI.armyK=Math.floor(M.gold/100)+'|'+M.era+'|'+JSON.stringify(M.up);UI.armyHold=performance.now()+900;}break;
       case'repair':if(e.a===me){addFx('ring',e.s.x,e.s.y,{r:5,col:'#7ee08a',dur:800});feed(t('m_fixed',cn),'good');}break;
       case'cityHit':addFx('ring',e.s.x,e.s.y,{r:4,col:'#b9b0a6',dur:900});if(e.d===me)feed(t('m_cityRuinYou',cn),'bad');else if(e.a===me)feed(t('m_cityRuin',cn),'good');break;
       case'cityGone':addFx('ring',e.s.x,e.s.y,{r:8,col:'#ff9a5a',dur:1500});if(e.d===me){feed(t('m_cityGoneYou',cn),'bad');banner(t('m_cityGoneYou',cn),'bad');}else if(e.a===me)feed(t('m_cityGone',cn),'good');break;
