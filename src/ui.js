@@ -555,8 +555,8 @@ function buildHud(){
   <div id="bottom"><div id="ratio" class="pn"><span>${t('force')}</span><input type="range" id="rs" min="5" max="100" step="5" value="${Math.round(UI.ratio*100)}" aria-label="${t('force')}"><b id="rv"></b></div>
   <div id="bar" class="pn">${BAR.map((k,i)=>`<button class="bb" data-a="b:${k}" id="bb_${k}" title="${k==='ult'?t('fu_'+me.fac)+': '+t('fd_'+me.fac):t('s_'+k)+': '+t('d_'+k)}"><img src="${gl(k)}" alt=""><span class="nm">${k==='ult'?t('fu_'+me.fac):t('s_'+k)}</span><span class="ct"></span><kbd>${k==='ult'?'F':i+1}</kbd></button>`).join('')}</div></div>`;
   if(UI.mob){$('#hud').insertAdjacentHTML('beforeend',`<div id="dock"><button data-a="sh:build"><i>🏗️</i><span>${t('dk_build')}</span></button><button data-a="sh:arms"><i>🚀</i><span>${t('dk_arms')}</span></button>
-      <button class="dka" data-a="sh:atk"><i>⚔️</i><span id="dkR"></span></button><button data-a="army"><i>🎖️</i><span>${t('ar_btn')}</span></button></div>
-    <div id="sheet" hidden><div class="shbg" data-a="sh:x"></div><div class="shp"><div class="shg"></div><div class="shh"><b id="shT"></b><button class="ib" data-a="sh:x" aria-label="close">✕</button></div><div id="shB"></div></div></div>`);
+      <button class="dka" data-a="sh:atk"><b id="dkP" dir="ltr"></b><span id="dkR"></span></button><button data-a="army"><i>🎖️</i><span>${t('ar_btn')}</span></button></div>
+    <div id="sheet" hidden><button class="shbg" data-a="sh:x" aria-label="close" tabindex="-1"></button><div class="shp"><div class="shg"></div><div class="shh"><b id="shT"></b><button class="ib" data-a="sh:x" aria-label="close">✕</button></div><div id="shB"></div></div></div>`);
     // big speed controls: one pause button and one button that cycles ×1 → ×2 → ×3
     $('#spd').innerHTML=`<button data-a="sp:0" id="spP" aria-label="pause">Ⅱ</button><button data-a="spc" id="spC" dir="ltr">×1</button>`;}
   renderFac();renderAmode();
@@ -564,7 +564,7 @@ function buildHud(){
   $('#mini').addEventListener('pointerdown',e=>{const r=e.target.getBoundingClientRect();lookAt((e.clientX-r.left)/r.width*g.W,(e.clientY-r.top)/r.height*g.H);});
 }
 function hudUpdate(){
-  {const d=$('#dkR');if(d)d.textContent=Math.round(UI.ratio*100)+'% · '+t((UI.prof.amode||'pt')==='all'?'am_allS':'am_ptS');const c=$('#spC');if(c){c.textContent='×'+UI.speed;c.classList.toggle('on',!UI.paused);}const pp=$('#spP');if(pp){pp.textContent=UI.paused?'▶':'Ⅱ';pp.classList.toggle('on',!!UI.paused);}}
+  {const d=$('#dkR');if(d){d.textContent=((UI.prof.amode||'pt')==='all'?'🌐 ':'🎯 ')+t((UI.prof.amode||'pt')==='all'?'am_allS':'am_ptS');$('#dkP').textContent='⚔️ '+Math.round(UI.ratio*100)+'%';}document.querySelectorAll('.amseg button').forEach(b=>b.classList.toggle('on',b.dataset.a==='am:'+(UI.prof.amode||'pt')));const c=$('#spC');if(c){c.textContent='×'+UI.speed;c.classList.toggle('on',!UI.paused);}const pp=$('#spP');if(pp){pp.textContent=UI.paused?'▶':'Ⅱ';pp.classList.toggle('on',!!UI.paused);}}
   {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human],k=me?Math.floor(me.gold/100)+'|'+me.era+'|'+JSON.stringify(me.up):'';if(k!==UI.armyK&&!(performance.now()<(UI.armyHold||0))){UI.armyK=k;renderArmy();}}}
   const g=G;if(!g||g.o.demo||!$('#sT'))return;const me=g.nations[g.human],now=g.tick,T=$('#sT'),Gd=$('#sG');
   T.querySelector('b').textContent=fmt(me.troops);T.querySelector('small').textContent='/ '+fmt(me.maxT);T.querySelector('u').style.width=clamp(me.troops/me.maxT*100,0,100)+'%';
@@ -757,11 +757,11 @@ function setMode(m){radClose();UI.mode=m;UI.pend=-1;if(UI.mob)UI.hover=-1;for(co
 // the phone's bottom sheet: build tiles, weapon tiles, or the attack controls (the same live elements, moved in)
 function sheetOpen(kind){const sh=$('#sheet');if(!sh)return;if(UI.sheet===kind&&!sh.hidden)return sheetClose();UI.sheet=kind;sh.hidden=false;sh.dataset.k=kind;
   $('#shT').textContent=t(kind==='build'?'dk_buildT':kind==='arms'?'dk_armsT':'dk_atkT');const B=$('#shB');B.innerHTML='';
-  if(kind==='atk'){const a=$('#amode'),r=$('#ratio');B.appendChild(a);B.appendChild(r);
-    B.insertAdjacentHTML('beforeend',`<div class="rq">${[25,50,75,100].map(v=>`<button data-a="rq:${v}">${v}%</button>`).join('')}</div>`);renderAmode();}
+  if(kind==='atk'){const r=$('#ratio'),m=UI.prof.amode||'pt';B.insertAdjacentHTML('beforeend',`<div class="amseg"><button data-a="am:pt" class="${m==='pt'?'on':''}"><i>🎯</i>${t('am_pt')}</button><button data-a="am:all" class="${m==='all'?'on':''}"><i>🌐</i>${t('am_all')}</button></div>`);B.appendChild(r);
+    B.insertAdjacentHTML('beforeend',`<div class="rq">${[25,50,75,100].map(v=>`<button data-a="rq:${v}">${v}%</button>`).join('')}</div>`);}
   else{B.appendChild($('#bar'));}
   for(const d of document.querySelectorAll('#dock button'))d.classList.toggle('on',d.dataset.a==='sh:'+kind);}
-function sheetClose(){const sh=$('#sheet');if(!sh||sh.hidden)return;sh.hidden=true;UI.sheet=null;const bt=$('#bottom');if(bt){bt.appendChild($('#ratio'));bt.appendChild($('#bar'));}const h=$('#hud'),a=$('#amode');if(h&&a)h.appendChild(a);
+function sheetClose(){const sh=$('#sheet');if(!sh||sh.hidden)return;sh.hidden=true;UI.sheet=null;const bt=$('#bottom');if(bt){bt.prepend($('#ratio'));bt.appendChild($('#bar'));}
   for(const d of document.querySelectorAll('#dock button'))d.classList.remove('on');}
 function barAct(k){
   const g=G,me=g.nations[g.human];if(UI.phase!=='play'||!me.alive)return;let r=0,m=null;
@@ -873,7 +873,7 @@ function act(a){
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
     case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
-    case'am':p.amode=v;renderAmode();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;
+    case'am':p.amode=v;saveProf();renderAmode();hudUpdate();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;
     case'renew':{send({k:'renew',d:+v,y:+w});for(const d of document.querySelectorAll('.ts[data-ally="'+(+v)+'"]'))d.remove();if(+w)feed(t('m_renewSent',nmh(g.nations[+v])),'good');break;}
     case'sea':closeCard();setMode('s:'+v);break;
     case'goatk':{const q=g.attacks.find(q=>q.id===+v),D=q&&q.d?g.nations[q.d]:null;if(D)lookAt(D.cx,D.cy,Math.max(cam.tz,4));else if(q)lookAt(q.ox,q.oy,Math.max(cam.tz,4));break;}

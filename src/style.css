@@ -535,7 +535,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #dock button i{font-style:normal;font-size:24px;line-height:1}#dock button span{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 4px}
 #dock button.on{background:linear-gradient(180deg,rgba(241,207,110,.3),rgba(201,149,45,.18));border-color:var(--gold);color:#ffe7a6}
 #dock .dka{background:linear-gradient(180deg,rgba(120,40,30,.85),rgba(70,20,15,.9));border-color:rgba(255,140,110,.5)}#dock .dka span{color:#ffd2c4;direction:ltr}
-#sheet{position:absolute;inset:0;z-index:15}#sheet .shbg{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+#sheet{position:absolute;inset:0;z-index:15}#sheet .shbg{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;border-radius:0;background:rgba(0,0,0,.35);cursor:default}
 #sheet .shp{position:absolute;left:0;right:0;bottom:0;max-height:72%;overflow:auto;padding:8px max(14px,env(safe-area-inset-left,0px)) calc(86px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;
   background:linear-gradient(180deg,rgba(16,30,48,.98),rgba(8,15,26,.99));border-top:1px solid rgba(241,207,110,.35);box-shadow:0 -14px 40px rgba(0,0,0,.5);animation:shUp .18s ease-out}
 @keyframes shUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
@@ -557,3 +557,6 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob #mini,.mob #bHome{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 /* computer: same layout, roomier small targets */
 #app:not(.mob) #spd button{padding:8px 13px;font-size:14px}#app:not(.mob) #amode .chip{padding:8px 14px;font-size:14px}#app:not(.mob) #ratio input{height:28px}
+.amseg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.amseg button{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--parch);font-size:16px;font-weight:700}
+.amseg button i{font-style:normal;font-size:20px}.amseg button.on{background:linear-gradient(180deg,#f6dc8a,#c9952d);color:#1a1205;border-color:#ffe9a8}
+#dock .dka b{font-size:17px;line-height:1.1;color:#fff}#dock .dka span{direction:rtl;font-size:11.5px}
