@@ -125,10 +125,13 @@ function aiDip(g,n){
   }
   for(let k=1;k<K;k++)if(n.pg[k]>0)n.pg[k]=Math.max(0,n.pg[k]-.5);
   // losing a war against a much stronger realm: ask it for peace (players decide, AIs weigh it up)
-  if(!n.minor&&now-(ai.peaceAt||0)>600)for(const m of g.nations){
+  // only once the war has gone on for 12 s, and never two requests to a player within 12 s
+  if(!n.minor){const W=ai.wt||(ai.wt={});for(const k in W)if(!atWar(g,id,+k))delete W[k];
+  if(now-(ai.peaceAt||0)>600)for(const m of g.nations){
     if(!m||!m.alive||m.id===id||m.minor||!atWar(g,id,m.id))continue;
-    if(m.troops>n.troops*1.8&&n.tiles<m.tiles&&rng()<.25+.2*(1-P.agg)){ai.peaceAt=now;if(m.human){proposePeace(g,id,m.id);say(g,n,'peace',m.id);}else if(peaceScore(g,m,n)>=20)makePeace(g,id,m.id);break;}
-  }
+    if(W[m.id]==null)W[m.id]=now;if(now-W[m.id]<120||(m.human&&now<(g.peaceCd||0)))continue;
+    if(m.troops>n.troops*1.8&&n.tiles<m.tiles&&rng()<.25+.2*(1-P.agg)){ai.peaceAt=now;if(m.human){g.peaceCd=now+120;proposePeace(g,id,m.id);say(g,n,'peace',m.id);}else if(peaceScore(g,m,n)>=20)makePeace(g,id,m.id);break;}
+  }}
   if(allies<(P.trust>.6?2:1)&&rng()<.35&&now-ai.propAt>300){
     let best=null,bs=18;
     for(const m of g.nations){

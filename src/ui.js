@@ -147,13 +147,13 @@ function gfxPreview(lv){
 function tribesN(){const v=UI.prof.tribes|0;return v>=30&&v<=240?v:240;}
 function maxP(){const v=UI.prof.maxP|0;return v>=2&&v<=32?v:16;}
 function renderSetup(){
-  const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
+  const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN||(!p.b2&&(p.botsN===10||p.botsN===14)))p.botsN=UI.mob?16:20;p.b2=1;
   const chips=(key,arr,cur)=>arr.map((s,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${s}</button>`).join('');
   const host=UI.setupMode==='host'||(NET.on&&NET.host);
   $('#setup').innerHTML=`<h2>${t(host?'hostRoom':'custom')}</h2>
   <div class="opts">${host?`<label class="fld"><h3>${t('roomName')}</h3><input id="inRoom" maxlength="24" value="${esc(p.room||'')}" placeholder="${esc(t('roomOf',p.name||t('defName')))}" autocomplete="off"></label>`:''}<div><h3>${t('world')}</h3><div class="wts">${Object.keys(t('types')).map(k=>`<button class="wt${p.type===k?' on':''}" data-a="type:${k}"><img src="${worldThumb(k)}" alt=""><span>${t('types')[k]}</span></button>`).join('')}</div></div>
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
-  <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="30" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
+  <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="40" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
   <div><h3>${t('tribes')}</h3><div class="rng"><input type="range" id="inTribes" min="30" max="240" step="5" value="${tribesN()}" aria-label="${t('tribes')}"><b id="tribesV">${tribesN()}</b></div></div>
   <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div>${host?'':`<div class="cheats"><h3>🧪 ${t('cheats')}</h3><div class="chips">${CHEATS.map(k=>`<button class="chip${(p.cheat||{})[k]?' on':''}" data-a="cheat:${k}">${t('ch_'+k)}</button>`).join('')}</div><p class="keys">${t('cheatNote')}</p></div>`}</div>
   ${host?`<div class="opts" style="grid-template-columns:minmax(0,1fr)"><div><h3>${t('maxP')}</h3><div class="rng"><input type="range" id="inMaxP" min="2" max="32" step="1" value="${maxP()}" aria-label="${t('maxP')}"><b id="maxPV">${maxP()}</b></div></div></div>`:''}
@@ -171,7 +171,7 @@ function renderDaily(){
   <p class="best">${b?t('best',clock(b)):t('dNone')}</p>${UI.prof.dailyDone===key?`<p class="dlock">🔒 ${t('dDone')}</p>`:''}<div class="row"><button class="btn" data-a="menu">${t('back')}</button>${UI.prof.dailyDone===key?'':`<button class="btn big" data-a="dailyGo">${t('dGo')}</button>`}</div>`;
 }
 // quick battle: more rivals on bigger maps and harder difficulties
-const quickBots=p=>clamp([8,12,16,22][p.size<0?1:p.size]+[0,2,4,6][p.diff|0],6,30);
+const quickBots=p=>clamp([14,20,26,34][p.size<0?1:p.size]+[0,2,4,6][p.diff|0],6,40);
 function renderQuick(){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;
   const chips=(key,arr,cur)=>arr.map((x,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${x}</button>`).join('');
@@ -505,10 +505,10 @@ function admMsg(){const m=(($('#admMsgIn')||{}).value||'').trim().slice(0,140);i
 function newsCheck(){if(!cloudOn())return;fetch(LB_DB+'/msg.json').then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.m||!j.ts||UI.prof.msgSeen===j.ts)return;UI.prof.msgSeen=j.ts;saveProf();toast('📣 '+esc(j.m),'prop',9000);}).catch(()=>{});}
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
-  UI.newSet=null;UI.newArmy=null;const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
+  UI.newSet=null;UI.newArmy=null;const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN||(!p.b2&&(p.botsN===10||p.botsN===14)))p.botsN=UI.mob?16:20;p.b2=1;saveProf();
   // quick battle: a different world shape every time
   const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
-  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?'auto':tribesN(),diff:p.diff,faction:p.fac};
+  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,40),minors:o.quick?'auto':tribesN(),diff:p.diff,faction:p.fac};
   opt.skin=mySkin();const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
   if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
