@@ -39,9 +39,9 @@ function setupNations(g){
     if(i<0){n.alive=false;continue;}spawn(g,n,i);
   }
   // minor tribes: weak villages scattered over the map, easy prey for whoever reaches them first
-  // 'auto': enough tribes to fill the map, about one per 900 tiles of land, up to the most realms a game can hold
-  const mc=o.minors==null?60:o.minors==='auto'?Math.max(60,Math.min(186-g.nations.length,Math.round(g.M.land/900))):o.minors,tn=shuffle([...Array(600).keys()],rng);
-  for(let b=0;b<mc&&g.nations.length<188;b++){const i=pickSpawn(g,mc>90?6:8);if(i<0)break;
+  // 'auto': enough tribes to fill the map, about one per 450 tiles of land, up to the most realms a game can hold
+  const mc=o.minors==null?60:o.minors==='auto'?Math.max(120,Math.min(250-g.nations.length,Math.round(g.M.land/450))):o.minors,tn=shuffle([...Array(600).keys()],rng);
+  for(let b=0;b<mc&&g.nations.length<251;b++){const i=pickSpawn(g,mc>180?5:mc>90?6:8);if(i<0)break;
     const n=addNation(g,{fac:'merchants',pers:'sage',color:[135+((rng()*50)|0),125+((rng()*45)|0),105+((rng()*45)|0)],nameIdx:-2});n.minor=true;n.tribe=tn[b];n.ai.nextWar=60+rng()*120;n.troops=2500;spawn(g,n,i);n.cap.level=1;}
   for(const n of g.nations)if(n&&!n.human)for(const m of g.nations)if(m&&m!==n)n.att[m.id]=rng()*40-15+(PERS[n.pers].trust-.5)*20+(m.human?[30,10,-5,-20][o.diff==null?1:o.diff]:0);
 }
@@ -59,8 +59,8 @@ function pickSpawn(g,md){
   return -1;
 }
 function spawn(g,n,i){
-  const W=g.W,x=i%W,y=(i/W)|0;n.spawned=true;
-  for(let dy=-7;dy<=7;dy++)for(let dx=-7;dx<=7;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=g.H||dx*dx+dy*dy>50)continue;const j=Y*W+X;if(g.M.ter[j]>1&&!g.owner[j]&&!g.structAt[j])setOwner(g,j,n.id);}
+  const W=g.W,x=i%W,y=(i/W)|0;n.spawned=true;const R2=n.minor?20:50;
+  for(let dy=-7;dy<=7;dy++)for(let dx=-7;dx<=7;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=g.H||dx*dx+dy*dy>R2)continue;const j=Y*W+X;if(g.M.ter[j]>1&&!g.owner[j]&&!g.structAt[j])setOwner(g,j,n.id);}
   setOwner(g,i,n.id);n.cap=addStruct(g,'city',i,n.id,2,newCityName(g));n.cap.capital=true;n.cx=x;n.cy=y;
 }
 function startGame(g){g.started=true;structPass(g);statsPass(g);}
