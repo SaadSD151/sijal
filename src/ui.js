@@ -312,7 +312,9 @@ function renderAccount(){
   <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 function renderNews(latest){
-  const L=(latest?LOG.slice(0,1):LOG.slice(0,10));
+  // one update per day: everything released on the same date shows as a single entry, numbered by the day's first version
+  const D=[];for(const e of LOG){const last=D[D.length-1];if(last&&last.d===e.d){last.v=e.v;last.ar=e.ar.concat(last.ar);last.en=(e.en||e.ar).concat(last.en);}else D.push({v:e.v,d:e.d,ar:e.ar.slice(),en:(e.en||e.ar).slice()});}
+  const L=(latest?D.slice(0,1):D.slice(0,10));
   $('#help').innerHTML=`<h2>${t(latest?'newsNew':'news')}</h2><div class="nl">${L.map(e=>`<div><b>${t('ver')} ${e.v}</b><small dir="ltr">${e.d}</small><ul>${(e[UI.lang]||e.ar).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}</div><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`;
 }
 function renderFac(){
