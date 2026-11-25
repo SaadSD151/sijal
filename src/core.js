@@ -17,7 +17,7 @@ const FAC={
 const FKEYS=Object.keys(FAC);
 const PERS={war:{agg:.9,trust:.3,tre:.4,thr:.9},conq:{agg:.75,trust:.45,tre:.3,thr:1},sly:{agg:.6,trust:.7,tre:.9,thr:1.1},merc:{agg:.45,trust:.9,tre:.12,thr:1.45},sage:{agg:.35,trust:.75,tre:.05,thr:1.65}};
 const PKEYS=Object.keys(PERS);
-const DIFF=[{grow:.5,gold:.6,hate:-1},{grow:.75,gold:.8,hate:-.3},{grow:1,gold:1,hate:.2},{grow:1.35,gold:1.35,hate:.7}];
+const DIFF=[{grow:.5,gold:.6,hate:-1},{grow:.8,gold:.8,hate:-.3},{grow:1,gold:1,hate:.2},{grow:1.35,gold:1.35,hate:.7}];
 const SEAS=[{spd:1,cost:1,grow:1.3,gold:1},{spd:.82,cost:1,grow:1,gold:1},{spd:1,cost:1,grow:1,gold:1.4},{spd:1.4,cost:1.25,grow:.7,gold:.9}];
 // battle pass: opens at 10,000 experience, then one tier every 1,000; each tier unlocks a land pattern or a building style
 const PASS_AT=10000,PASS_STEP=1000,PATS=['stripes','dots','checker','grid','waves','chevron','bricks','stars','diamonds','zigzag'],BLDS=['gold','stone','neon','royal','ice','obsidian','fire','jade','crimson','silver'];

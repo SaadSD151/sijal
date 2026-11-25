@@ -39,11 +39,11 @@ function aiThink(g,n){
     for(const m of g.nations)if(m&&m.alive&&m.minor&&g.nb[id*K+m.id]>1){const v=n.troops/(m.troops+1)+rng();if(v>1.5&&v>tv){tv=v;tb=m;}}
     if(tb){const c=tb.cap;launchAttack(g,id,tb.id,.22,c?c.x:-1,c?c.y:-1);myAtk++;}}
   // keep the expansion front fed: start one, or top it up whenever it runs thin
-  if(nbN>0&&(!neut||neut.troops<n.troops*.08)&&ratio>.12&&myAtk<MAX_ATK){
+  if(nbN>0&&(!neut||neut.troops<n.troops*.08)&&ratio>.2&&myAtk<MAX_ATK){
     const c=nearestCity(g,0,n.cx,n.cy),far=c?hyp(c.x-n.cx,c.y-n.cy):99;
     launchAttack(g,id,0,.3+.2*P.agg,far<50?c.x:-1,far<50?c.y:-1);
   }
-  if(myAtk<3&&now>=ai.nextWar&&ratio>.18){
+  if(myAtk<3&&now>=ai.nextWar&&ratio>.25){
     // a full army may pick any war; a thinner one still pounces on a much weaker AI neighbour
     const full=ratio>(nbN>0?.4:.3);let best=null,bs=P.thr;const nd=n.troops/Math.max(n.tiles,1);
     for(const m of g.nations){

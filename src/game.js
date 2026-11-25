@@ -570,7 +570,7 @@ function callArms(g,a,target){
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
     const U=n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1)*(1+.1*(U.def|0));
-    const x=clamp(n.troops/n.maxT,.04,2);let gr=x<1?n.maxT*.0046*x*(1-x):-(n.troops-n.maxT)*.02;
+    const x=clamp(n.troops/n.maxT,.04,2),xg=n.human||n.minor?x:Math.max(x,.2);let gr=x<1?n.maxT*.0046*xg*(1-xg):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(1+.15*(n.up?n.up.sol:0))*(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
     n.troops+=gr;n.gold+=n.income/TPS;
     // custom-battle cheats for the player (solo only, never online)

@@ -780,7 +780,10 @@ function sheetOpen(kind){newMarks();const sh=$('#sheet');if(!sh)return;if(UI.she
     B.insertAdjacentHTML('beforeend',`<div class="rq">${[25,50,75,100].map(v=>`<button data-a="rq:${v}">${v}%</button>`).join('')}</div>`);}
   else{B.appendChild($('#bar'));}
   for(const d of document.querySelectorAll('#dock button'))d.classList.toggle('on',d.dataset.a==='sh:'+kind);}
-function sheetClose(){const sh=$('#sheet');if(!sh||sh.hidden)return;sh.hidden=true;UI.sheet=null;const bt=$('#bottom');if(bt){bt.prepend($('#ratio'));bt.appendChild($('#bar'));}
+function sheetClose(){const sh=$('#sheet');if(!sh||sh.hidden)return;
+  // whatever was new in this panel has now been seen
+  if(UI.newSet){const arms=['rocket','nuke','doom','ult'],k=UI.sheet;for(const x of [...UI.newSet])if(k==='arms'?arms.includes(x):k==='build'&&!arms.includes(x))UI.newSet.delete(x);}
+  sh.hidden=true;UI.sheet=null;newMarks();const bt=$('#bottom');if(bt){bt.prepend($('#ratio'));bt.appendChild($('#bar'));}
   for(const d of document.querySelectorAll('#dock button'))d.classList.remove('on');}
 function barAct(k){
   const g=G,me=g.nations[g.human];if(UI.phase!=='play'||!me.alive)return;let r=0,m=null;
