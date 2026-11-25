@@ -532,7 +532,12 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #app.spawning #amode,#app.spawning #atk,#app.spawning #bottom,#app.spawning #bArmy{display:none!important}
 
 /* ── phone match screen: four big buttons at the bottom, everything else in a sheet with large tiles ── */
-.mob #bottom,.mob #amode,.mob #bArmy{display:none}
+.mob #amode,.mob #bArmy{display:none}
+/* the attack-strength bar stays on screen, just above the dock, for quick changes mid-fight */
+.mob #bottom{display:flex;left:0;right:0;transform:none;max-width:none;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:9}.mob #bottom #bar{display:none}
+.mob #bottom #ratio{margin:0 12px;padding:6px 14px;border-radius:14px;border:1px solid var(--line2);background:rgba(8,16,28,.88);font-size:13px}
+.mob #bottom #ratio input{height:36px}.mob #bottom #ratio b{min-width:0;font-size:14px}
+#sheet:not([hidden])~#bottom,.mob #hud:has(#sheet:not([hidden])) #bottom{display:none}
 #dock{position:absolute;left:0;right:0;bottom:0;z-index:9;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px max(12px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px));
   background:linear-gradient(180deg,rgba(8,16,28,.6),rgba(8,16,28,.96));border-top:1px solid var(--line2)}
 #dock button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:62px;border-radius:16px;background:rgba(20,40,62,.9);border:1px solid var(--line2);color:var(--parch);min-width:0}
@@ -558,7 +563,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob #spd{border:0;gap:6px;overflow:visible}.mob #spd button{width:46px;height:40px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.05);font-size:16px;padding:0}
 .mob #spd button.on{background:var(--gold);color:#1c1405;border-color:var(--gold)}
 .mob #card button,.mob #card .ca{min-height:44px}
-.mob #mini,.mob #bHome{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+.mob #mini,.mob #bHome{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
 /* computer: same layout, roomier small targets */
 #app:not(.mob) #spd button{padding:8px 13px;font-size:14px}#app:not(.mob) #amode .chip{padding:8px 14px;font-size:14px}#app:not(.mob) #ratio input{height:28px}
 .amseg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.amseg button{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--parch);font-size:16px;font-weight:700}
