@@ -4,7 +4,7 @@ let G=null,acc=0,lastTs=0;
 // online leaderboard (Firebase Realtime Database + anonymous sign-in); empty = turned off
 const LB_DB='https://sijal-fa367-default-rtdb.firebaseio.com',LB_KEY='AIzaSyABuacot7I8S6r-7bsTHbYgMWhQC7OHXi4';
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
-const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','camp','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
+const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
@@ -120,7 +120,7 @@ function renderMenu(){
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><a href="${TIKTOK}" target="_blank" rel="noopener">${TT} ${t('d_tt')}</a></div>
   </div>
-  <div class="mf"><span class="made">${t('made')}</span></div>${mtabs('menu')}`;
+  <div class="mf"><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>${mtabs('menu')}`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -544,7 +544,7 @@ function buildHud(){
   $('#hud').innerHTML=`<div id="top" class="pn"><button class="ib" data-a="pause" aria-label="menu">☰</button>
   <div class="stat" id="sT" title="${t('troops')}"><img src="${R.url.sword}" alt=""><div><b>0</b><small></small><i class="mt"><u></u></i></div></div>
   <div class="stat" id="sG"><span class="coin"></span><div><b>0</b><small></small></div></div>
-  <button id="bEra" class="era" data-a="era"></button><div id="sS"></div>
+  <button id="bEra" class="era" data-a="era"></button><button id="bArmy" class="armyb" data-a="army">🎖️ ${t('ar_btn')}</button><div id="sS"></div>
   <div id="spd"><button data-a="sp:0" aria-label="pause">Ⅱ</button><button data-a="sp:1">1×</button><button data-a="sp:2">2×</button><button data-a="sp:3">3×</button></div>
   <button class="ib" id="bLb" data-a="lb" aria-label="${t('ranking')}"><img src="${R.url.crown}" alt=""></button></div>
   <div id="hint" hidden></div><div id="amode" class="pn"></div><div id="fpick" class="pn" hidden></div><div id="feed"></div><div id="lb" class="pn"><h4>${t('ranking')}</h4><div id="lbr"></div></div><div id="atk"></div>
@@ -557,6 +557,7 @@ function buildHud(){
   $('#mini').addEventListener('pointerdown',e=>{const r=e.target.getBoundingClientRect();lookAt((e.clientX-r.left)/r.width*g.W,(e.clientY-r.top)/r.height*g.H);});
 }
 function hudUpdate(){
+  {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human],k=me?Math.floor(me.gold/100)+'|'+me.era+'|'+JSON.stringify(me.up):'';if(k!==UI.armyK){UI.armyK=k;renderArmy();}}}
   const g=G;if(!g||g.o.demo||!$('#sT'))return;const me=g.nations[g.human],now=g.tick,T=$('#sT'),Gd=$('#sG');
   T.querySelector('b').textContent=fmt(me.troops);T.querySelector('small').textContent='/ '+fmt(me.maxT);T.querySelector('u').style.width=clamp(me.troops/me.maxT*100,0,100)+'%';
   Gd.querySelector('b').textContent=fmt(me.gold);Gd.querySelector('small').textContent='+'+me.income.toFixed(0);
@@ -615,6 +616,21 @@ function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span
 
 // nation card
 // your own realm: emoji, trade with everyone on/off, and automatic upgrades within the limits you set
+// ── army upgrades: soldiers, tanks and planes, five levels each, paid in gold and opened by age ──
+const ARMY=[
+  {k:'sol',ic:'🪖',pct:15,cnt:lv=>'+'+lv*15+'%'},
+  {k:'tank',ic:'',pct:10,cnt:lv=>[0,10,25,45,70,100][lv]},
+  {k:'air',ic:'',pct:12,cnt:lv=>[0,4,10,18,28,40][lv]}].map(a=>Object.assign(a,ARMY_UP[a.k]));
+function openArmy(){const g=G,me=g.nations[g.human];if(!me||!me.alive)return;UI.bs=null;UI.sel=0;const c=$('#card');c.hidden=true;let p=$('#armyP');if(!p){p=document.createElement('div');p.id='armyP';$('#hud').appendChild(p);}
+  p.hidden=false;renderArmy();}
+function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden)return;const U=me.up||(me.up={sol:0,tank:0,air:0});
+  p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
+  <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost;
+    return `<div class="apc ${A.k}${lock?' lk':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:A.k==='air'?`<svg viewBox="0 0 64 64" width="34" height="34"><path fill="#cfe0f2" d="M32 2c2.2 0 3.6 4.4 3.8 10l.4 12 20 12.5v5.2L36.4 35l.6 13.6 7.2 6v4.6L33.6 56l-1.6 4-1.6-4-10.6 3.2v-4.6l7.2-6 .6-13.6-19.8 6.7v-5.2l20-12.5.4-12C28.4 6.4 29.8 2 32 2z"/><path fill="#7c93ab" d="M30.4 14h3.2l.3 9h-3.8zM9.8 41.7 28 33.8v2.4L9.8 43.2zm44.4 0L36 33.8v2.4l18.2 7z"/><circle cx="32" cy="11" r="1.6" fill="#4ea4ff"/></svg>`:A.ic}</div><b>${t('ar_'+A.k)}</b>
+      <div class="apn"><em>${A.cnt(lv)}</em><small>${t('ar_'+A.k+'U')}</small></div>
+      <div class="apd">${[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div>
+      <p>${t('ar_'+A.k+'D')}</p><div class="apx"><span>${t('ar_now')} <b dir="ltr">+${lv*A.pct}%</b></span>${mx?'':`<span class="nx">${t('ar_next')} <b dir="ltr">+${(lv+1)*A.pct}%</b></span>`}</div>
+      ${mx?`<div class="apm">${t('upMax')}</div>`:lock?`<div class="apl">🔒 ${t('eras')[need-1]}</div>`:`<button class="btn sm ${poor?'':'ok'}" data-a="armyUp:${A.k}"${poor?' disabled':''}>⬆ <bdi dir="ltr">${A.cnt(lv+1)}</bdi> · ${fmt(cost)}</button>`}</div>`;}).join('')}</div>`;}
 function openSelf(){
   const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
   const c=$('#card');c.hidden=false;
@@ -821,6 +837,7 @@ function act(a){
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
+    case'army':openArmy();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':send({k:'army',t:v});setTimeout(renderArmy,60);break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
