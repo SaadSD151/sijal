@@ -624,7 +624,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='18b6edab3d';
+const BUILD_ID='d999288a85';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1878,7 +1878,7 @@ function frontSpots(g,me,ts){
     // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
     if(S.dmin>36){const ax=k.fx!=null?k.fx:P?P.x:S.mx,ay=k.fx!=null?k.fy:P?P.y:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
     const th=.5*Math.atan2(2*S.cxy,S.cxx-S.cyy),ev=(S.cxx+S.cyy)/2+Math.sqrt(((S.cxx-S.cyy)/2)**2+S.cxy*S.cxy),len=Math.max(4,Math.sqrt(ev)*3.4);
-    let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;if(ang>1.35)ang-=Math.PI;
+    let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;ang=clamp(ang,-.52,.52);
     const bl=Math.hypot(S.bx,S.by)||1,back=2.5+Math.min(10,len*.12),x=S.mx+S.bx/bl*back,y=S.my+S.by/bl*back,sz=clamp(Math.sqrt(len)*1.35,3,14);
     out[k.id]=P&&P.sx!=null?{x,y,ang,sz,sx:P.sx,sy:P.sy,sa:P.sa,ss:P.ss}:{x,y,ang,sz,sx:x,sy:y,sa:ang,ss:sz};}
   R.front=out;
@@ -2087,7 +2087,7 @@ function draw(g,dt,ts){
   // missiles and pending strikes
   // troops pushing on each front that involves me, drawn over the cities so the number is always readable
   if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
-    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa+=da*.1;F.ss+=(F.sz-F.ss)*.1;
+    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa=clamp(F.sa+da*.1,-.52,.52);F.ss+=(F.sz-F.ss)*.1;
     const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
     c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
   drawSmoke(c,z,cw,ch);
