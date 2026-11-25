@@ -542,7 +542,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .shg{width:42px;height:5px;border-radius:9px;background:rgba(255,255,255,.2);margin:2px auto 8px}
 .shh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.shh b{font-size:18px;color:#ffe7a6}
 #shB #bar{position:static;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0;border:0;background:none;box-shadow:none;max-width:none;overflow:visible}
-#shB .bb{flex:none;width:auto;height:96px;border-radius:16px}#shB .bb img{width:34px;height:34px}#shB .bb .nm{font-size:13px}#shB .bb .ct{font-size:14px}#shB .bb kbd{display:none}
+#shB .bb{flex:none;width:auto;height:96px;border-radius:16px}#shB .bb img{width:34px;height:34px}#shB .bb .nm{font-size:13px;max-width:none;white-space:normal;overflow:visible;text-overflow:clip;text-align:center;padding:0 4px}#shB .bb .ct{font-size:14px}#shB .bb kbd{display:none}
 #sheet[data-k=build] #bb_rocket,#sheet[data-k=build] #bb_nuke,#sheet[data-k=build] #bb_doom,#sheet[data-k=build] #bb_ult{display:none}
 #sheet[data-k=arms] .bb:not(#bb_rocket):not(#bb_nuke):not(#bb_doom):not(#bb_ult){display:none}#sheet[data-k=arms] #bar{grid-template-columns:repeat(2,minmax(0,1fr))}
 #shB #amode{position:static;display:flex!important;flex-direction:row;transform:none;padding:0;border:0;background:none;box-shadow:none;gap:8px;margin-bottom:14px}
