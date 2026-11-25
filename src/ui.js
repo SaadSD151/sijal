@@ -653,6 +653,17 @@ function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hid
       ${mx?`<div class="apm">✨ ${t('upMax')}</div>`:lock?`<div class="apl">🔒 ${t('ar_lock',t('eras')[need-1])}</div>`:`<button class="btn sm ${poor?'':'ok'}" data-a="armyUp:${A.k}"${poor?' disabled':''}>⬆ ${t('ar_upTo',lv+1)} · ${fmt(cost)}</button>`}</div>`;}).join('')}</div>`;
   // the card just upgraded: its number counts up from the old value
   if(fx){const e=p.querySelector('.apc.upd .apn em');if(e){const to=e.dataset.to,m=/^(\+?)(\d+)(%?)$/.exec(to);if(m){const end=+m[2],st=performance.now();const step=()=>{const k=Math.min(1,(performance.now()-st)/650),v=Math.round(end*(.6+.4*k));e.textContent=m[1]+v+m[3];if(k<1)requestAnimationFrame(step);};step();}}}}
+// ── ages: what the next age gives you, shown before you pay and again once you're in ──
+function eraInfo(E){const it=[];for(const k in ST)if(ST[k].era===E)it.push({ic:k,n:t('s_'+k),d:t('d_'+k)});for(const k in MSL)if(MSL[k].era===E)it.push({ic:k,n:t('s_'+k),d:t('d_'+k)});
+  {const ks=ARMY.filter(A=>A.era.includes(E)).map(A=>A.k);if(ks.length)it.push({ic:'army',k:'sol',n:t('era_armyT'),d:ks.map(k=>t('ar_'+k)).join('، ')});}
+  if(E===3)it.push({ic:'up',n:t('era_up4'),d:t('era_upD')});if(E===4)it.push({ic:'up',n:t('era_up5'),d:t('era_upD')});
+  return{bon:[t('era_atk',8*(E-1)),t('era_army',10*(E-1)),t('era_trade',25*(E-1))],it};}
+function eraCard(E,mode){const g=G,me=g.nations[g.human];if(!me)return;closeCard();let p=$('#eraP');if(!p){p=document.createElement('div');p.id='eraP';$('#hud').appendChild(p);}p.hidden=false;
+  const I=eraInfo(E),cost=mode==='next'?eraCost(me):0,poor=mode==='next'&&me.gold<cost,icon=x=>x.ic==='army'?(x.k==='tank'?`<img src="${R.url.camp}">`:ART[x.k]||'🎖️'):x.ic==='up'?'⬆️':`<img src="${R.url[x.ic]}">`;
+  p.scrollTop=0;p.innerHTML=`<div class="eph">${mode==='got'?`<span class="epx">🎉</span><b>${t('era_got',t('eras')[E-1])}</b>`:`<b>${t('era_next',t('eras')[E-1])}</b>`}<button class="ib" data-a="eraX" aria-label="close">✕</button></div>
+    <div class="epb">${I.bon.map(b=>`<span>${b}</span>`).join('')}</div><h5>${t(mode==='got'?'era_unl':'era_will')}</h5>
+    <div class="epg">${I.it.map(x=>`<div class="epi"><i>${icon(x)}</i><div><b>${x.n}</b><small>${x.d}</small></div></div>`).join('')}</div>
+    ${mode==='got'?`<button class="btn big ok" data-a="eraX">${t('era_ok')}</button>`:`<button class="btn big ${poor?'':'ok'}" data-a="eraGo"${poor?' disabled':''}>⬆ ${t('era_buy')} · ${fmt(cost)}</button>${poor?`<p class="bad">${t('era_need',fmt(cost-me.gold))}</p>`:''}`}`;}
 function openSelf(){
   const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
   const c=$('#card');c.hidden=false;
@@ -755,7 +766,8 @@ function cardRefresh(){if(UI.bs)return buildRefresh();if(G&&UI.sel===G.human&&!$
 // ── player actions ──
 function setMode(m){radClose();UI.mode=m;UI.pend=-1;if(UI.mob)UI.hover=-1;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();if(m)hint(m[0]==='b'?t('pick',t('s_'+m.slice(2))):m[0]==='s'?t('pickSea',natName(G.nations[+m.slice(2)])):t('aim'),true);else hint(null);hudUpdate();}
 // the phone's bottom sheet: build tiles, weapon tiles, or the attack controls (the same live elements, moved in)
-function sheetOpen(kind){const sh=$('#sheet');if(!sh)return;if(UI.sheet===kind&&!sh.hidden)return sheetClose();UI.sheet=kind;sh.hidden=false;sh.dataset.k=kind;
+function dockDots(){for(const [k,f] of [['build','newB'],['arms','newA']]){const b=document.querySelector(`#dock [data-a="sh:${k}"]`);if(b)b.classList.toggle('dot',!!UI[f]);}const a=document.querySelector('#dock [data-a="army"]');if(a)a.classList.toggle('dot',!!UI.newB);}
+function sheetOpen(kind){if(kind==='build')UI.newB=0;if(kind==='arms')UI.newA=0;dockDots();const sh=$('#sheet');if(!sh)return;if(UI.sheet===kind&&!sh.hidden)return sheetClose();UI.sheet=kind;sh.hidden=false;sh.dataset.k=kind;
   $('#shT').textContent=t(kind==='build'?'dk_buildT':kind==='arms'?'dk_armsT':'dk_atkT');const B=$('#shB');B.innerHTML='';
   if(kind==='atk'){const r=$('#ratio'),m=UI.prof.amode||'pt';B.insertAdjacentHTML('beforeend',`<div class="amseg"><button data-a="am:pt" class="${m==='pt'?'on':''}"><i>🎯</i>${t('am_pt')}</button><button data-a="am:all" class="${m==='all'?'on':''}"><i>🌐</i>${t('am_all')}</button></div>`);B.appendChild(r);
     B.insertAdjacentHTML('beforeend',`<div class="rq">${[25,50,75,100].map(v=>`<button data-a="rq:${v}">${v}%</button>`).join('')}</div>`);}
@@ -823,7 +835,7 @@ function act(a){
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
     case'b':{const r=barAct(v);if(UI.sheet&&UI.sheet!=='atk')sheetClose();return r;}
-    case'era':if(me&&me.era<4){if(me.gold<eraCost(me))return err('gold');send({k:'era'});}break;
+    case'era':if(me&&me.era<4)eraCard(me.era+1,'next');break;case'eraGo':if(me&&me.era<4){if(me.gold<eraCost(me))return err('gold');send({k:'era'});{const p=$('#eraP');if(p)p.hidden=true;}}break;case'eraX':{const p=$('#eraP');if(p)p.hidden=true;}break;
     case'lb':$('#lb').classList.toggle('open');break;
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,7));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
@@ -927,7 +939,7 @@ function handleEvents(){
       case'peaceRej':if(e.b===me){const L=TX[UI.lang]['pr_'+e.why];feed(L?t('m_peaceRejX',nmh(A),L[(Math.random()*L.length)|0]):t('m_peaceNo',nmh(A)),'bad');}break;
       case'reject':if(e.b===me){const L=TX[UI.lang]['ar_'+(e.why||'trust')];feed(L?t('m_rejX',nmh(A),L[(Math.random()*L.length)|0]):t('m_rej',nmh(A)),'bad');}break;
       case'say':if(e.to==null||e.to===me)sayLine(A,e.key);break;
-      case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');}break;
+      case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');UI.newB=1;UI.newA=Object.values(MSL).some(m=>m.era===e.era)||e.era===4?1:UI.newA;eraCard(e.era,'got');dockDots();requestAnimationFrame(()=>{const p=$('#eraP');if(p)p.scrollTop=0;});}break;
       case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season'+e.s);break;
       case'rebel':feed(t('m_rebel',nmh(D)),e.d===me?'bad':'');addFx('ring',e.x,e.y,{r:9,col:'#ff7a4a',dur:1500});break;
       case'plague':feed(t('m_plague',nmh(D)),e.d===me?'bad':'');break;

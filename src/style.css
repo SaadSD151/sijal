@@ -565,3 +565,17 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .amseg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.amseg button{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--parch);font-size:16px;font-weight:700}
 .amseg button i{font-style:normal;font-size:20px}.amseg button.on{background:linear-gradient(180deg,#f6dc8a,#c9952d);color:#1a1205;border-color:#ffe9a8}
 #dock .dka b{font-size:17px;line-height:1.1;color:#fff}#dock .dka span{direction:rtl;font-size:11.5px}
+
+/* age card: the bonuses and what opens, before you pay and once you're in */
+#eraP{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:21;width:min(460px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;padding:16px;border-radius:22px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(241,207,110,.22),rgba(0,0,0,0) 60%),linear-gradient(180deg,rgba(14,26,42,.98),rgba(7,13,23,.99));border:1px solid rgba(241,207,110,.5);box-shadow:0 24px 70px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:10px;animation:epIn .25s ease-out}
+@keyframes epIn{from{transform:translate(-50%,-46%) scale(.94);opacity:0}to{transform:translate(-50%,-50%);opacity:1}}
+.eph{display:flex;align-items:center;gap:10px}.eph b{flex:1;font-size:21px;color:#ffe7a6}.epx{font-size:30px}
+.epb{display:flex;flex-direction:column;gap:5px}.epb span{padding:7px 12px;border-radius:11px;background:rgba(110,231,160,.1);border:1px solid rgba(110,231,160,.3);color:#b9f5cf;font-weight:600;font-size:14px}
+#eraP h5{margin:4px 0 0;color:var(--dim);font-size:13px}
+.epg{display:flex;flex-direction:column;gap:6px}.epi{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+.epi i{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:20px;background:rgba(241,207,110,.12)}.epi i img{width:26px;height:26px}.epi i svg{width:30px;height:30px}
+.epi b{display:block;font-size:14.5px}.epi small{display:block;font-size:12px;color:var(--dim);line-height:1.5}
+#eraP .btn{width:100%;min-width:0}#eraP .bad{margin:0;text-align:center}
+#dock button.dot{position:relative}#dock button.dot::after{content:'';position:absolute;top:7px;inset-inline-end:9px;width:11px;height:11px;border-radius:50%;background:#ff5a4d;box-shadow:0 0 0 2px #0b1626,0 0 10px #ff5a4d;animation:dotP 1.2s ease-in-out infinite}
+@keyframes dotP{50%{transform:scale(1.3)}}
