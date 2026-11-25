@@ -643,7 +643,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='pc';(function(){"use strict";
-const BUILD_ID='1503630c67';
+const BUILD_ID='77b72ec293';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -846,7 +846,7 @@ function setupNations(g){
 function canSpawn(g,i){
   const M=g.M;if(i<0||M.ter[i]<2||M.ter[i]===6||g.owner[i]||g.structAt[i])return false;
   const x=i%g.W,y=(i/g.W)|0;
-  for(const s of g.structs)if(!s.dead&&s.type==='city'){const d=(s.x-x)**2+(s.y-y)**2;if(d<(s.owner?196:49))return false;}
+  for(const s of g.structs)if(!s.dead&&s.type==='city'){const d=(s.x-x)**2+(s.y-y)**2;if(d<(!s.owner?49:g.nations[s.owner].minor?100:196))return false;}
   return true;
 }
 function pickSpawn(g,md){
@@ -927,7 +927,7 @@ function captured(g,s,old,o){
     s.capital=false;let best=null;
     for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===old&&(!best||c.level>best.level))best=c;
     if(best){best.capital=true;O.cap=best;O.defDirty=true;O.troops*=.75;O.collapse=g.tick+250;emit(g,'capMoved',{d:old,s:best});}
-    else{O.cap=null;collapseNation(g,O,o,s);}
+    else{O.cap=null;if(O.minor)collapseNation(g,O,o,s);else lostCities(g,O,o);}
   }
 }
 // a fallen city drags its province with it
@@ -944,7 +944,9 @@ function flipAround(g,s,o,R){
   const W=g.W;for(let y=Math.max(0,s.y-R);y<=Math.min(g.H-1,s.y+R);y++)for(let x=Math.max(0,s.x-R);x<=Math.min(W-1,s.x+R);x++){
     const i=y*W+x;if((x-s.x)**2+(y-s.y)**2<=R*R&&g.M.ter[i]>1&&!g.owner[i]&&!g.structAt[i]&&g.fall[i]<=g.tick)setOwner(g,i,o);}
 }
-// a realm with no city left falls apart: the conqueror takes the heartland, the rest turns lawless
+// a realm that lost every city lives on in whatever land it still holds, until someone takes all of it
+function lostCities(g,O,o){O.defDirty=true;O.troops*=.75;O.collapse=g.tick+250;emit(g,'collapse',{d:O.id,a:o});}
+// a tribe with no city left falls apart: the conqueror takes the heartland, the rest turns lawless
 function collapseNation(g,O,o,s){
   if(!O.alive)return;emit(g,'collapse',{d:O.id,a:o});
   // the conqueror takes the whole fallen realm, buildings included
@@ -1269,7 +1271,7 @@ function destroyCity(g,s,by){
   if(s.dead)return;const O=s.owner?g.nations[s.owner]:null,cap=s.capital;s.capital=false;killStruct(g,s);g.ruins.push({x:s.x,y:s.y,until:g.tick+1500});
   emit(g,'cityGone',{s,a:by,d:O?O.id:0});
   if(O&&O.alive&&cap){let best=null;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===O.id&&(!best||c.level>best.level))best=c;
-    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;collapseNation(g,O,0,s);}}
+    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;if(O.minor)collapseNation(g,O,0,s);else lostCities(g,O,by||0);}}
 }
 function blast(g,cx,cy,R,by,o){
   const W=g.W,H=g.H,now=g.tick,hits=new Map();
@@ -1372,6 +1374,8 @@ function callArms(g,a,target){
 // ── economy, seasons, world ──
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
+    // a realm without a capital crowns its first city again, built or taken
+    if(!n.cap&&n.spawned&&now%10===0){let best=null;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===n.id&&(!best||c.level>best.level))best=c;if(best){best.capital=true;n.cap=best;n.defDirty=true;}}
     const U=n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1)*(1+.1*(U.def|0));
     const x=clamp(n.troops/n.maxT,.04,2),xg=n.human||n.minor?x:Math.max(x,.2);let gr=x<1?n.maxT*.0046*xg*(1-xg):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(1+.15*(n.up?n.up.sol:0))*(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
@@ -1653,7 +1657,7 @@ function aiSite(g,n,type,hostile){
     if(type==='city')s+=inner*1.5+g.M.val[i]*6+Math.min(24,cityD)*.5;
     else if(type==='fort'){if(!enemy||sameD<8)continue;s+=enemy*2+inner*.5-cityD*.25;}
     else if(type==='port')s+=inner-cityD*.2+Math.min(sameD,30)*.2;
-    else s+=inner*2-hyp(n.cap.x-x,n.cap.y-y)*.25;
+    else s+=inner*2-(n.cap?hyp(n.cap.x-x,n.cap.y-y)*.25:0);
     if(s>bs){bs=s;best=i;}
   }
   return best;
@@ -2287,7 +2291,7 @@ ar:{title:'سِجال',sub:'حرب المدن',tag:'احتلّ المدينة ي
  e_room:'لم أجد غرفة بهذا الكود',e_full:'الغرفة ممتلئة أو بدأت معركتها',e_net:'تعذّر الاتصال. الأونلاين يعمل من ملف اللعبة أو موقعها وليس من هذه الصفحة',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف وحده يتحكم بالسرعة',made:'صُنعت في المملكة العربية السعودية بمساعدة الذكاء الاصطناعي',dGo:'ابدأ التحدي',dNone:'لم تفز بتحدي اليوم بعد',dWorld:'عالم اليوم',
  dInfo:[['عالم واحد كل يوم','كل يوم تتولّد خريطة جديدة من تاريخ اليوم، وتبقى نفسها طوال اليوم مهما أعدت المحاولة. غداً يأتي عالم مختلف.'],['شروط ثابتة','خريطة متوسطة، 14 دولة خصم و60 قبيلة، والصعوبة «صعب». لا يمكنك تغييرها، فالتحدي واحد في كل محاولة.'],['الهدف: أسرع نصر','افز بأي طريقة: السيطرة على 70% من الأرض أو صرح الخلود. يُحفظ أفضل زمن لك اليوم، وحاول أن تكسره.'],['نصيحة','لأن العالم لا يتغير، تعلّم من كل محاولة: أين تضع عاصمتك، وأي مدن تأخذ أولاً، ومن تحالف.']],b_annex:'ضمّ {0}',m_annex:'ضممت {0} بلا قتال',b_ally:'اطلب تحالفاً',b_break:'انقض التحالف',b_gift:'أهدِه {0} ذهباً',b_arms:'ادعُ حلفاءك لمهاجمته',b_find:'أرني عاصمته',
  m_warYou:'{0} تهاجمك!',m_cityYou:'احتللت {0} واستسلم إقليمها',m_cityLost:'خسرت {0}!',m_join:'{0} انضمّت إليك',
- m_capMoved:'سقطت عاصمة {0}، وانتقل الحكم إلى {1}',m_capYou:'سقطت عاصمتك! انتقل الحكم إلى {0}',m_collapse:'انهارت {0} على يد {1}',
+ m_capMoved:'سقطت عاصمة {0}، وانتقل الحكم إلى {1}',m_capYou:'سقطت عاصمتك! انتقل الحكم إلى {0}',m_collapse:'سقطت كل مدن {0} على يد {1}، وباقي أرضها لمن ياخذها',
  m_ally:'تحالف بين {0} و{1}',m_betray:'{0} نقضت تحالفها مع {1}',m_prop:'{0} يعرض عليك تحالفاً',yes:'قبول',no:'رفض',m_rej:'{0} رفض التحالف',
  m_era:'دخلت {0}',m_meteor:'نيزك يقترب من الأرض!',m_rebel:'ثورة في أراضي {0}',m_plague:'وباء يضرب جيش {0}',m_caravan:'قوافل الذهب تملأ خزائن المدن',
  m_launch:'{0} أطلقت {1}',m_incoming:'{0} قادم نحو أرضك!',m_inter:'اعتُرض الصاروخ في السماء',m_mon:'{0} تبني صرح الخلود. دمّروه قبل أن يكتمل!',m_monYou:'صرحك يكتمل بعد 150 ثانية. دافع عنه!',m_monLost:'تحطّم صرح {0}',
@@ -2330,7 +2334,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  e_room:'Could not reach the room. Check the code; if it still fails, try another network (Wi-Fi or mobile data)',e_full:'That room is full or already playing',e_net:'Could not connect. Online play works from the game file or its website, not from this page',e_host:'Lost connection to the host',e_hostOnly:'Only the host controls the speed',made:'Made in Saudi Arabia with the help of AI',dGo:'Start the challenge',dNone:'You have not won today\'s challenge yet',dWorld:'Today\'s world',
  dInfo:[['One world per day','Each day a new map is generated from the date and stays the same all day. You get one attempt; tomorrow brings a different world.'],['Fixed rules','Medium map, 14 rival realms and 60 tribes, on Hard. You cannot change them.'],['Goal: the fastest win','Win any way you like: hold 70% of the land or raise the Eternal Monument. Your time is saved; the faster the better.'],['Tip','Since the world does not change, learn from each attempt: where to found your capital, which cities to take first, whom to ally with.']],b_annex:'Annex {0}',m_annex:'You annexed {0} without a fight',b_ally:'Propose alliance',b_break:'Break alliance',b_gift:'Gift {0} gold',b_arms:'Call allies against them',b_find:'Show their capital',
  m_warYou:'{0} is attacking you!',m_cityYou:'You took {0} and its province surrendered',m_cityLost:'You lost {0}!',m_join:'{0} joined you',
- m_capMoved:'The capital of {0} fell; rule moves to {1}',m_capYou:'Your capital fell! Rule moves to {0}',m_collapse:'{0} collapsed, toppled by {1}',
+ m_capMoved:'The capital of {0} fell; rule moves to {1}',m_capYou:'Your capital fell! Rule moves to {0}',m_collapse:'{0} lost its last city to {1}; its land is still up for grabs',
  m_ally:'Alliance between {0} and {1}',m_betray:'{0} broke its alliance with {1}',m_prop:'{0} offers you an alliance',yes:'Accept',no:'Decline',m_rej:'{0} declined the alliance',
  m_era:'You entered the {0}',m_meteor:'A meteor is falling!',m_rebel:'Revolt in the lands of {0}',m_plague:'Plague strikes the army of {0}',m_caravan:'Gold caravans fill the city treasuries',
  m_launch:'{0} launches: {1}',m_incoming:'{0} incoming on your land!',m_inter:'Missile intercepted in the sky',m_mon:'{0} is raising the Eternal Monument. Destroy it before it is done!',m_monYou:'Your monument completes in 150 seconds. Defend it!',m_monLost:'The monument of {0} was destroyed',
@@ -2352,7 +2356,7 @@ Object.assign(TX.ar,{nwTag:'جديد',era_armyT:'مستويات جديدة في 
  mood:'موقفه منك',moods:['معاديك','مو مرتاح لك','محايد','مرتاح لك','يثق فيك'],st_war:'في حرب معك',
  b_ally:'اطلب تحالف',b_break:'افسخ التحالف',b_gift:'أهدِه {0} ذهب',b_arms:'نادِ حلفاءك عليه',b_find:'ورّني عاصمته',b_focus:'ورّني مكانه',b_atk:'اهجم عليه',b_annexS:'ضمّه لك',
  m_warYou:'{0} تهاجمك!',m_cityYou:'أخذت {0} وإقليمها استسلم',m_cityLost:'راحت عليك {0}!',m_join:'{0} انضمّت لك',
- m_capMoved:'طاحت عاصمة {0}، وانتقل الحكم إلى {1}',m_capYou:'طاحت عاصمتك! انتقل الحكم إلى {0}',m_collapse:'انهارت {0} على يد {1}',
+ m_capMoved:'طاحت عاصمة {0}، وانتقل الحكم إلى {1}',m_capYou:'طاحت عاصمتك! انتقل الحكم إلى {0}',m_collapse:'طاحت كل مدن {0} على يد {1}، وباقي أرضها لمن ياخذها',
  m_prop:'{0} يبي يتحالف معك',yes:'موافق',no:'لا',m_rej:'{0} رفض التحالف',m_era:'دخلت {0}',m_meteor:'نيزك جاي على الأرض!',m_rebel:'ثورة في أراضي {0}',m_plague:'وباء ضرب جيش {0}',m_caravan:'قوافل الذهب عبّت خزاين المدن',
  m_incoming:'{0} جاي على أرضك!',m_inter:'انصاد الصاروخ في السما',m_mon:'{0} تبني صرح الخلود. دمّروه قبل يكتمل!',m_monYou:'صرحك يكتمل بعد 150 ثانية. دافع عنه!',
  m_coal:'العالم كله اتحد ضد {0}',m_coalYou:'العالم كله اتحد ضدك!',m_pocket:'حاصرت جيب للعدو وضمّيته',m_landed:'الإنزال البحري نجح',m_landFail:'الإنزال البحري فشل',m_clash:'جيشك صدّ هجومهم',
@@ -2446,7 +2450,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:"5.4",d:"2026-11-25",ar:["🛡️ القبة الدفاعية تطلق صاروخها بدري وتصيد الصاروخ في الجو قبل ما يوصل","🏕️ ضاعفنا عدد القبائل الصغيرة عشان المنافسة على الأرض تصير أقوى","✨ علامة «جديد» تختفي أول ما تفتح القائمة وتطلع منها","⚖️ توازن الصعوبة المتوسطة: جيوش الدول الكبيرة صارت تكبر أسرع","🎖️ قائمة جديدة «تطوير الجيش»: طوّر الجنود والدبابات والطيارات والبحرية والدفاع، لكل وحدة 5 مستويات، وشلنا معسكر الدبابات","🏕️ القبائل صارت كثيرة ومنتشرة في كل الخريطة، تهجم من ألف جندي وتحتل أسرع","📱 شاشة المعركة في الجوال صارت أسهل: 4 أزرار كبيرة تحت (بناء، أسلحة، هجوم، جيش)، وشريط قوة الهجوم فوقها، وأزرار سريعة 25% إلى 100%","🏛️ زر العصر يوريك وش يعطيك العصر الجاي ووش يفتح لك قبل ما تدفع","🔴 علامة «جديد» على كل مبنى أو سلاح أو تطوير انفتح لك، لين تضغطه","🧭 بداية المعركة صارت أبسط: اختر حضارتك وحط عاصمتك بس","🔔 إشعارات السلام والتحالف في الجوال صارت بأزرار كبيرة","🗺️ المربعات تطلع أكبر واللعبة صارت أخف على الجوال","🗡️ سيفين يتحركون في بطاقة المعركة السريعة"],en:["🛡️ The dome fires early and downs the missile mid-air, well before it lands","🏕️ Twice as many small tribes, for a fiercer race for land","✨ \"New\" badges clear once you open a panel and close it","⚖️ Medium balance: big nations' armies now grow faster","🎖️ New Army upgrades menu: upgrade Soldiers, Tanks, Planes, Navy and Defence, five levels each; the tank camp is gone","🏕️ Many more tribes spread across the whole map; they raid from 1,000 troops and take land faster","📱 An easier phone battle screen: four big buttons at the bottom (Build, Weapons, Attack, Army), the attack-strength bar above them, and quick 25% to 100% buttons","🏛️ The age button shows what the next age gives and unlocks before you pay","🔴 A New badge on every building, weapon or upgrade that unlocks, until you tap it","🧭 A simpler battle start: pick your realm and place your capital","🔔 Peace and alliance notifications on phones have big buttons","🗺️ Tiles look bigger and the game runs lighter on phones","🗡️ Animated swords on the quick battle card"]},
+ {v:"5.4",d:"2026-11-25",ar:["🗺️ أخذ مدن الدولة ما يعطيك كل أرضها: لازم تسيطر على أرضها كاملة بنفسك","🛡️ القبة الدفاعية تطلق صاروخها بدري وتصيد الصاروخ في الجو قبل ما يوصل","🏕️ ضاعفنا عدد القبائل الصغيرة عشان المنافسة على الأرض تصير أقوى","✨ علامة «جديد» تختفي أول ما تفتح القائمة وتطلع منها","⚖️ توازن الصعوبة المتوسطة: جيوش الدول الكبيرة صارت تكبر أسرع","🎖️ قائمة جديدة «تطوير الجيش»: طوّر الجنود والدبابات والطيارات والبحرية والدفاع، لكل وحدة 5 مستويات، وشلنا معسكر الدبابات","🏕️ القبائل صارت كثيرة ومنتشرة في كل الخريطة، تهجم من ألف جندي وتحتل أسرع","📱 شاشة المعركة في الجوال صارت أسهل: 4 أزرار كبيرة تحت (بناء، أسلحة، هجوم، جيش)، وشريط قوة الهجوم فوقها، وأزرار سريعة 25% إلى 100%","🏛️ زر العصر يوريك وش يعطيك العصر الجاي ووش يفتح لك قبل ما تدفع","🔴 علامة «جديد» على كل مبنى أو سلاح أو تطوير انفتح لك، لين تضغطه","🧭 بداية المعركة صارت أبسط: اختر حضارتك وحط عاصمتك بس","🔔 إشعارات السلام والتحالف في الجوال صارت بأزرار كبيرة","🗺️ المربعات تطلع أكبر واللعبة صارت أخف على الجوال","🗡️ سيفين يتحركون في بطاقة المعركة السريعة"],en:["🗺️ Taking a realm's cities no longer hands you all its land: you have to conquer every tile","🛡️ The dome fires early and downs the missile mid-air, well before it lands","🏕️ Twice as many small tribes, for a fiercer race for land","✨ \"New\" badges clear once you open a panel and close it","⚖️ Medium balance: big nations' armies now grow faster","🎖️ New Army upgrades menu: upgrade Soldiers, Tanks, Planes, Navy and Defence, five levels each; the tank camp is gone","🏕️ Many more tribes spread across the whole map; they raid from 1,000 troops and take land faster","📱 An easier phone battle screen: four big buttons at the bottom (Build, Weapons, Attack, Army), the attack-strength bar above them, and quick 25% to 100% buttons","🏛️ The age button shows what the next age gives and unlocks before you pay","🔴 A New badge on every building, weapon or upgrade that unlocks, until you tap it","🧭 A simpler battle start: pick your realm and place your capital","🔔 Peace and alliance notifications on phones have big buttons","🗺️ Tiles look bigger and the game runs lighter on phones","🗡️ Animated swords on the quick battle card"]},
  {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650','⚡ الجيش الكبير صار يكتسح بسرعة: إذا جيشك أكبر بأربع مرات يمسح المنطقة خلال ثواني. الغابة تبطّئه شوي بس، والجبال تبطّئه أكثر','🔢 عدد الجنود على الجبهة صار يطلع فوق المدن بدل ما ينغطى تحتها','💥 لكل سلاح انفجاره: الصاروخ انفجار صغير بشرار، والنووي سحابة فطر صغيرة، والفناء سحابة فطر كبيرة بموجة صدمة','🌫️ دخان الصواريخ والانفجارات يبقى في الجو ويختفي شوي شوي، وأخف في الجرافيكس المتوسط، وما يطلع في المنخفض عشان الجوالات الضعيفة','⏳ دائرة البناء صارت تبدأ من الصفر','🚀 الصاروخ يطلع من المنصة بوميض ودخان ويكبر شوي شوي بدل ما يطلع فجأة','⚔️ الجيش ما عاد يذوب بسرعة على أرض العدو: الخسائر صارت أغلبها من قتال جنوده، فـ120 ألف ضد 50 ألف يمسح الدولة كاملة ويبقى معك جيش','🔢 رقم الجنود صار يطلع على الجبهة الرئيسية إذا هجمت من أكثر من جهة، بدل ما يطلع بالنص بينهم','⚡ تحسّن الهجوم: الجبهة تمشي كخط واحد، والجيش الأقوى بكثير ياخذ دولة صغيرة في حوالي 6 ثواني، وسرعته تتغير حسب ارتفاع الأرض: الأخضر الفاتح سريع ويهدأ شوي عند المرتفعات الصغيرة، والغابات أبطأ شوي، والمرتفعات أبطأ، والجبال العالية أبطأ شي'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200','⚡ Big armies sweep fast: four times the enemy army clears the area in seconds. Forest slows it only a little, mountains more','🔢 The troop count on a front now shows above cities instead of hiding under them','💥 Each weapon has its own blast: a small burst with sparks for the rocket, a small mushroom cloud for the nuke, a big one with a shockwave for doom','🌫️ Missile and blast smoke stays in the air and fades slowly; lighter on Medium graphics and off on Low for weaker phones','⏳ The building progress ring now starts from zero','🚀 Missiles leave the silo with a flash and smoke and grow into view instead of popping in','⚔️ Armies no longer melt on enemy land: losses now come mostly from fighting their soldiers, so 120K against 50K wipes the realm out with an army to spare','🔢 When you attack on several sides the troop count sits on the main front, not between them','⚡ Better attacks: the front advances as one line, a much stronger army takes a small realm in about 6 seconds, and its pace follows the height of the land: fast on open green, easing over small rises, a little slower in forest, slower on hills, slowest on high mountains']},
  {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
  {v:'5.1',d:'2026-11-22',ar:['🎵 صار للعبة حساب على تيك توك: @sijal_2، تلقاه في القائمة الرئيسية. تابعنا!'],en:['🎵 Sijal is on TikTok: @sijal_2, linked from the main menu. Follow us!']},

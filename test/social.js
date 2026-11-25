@@ -8,7 +8,8 @@ setEmb(g,A.id,0,1);const bad=[...g.trades,...g.trains].filter(b=>b.a===A.id||(b.
 let launched=0;for(let t=0;t<1500;t++){tick(g);g.ev.length=0;g.dirty.length=0;for(const b of [...g.trades,...g.trains])if(b.a===A.id||(b.to&&b.to.owner===A.id))launched++;}
 console.log('after stop-all: routes of A left',bad,'| A routes seen in 2.5 min',launched);setEmb(g,A.id,0,0);
 console.log('emoji:',setEmo(g,A.id,5,0),'again at once:',setEmo(g,A.id,6,0),'| bad index:',setEmo(g,A.id,999,0));
-const B=g.nations.find(n=>n&&n.alive&&!n.minor&&n!==A);B.troops=50000;const before=A.troops;let ev=null;
-const tiles=[];for(let i=0;i<g.N;i++)if(g.owner[i]===B.id)tiles.push(i);for(const i of tiles)setOwner(g,i,A.id);for(const e of g.ev)if(e.t==='dead')ev=e;
-console.log('conquest gain',A.troops-before,'| event',JSON.stringify(ev&&{tr:ev.tr,x:ev.x>0}));
+{const A=g.nations.find(n=>n&&n.alive&&!n.minor),B=g.nations.find(n=>n&&n.alive&&!n.minor&&n!==A);let ev=null;
+// losing every city no longer ends a realm: it dies only with its last tile
+const tiles=[];for(let i=0;i<g.N;i++)if(g.owner[i]===B.id)tiles.push(i);const last=tiles.pop();for(const i of tiles)setOwner(g,i,A.id);console.log('B alive after losing all but one tile',B.alive,'cities',B.cnt.city);B.troops=50000;const before=A.troops;setOwner(g,last,A.id);for(const e of g.ev)if(e.t==='dead')ev=e;
+console.log('conquest gain',A.troops-before,'| event',JSON.stringify(ev&&{tr:ev.tr,x:ev.x>0}));}
 `+'})()');

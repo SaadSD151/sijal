@@ -7,7 +7,7 @@ const {chromium}=require('playwright');const path=require('path');
   await pg.evaluate(()=>{__sijal.act('lang:en');__sijal.act('setBack');__sijal.UI.prof.fac='scholars';__sijal.UI.prof.type='islands';(__sijal.act('quick'),__sijal.act('go'));});await pg.waitForTimeout(1500);
   const log=await pg.evaluate(()=>{
     const S=__sijal,g=S.G,L=[],me=g.nations[g.human],W=g.W;
-    let sp=-1;for(let i=0;i<g.N&&sp<0;i++){const x=i%W,y=(i/W)|0;if(g.M.ter[i]===2&&g.M.coastD[i]>3&&!g.owner[i]&&g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>250))sp=i;}
+    let sp=-1;for(let i=0;i<g.N&&sp<0;i++){const x=i%W,y=(i/W)|0;if(g.M.ter[i]===2&&g.M.coastD[i]>3&&!g.owner[i]&&g.structs.every(s=>(s.x-x)**2+(s.y-y)**2>(g.nations[s.owner]&&g.nations[s.owner].minor?110:250)))sp=i;}
     S.tap(sp,0,0);L.push('spawn '+S.UI.phase);
     me.gold=1e6;me.troops=5e5;
     for(let r=0;r<12;r++){S.UI.ratio=.3;let t=-1,bd=1e9;for(let i=0;i<g.N;i+=7){if(g.M.ter[i]<2||g.owner[i])continue;const d=(i%W-me.cx)**2+(((i/W)|0)-me.cy)**2;if(d<bd){bd=d;t=i;}}if(t>=0)S.tap(t,0,0);S.run(40);me.troops=Math.max(me.troops,3e5);}

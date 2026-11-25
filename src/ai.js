@@ -99,7 +99,7 @@ function aiSite(g,n,type,hostile){
     if(type==='city')s+=inner*1.5+g.M.val[i]*6+Math.min(24,cityD)*.5;
     else if(type==='fort'){if(!enemy||sameD<8)continue;s+=enemy*2+inner*.5-cityD*.25;}
     else if(type==='port')s+=inner-cityD*.2+Math.min(sameD,30)*.2;
-    else s+=inner*2-hyp(n.cap.x-x,n.cap.y-y)*.25;
+    else s+=inner*2-(n.cap?hyp(n.cap.x-x,n.cap.y-y)*.25:0);
     if(s>bs){bs=s;best=i;}
   }
   return best;

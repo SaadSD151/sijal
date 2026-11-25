@@ -48,7 +48,7 @@ function setupNations(g){
 function canSpawn(g,i){
   const M=g.M;if(i<0||M.ter[i]<2||M.ter[i]===6||g.owner[i]||g.structAt[i])return false;
   const x=i%g.W,y=(i/g.W)|0;
-  for(const s of g.structs)if(!s.dead&&s.type==='city'){const d=(s.x-x)**2+(s.y-y)**2;if(d<(s.owner?196:49))return false;}
+  for(const s of g.structs)if(!s.dead&&s.type==='city'){const d=(s.x-x)**2+(s.y-y)**2;if(d<(!s.owner?49:g.nations[s.owner].minor?100:196))return false;}
   return true;
 }
 function pickSpawn(g,md){
@@ -129,7 +129,7 @@ function captured(g,s,old,o){
     s.capital=false;let best=null;
     for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===old&&(!best||c.level>best.level))best=c;
     if(best){best.capital=true;O.cap=best;O.defDirty=true;O.troops*=.75;O.collapse=g.tick+250;emit(g,'capMoved',{d:old,s:best});}
-    else{O.cap=null;collapseNation(g,O,o,s);}
+    else{O.cap=null;if(O.minor)collapseNation(g,O,o,s);else lostCities(g,O,o);}
   }
 }
 // a fallen city drags its province with it
@@ -146,7 +146,9 @@ function flipAround(g,s,o,R){
   const W=g.W;for(let y=Math.max(0,s.y-R);y<=Math.min(g.H-1,s.y+R);y++)for(let x=Math.max(0,s.x-R);x<=Math.min(W-1,s.x+R);x++){
     const i=y*W+x;if((x-s.x)**2+(y-s.y)**2<=R*R&&g.M.ter[i]>1&&!g.owner[i]&&!g.structAt[i]&&g.fall[i]<=g.tick)setOwner(g,i,o);}
 }
-// a realm with no city left falls apart: the conqueror takes the heartland, the rest turns lawless
+// a realm that lost every city lives on in whatever land it still holds, until someone takes all of it
+function lostCities(g,O,o){O.defDirty=true;O.troops*=.75;O.collapse=g.tick+250;emit(g,'collapse',{d:O.id,a:o});}
+// a tribe with no city left falls apart: the conqueror takes the heartland, the rest turns lawless
 function collapseNation(g,O,o,s){
   if(!O.alive)return;emit(g,'collapse',{d:O.id,a:o});
   // the conqueror takes the whole fallen realm, buildings included
@@ -471,7 +473,7 @@ function destroyCity(g,s,by){
   if(s.dead)return;const O=s.owner?g.nations[s.owner]:null,cap=s.capital;s.capital=false;killStruct(g,s);g.ruins.push({x:s.x,y:s.y,until:g.tick+1500});
   emit(g,'cityGone',{s,a:by,d:O?O.id:0});
   if(O&&O.alive&&cap){let best=null;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===O.id&&(!best||c.level>best.level))best=c;
-    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;collapseNation(g,O,0,s);}}
+    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;if(O.minor)collapseNation(g,O,0,s);else lostCities(g,O,by||0);}}
 }
 function blast(g,cx,cy,R,by,o){
   const W=g.W,H=g.H,now=g.tick,hits=new Map();
@@ -574,6 +576,8 @@ function callArms(g,a,target){
 // ── economy, seasons, world ──
 function economy(g){
   const now=g.tick;for(const n of g.nations){if(!n||!n.alive)continue;const f=FAC[n.fac];
+    // a realm without a capital crowns its first city again, built or taken
+    if(!n.cap&&n.spawned&&now%10===0){let best=null;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===n.id&&(!best||c.level>best.level))best=c;if(best){best.capital=true;n.cap=best;n.defDirty=true;}}
     const U=n.up||(n.up={sol:0,tank:0,air:0,nav:0,def:0});n.mSpd=(f.spd||1)*(now<n.blitz?.5:1)/(1+.12*U.air);n.mAtk=(1+.08*(n.era-1))*(now<n.blitz?1.25:1)*(1+.1*U.tank);n.mDef=(f.def||1)*(now<n.wall?2.5:1)*(now<n.collapse?.55:1)*(1+.1*(U.def|0));
     const x=clamp(n.troops/n.maxT,.04,2),xg=n.human||n.minor?x:Math.max(x,.2);let gr=x<1?n.maxT*.0046*xg*(1-xg):-(n.troops-n.maxT)*.02;
     if(gr>0)gr*=(1+.15*(n.up?n.up.sol:0))*(f.grow||1)*g.sGrow*(n.human?1:g.diff.grow)*(n.minor?.45:1)*(1-clamp((n.tiles/g.M.land-.2)*1.6,0,.6));
