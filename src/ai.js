@@ -10,8 +10,8 @@ function aiAccepts(g,B,A){
 }
 function aiThink(g,n){
   if(n.minor){
-    // tribes are simple and greedy: everything above a 2000-man reserve goes on the attack, then they wait to refill
-    const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai,spare=n.troops-2000;if(spare<600||now<(ai.nextHit||0))return;ai.nextHit=now+15+((rng()*15)|0);
+    // tribes are simple and greedy: everything above a 1000-man reserve goes on the attack, then they wait a moment to refill
+    const K=g.nations.length,now=g.tick,rng=g.rng,ai=n.ai,spare=n.troops-1000;if(spare<300||now<(ai.nextHit||0))return;ai.nextHit=now+8+((rng()*10)|0);
     const r=spare/n.troops;let cur=null;for(const k of g.attacks)if(k.a===n.id&&!k.naval){cur=k;break;}
     if(cur){launchAttack(g,n.id,cur.d,r,cur.tx,cur.ty,cur.focus);return;}
     if(g.nb[n.id*K]>0){launchAttack(g,n.id,0,r,-1,-1);return;}

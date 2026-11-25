@@ -144,7 +144,7 @@ function gfxPreview(lv){
     x.fillStyle='#e0a03a';x.beginPath();x.arc(px,py,r,0,7);x.fill();x.restore();x.lineWidth=2;x.strokeStyle=cap?'#ffe9a8':'rgba(6,12,20,.9)';x.beginPath();x.arc(px,py,r,0,7);x.stroke();const q=r*1.5;x.drawImage(R.glyph[k],px-q/2,py-q/2,q,q);}
   const out=mk(W,H),o=out.getContext('2d');o.imageSmoothingEnabled=false;o.drawImage(lo,0,0,W,H);return GFXP[lv]=out.toDataURL();
 }
-function tribesN(){const v=UI.prof.tribes|0;return v>=30&&v<=120?v:60;}
+function tribesN(){const v=UI.prof.tribes|0;return v>=30&&v<=180?v:120;}
 function maxP(){const v=UI.prof.maxP|0;return v>=2&&v<=32?v:16;}
 function renderSetup(){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;
@@ -154,7 +154,7 @@ function renderSetup(){
   <div class="opts">${host?`<label class="fld"><h3>${t('roomName')}</h3><input id="inRoom" maxlength="24" value="${esc(p.room||'')}" placeholder="${esc(t('roomOf',p.name||t('defName')))}" autocomplete="off"></label>`:''}<div><h3>${t('world')}</h3><div class="wts">${Object.keys(t('types')).map(k=>`<button class="wt${p.type===k?' on':''}" data-a="type:${k}"><img src="${worldThumb(k)}" alt=""><span>${t('types')[k]}</span></button>`).join('')}</div></div>
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
   <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="30" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
-  <div><h3>${t('tribes')}</h3><div class="rng"><input type="range" id="inTribes" min="30" max="120" step="5" value="${tribesN()}" aria-label="${t('tribes')}"><b id="tribesV">${tribesN()}</b></div></div>
+  <div><h3>${t('tribes')}</h3><div class="rng"><input type="range" id="inTribes" min="30" max="180" step="5" value="${tribesN()}" aria-label="${t('tribes')}"><b id="tribesV">${tribesN()}</b></div></div>
   <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div>${host?'':`<div class="cheats"><h3>🧪 ${t('cheats')}</h3><div class="chips">${CHEATS.map(k=>`<button class="chip${(p.cheat||{})[k]?' on':''}" data-a="cheat:${k}">${t('ch_'+k)}</button>`).join('')}</div><p class="keys">${t('cheatNote')}</p></div>`}</div>
   ${host?`<div class="opts" style="grid-template-columns:minmax(0,1fr)"><div><h3>${t('maxP')}</h3><div class="rng"><input type="range" id="inMaxP" min="2" max="32" step="1" value="${maxP()}" aria-label="${t('maxP')}"><b id="maxPV">${maxP()}</b></div></div></div>`:''}
   ${host?`<div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>`:''}
@@ -508,7 +508,7 @@ function startMatch(o){
   UI.newSet=null;UI.newArmy=null;const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
   // quick battle: a different world shape every time
   const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
-  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
+  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?'auto':tribesN(),diff:p.diff,faction:p.fac};
   opt.skin=mySkin();const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
   if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
@@ -1021,7 +1021,7 @@ function bindInput(){
   // no browser menu over the map, the radial menu or the HUD during a match
   document.addEventListener('contextmenu',e=>{if(G&&!G.o.demo&&!UI.screen&&!(e.target.closest&&e.target.closest('input,textarea,select')))e.preventDefault();});
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
-  $('#app').addEventListener('input',e=>{if(e.target.id==='inTribes'){UI.prof.tribes=clamp(+e.target.value|0,30,120);$('#tribesV').textContent=UI.prof.tribes;saveProf();return;}if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='inTribes'){UI.prof.tribes=clamp(+e.target.value|0,30,180);$('#tribesV').textContent=UI.prof.tribes;saveProf();return;}if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
   $('#app').addEventListener('change',e=>{if(e.target.id==='auKeep'||e.target.id==='auMax'||e.target.id==='auRate'){const a=auCfg();a[{auKeep:'keep',auMax:'max',auRate:'rate'}[e.target.id]]=+e.target.value;saveProf();UI.auNext=0;auOpen();}});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.nameDraft=e.target.value.trim().slice(0,18);const ch=UI.nameDraft!==(UI.prof.name||'');const b=$('#nameSave'),u=$('#nameUndo');if(b)b.disabled=!ch;if(u)u.disabled=!ch;const m=$('#nameMsg');if(m)m.textContent='';}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
