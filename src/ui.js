@@ -544,7 +544,7 @@ function buildHud(){
   $('#hud').innerHTML=`<div id="top" class="pn"><button class="ib" data-a="pause" aria-label="menu">☰</button>
   <div class="stat" id="sT" title="${t('troops')}"><img src="${R.url.sword}" alt=""><div><b>0</b><small></small><i class="mt"><u></u></i></div></div>
   <div class="stat" id="sG"><span class="coin"></span><div><b>0</b><small></small></div></div>
-  <button id="bEra" class="era" data-a="era"></button><div id="sS"></div>
+  <button id="bEra" class="era" data-a="era"></button><button id="bArmy" class="armyb" data-a="army">🎖️ ${t('ar_btn')}</button><div id="sS"></div>
   <div id="spd"><button data-a="sp:0" aria-label="pause">Ⅱ</button><button data-a="sp:1">1×</button><button data-a="sp:2">2×</button><button data-a="sp:3">3×</button></div>
   <button class="ib" id="bLb" data-a="lb" aria-label="${t('ranking')}"><img src="${R.url.crown}" alt=""></button></div>
   <div id="hint" hidden></div><div id="amode" class="pn"></div><div id="fpick" class="pn" hidden></div><div id="feed"></div><div id="lb" class="pn"><h4>${t('ranking')}</h4><div id="lbr"></div></div><div id="atk"></div>
@@ -615,6 +615,21 @@ function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span
 
 // nation card
 // your own realm: emoji, trade with everyone on/off, and automatic upgrades within the limits you set
+// ── army upgrades: soldiers, tanks and planes, five levels each, paid in gold and opened by age ──
+const ARMY=[
+  {k:'sol',ic:'🪖',cost:[600,1400,3000,5600,9500],era:[1,1,2,3,4],cnt:lv=>'+'+lv*15+'%'},
+  {k:'tank',ic:'🛡️',cost:[1500,3200,5800,9500,15000],era:[2,3,3,4,4],cnt:lv=>[0,10,25,45,70,100][lv]},
+  {k:'air',ic:'✈️',cost:[2500,5200,8500,13000,20000],era:[3,3,4,4,4],cnt:lv=>[0,4,10,18,28,40][lv]}];
+function openArmy(){const g=G,me=g.nations[g.human];if(!me||!me.alive)return;UI.bs=null;UI.sel=0;const c=$('#card');c.hidden=true;let p=$('#armyP');if(!p){p=document.createElement('div');p.id='armyP';$('#hud').appendChild(p);}
+  p.hidden=false;renderArmy();}
+function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden)return;const U=me.up||(me.up={sol:0,tank:0,air:0});
+  p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
+  <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost;
+    return `<div class="apc ${A.k}${lock?' lk':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:A.ic}</div><b>${t('ar_'+A.k)}</b>
+      <div class="apn"><em>${A.cnt(lv)}</em><small>${t('ar_'+A.k+'U')}</small></div>
+      <div class="apd">${[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div>
+      <p>${t('ar_'+A.k+'E',lv,mx?lv:lv+1)}</p>
+      ${mx?`<div class="apm">${t('upMax')}</div>`:lock?`<div class="apl">🔒 ${t('eras')[need-1]}</div>`:`<button class="btn sm ${poor?'':'ok'}" data-a="armyUp:${A.k}"${poor?' disabled':''}>⬆ <bdi dir="ltr">${A.cnt(lv+1)}</bdi> · ${fmt(cost)}</button>`}</div>`;}).join('')}</div>`;}
 function openSelf(){
   const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
   const c=$('#card');c.hidden=false;
@@ -821,6 +836,7 @@ function act(a){
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
+    case'army':openArmy();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':{const me=G.nations[G.human],A=ARMY.find(a=>a.k===v),U=me.up||(me.up={sol:0,tank:0,air:0}),lv=U[v]|0;if(A&&lv<5&&me.era>=A.era[lv]&&me.gold>=A.cost[lv]){me.gold-=A.cost[lv];U[v]=lv+1;sfx('build');}renderArmy();}break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;

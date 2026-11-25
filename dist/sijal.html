@@ -499,6 +499,25 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .mob .topbar .pchip{flex:1 1 auto;max-width:none;min-width:0}.mob .topbar .tbi{flex:none}
 @media (max-width:400px){.mob .ibn{width:36px;height:36px;font-size:15px}.mob .tbi{gap:4px}.mob .pchip .av{width:34px;height:34px;font-size:15px}.mob .xpb{width:70px}.mob .pchip .pi small{font-size:10.5px}}
 
+/* army upgrades */
+.armyb{padding:6px 12px;border-radius:10px;background:linear-gradient(180deg,#3a2c0e,#22190a);border:1px solid rgba(241,207,110,.6);color:#ffe3a0;font-weight:700;font-size:13px;white-space:nowrap}
+#armyP{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;width:min(640px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;padding:16px;border-radius:20px;
+  background:linear-gradient(180deg,rgba(14,26,42,.97),rgba(8,15,26,.98));border:1px solid rgba(241,207,110,.35);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.aph{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}.aph b{display:block;font-size:20px;color:#ffe7a6}.aph small{color:var(--dim);font-size:13px}
+.apg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mob .apg{grid-template-columns:1fr}
+.apc{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px 12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:center}
+.mob .apc{display:grid;grid-template-columns:52px 1fr auto;grid-template-areas:"i b n" "i d n" "p p p" "x x x";align-items:center;text-align:start;column-gap:10px;row-gap:4px}
+.mob .apc .api{grid-area:i}.mob .apc>b{grid-area:b}.mob .apc .apn{grid-area:n;align-items:flex-end}.mob .apc .apd{grid-area:d;justify-content:flex-start}.mob .apc p{grid-area:p}.mob .apc>button,.mob .apc .apm,.mob .apc .apl{grid-area:x}
+.apc .api{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:28px;background:rgba(241,207,110,.1)}
+.apc.tank .api{background:rgba(120,190,120,.13)}.apc.air .api{background:rgba(120,180,255,.13)}
+.apc>b{font-size:16px}.apn{display:flex;flex-direction:column;align-items:center}.apn em{font-style:normal;font-size:22px;font-weight:700;color:#fff;direction:ltr}.apn small{font-size:11.5px;color:var(--dim)}
+.apd{display:flex;gap:4px;justify-content:center}.apd i{width:16px;height:5px;border-radius:9px;background:rgba(255,255,255,.14)}.apd i.on{background:linear-gradient(90deg,#c9952d,#f6dc8a)}
+.apc p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.6}
+.apc>button{width:100%}.apm{color:#8be39a;font-weight:600;font-size:13px}.apl{color:var(--dim);font-size:13px;padding:6px 0}
+.apc.lk{opacity:.6}
+.apc .api img{width:32px;height:32px;filter:brightness(1.6)}
+
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
 #bHome{left:var(--g)}
@@ -530,7 +549,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='d9969f6be4';
+const BUILD_ID='ef87826578';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -2214,7 +2233,7 @@ en:{title:'SIJAL',sub:'War of Cities',tag:'Take the city and its province falls'
  help:[['Cities are the heart of war','Each city rules the province around it. When a city falls, its province surrenders to the conqueror. Lose your last city and your whole realm collapses.'],['The spearhead','Tap enemy or neutral land and your attack drives toward the point you tapped. Aim it at cities.'],['Attack force','The slider sets how much of your army each attack takes. Send everything and your homeland is left thin.'],['Sieges','A city is held by a share of its realm\'s whole army, so mass your troops first. A landlocked pocket that is fully encircled falls by itself.'],['Building','Cities add troops and gold, forts double defense, ports bring gold and ships.'],['Seasons','Spring for growth, summer for attack, autumn for gold, and winter slows every army.'],['Ages','Advance from swords to the atom to unlock ports, missiles, the air shield and the bomb.'],['Politics','Alliances last two minutes, and before they end you choose whether to renew. Gift gold and call your allies to war. Grow too large and the world unites against you, and your army grows more slowly.'],['Two roads to victory','Rule 70% of the world\'s land, or raise the Eternal Monument and hold it for 150 seconds.']],
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the left button to aim an attack arrow, drag with the right button to move the map, right-click opens a realm card. On mobile: long-press a realm to open its card.'}};
 // Saudi-dialect wording for the Arabic interface
-Object.assign(TX.ar,{d_how:'الشرح',d_sug:'اقترح',d_sup:'ادعم',d_tt:'تيك توك',h_quick:'خريطة جديدة كل مرة · جاهزة على طول',h_play:'العب',h_onl:'مع أخوياك',h_left:'باقي {0} س',h_done:'خلّصته',h_cus:'على كيفك',ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
+Object.assign(TX.ar,{ar_btn:'الجيش',ar_t:'تطوير الجيش',ar_sub:'طوّر جيشك بالذهب، كل تطوير له 5 مستويات',ar_sol:'الجنود',ar_solU:'جنود أكثر',ar_solE:'المستوى {0}: الجيش يكبر أسرع وحدّه الأعلى أكبر',ar_tank:'الدبابات',ar_tankU:'دبابة',ar_tankE:'المستوى {0}: هجماتك أقوى وتخسر جنود أقل',ar_air:'الطيارات',ar_airU:'طيارة',ar_airE:'المستوى {0}: هجماتك أسرع وتوصل أبعد',d_how:'الشرح',d_sug:'اقترح',d_sup:'ادعم',d_tt:'تيك توك',h_quick:'خريطة جديدة كل مرة · جاهزة على طول',h_play:'العب',h_onl:'مع أخوياك',h_left:'باقي {0} س',h_done:'خلّصته',h_cus:'على كيفك',ruinLeft:'المدينة متضررة · تتصلح بعد {0} ثانية',fixNow:'أصلحها الحين',ruinWhy:'المدينة المتضررة دخلها ودفاعها أقل، وما تقدر تطوّرها لين تتصلح',m_fixed:'تصلحت {0}',tag:'خذ المدينة يطيح إقليمها',quick:'معركة سريعة',how:'كيف ألعب؟',start:'يلا نبدأ',back:'رجوع',on:'شغّال',off:'مطفي',
  faction:'اختر حضارتك',realm:'اسم دولتك',world:'شكل العالم',foes:'عدد الخصوم',
  pick:'اختر مكان «{0}» داخل أرضك',aim:'اختر الهدف على الخريطة',spawn:'اختر مكان عاصمتك: اضغط على أي أرض فاضية',
  e_gold:'الذهب ما يكفي',e_era:'يبي له عصر أحدث',e_own:'ابنِ داخل أرضك',e_busy:'المكان مشغول',e_near:'قريب مرة من مبنى ثاني',e_cnear:'قريب مرة من مدينة ثانية',e_coast:'الميناء يبي له ساحل مفتوح',
@@ -2236,7 +2255,7 @@ Object.assign(TX.ar,{d_how:'الشرح',d_sug:'اقترح',d_sup:'ادعم',d_tt
  lobbyHost:'أنت المضيف. عط الكود لأخوياك، ولما يدخلون ابدأ المعركة. إعدادات العالم هي اللي اخترتها في المعركة المخصّصة.',lobbyWait:'ننتظر المضيف يبدأ المعركة…',
  mpSpawn:'اختر حضارتك ومكان عاصمتك. المعركة تبدأ لما الكل يختار أو بعد دقيقة',mpWait:'ننتظر باقي اللاعبين…',mpLeft:'{0} طلع من المعركة والحاسوب مسك دولته',mpDead:'طاحت دولتك. تتفرج الحين على باقي الحرب',
  e_room:'ما قدرنا نوصل للغرفة. تأكد من الكود، وإذا ما ضبط جرّب شبكة ثانية (واي فاي أو بيانات الجوال)',e_full:'الغرفة مليانة أو بدت معركتها',e_net:'ما قدرت أتصل. الأونلاين يشتغل من موقع اللعبة أو ملفها',e_host:'انقطع الاتصال بالمضيف',e_hostOnly:'المضيف بس اللي يتحكم بالسرعة'});
-Object.assign(TX.en,{d_how:'Guide',d_sug:'Ideas',d_sup:'Support',d_tt:'TikTok',h_quick:'A new map every time · ready now',h_play:'Play',h_onl:'With friends',h_left:'{0} h left',h_done:'Done',h_cus:'Your rules',ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
+Object.assign(TX.en,{ar_btn:'Army',ar_t:'Army upgrades',ar_sub:'Upgrade your army with gold, five levels each',ar_sol:'Soldiers',ar_solU:'more troops',ar_solE:'Level {0}: your army grows faster and holds more',ar_tank:'Tanks',ar_tankU:'tanks',ar_tankE:'Level {0}: your attacks hit harder and lose fewer troops',ar_air:'Planes',ar_airU:'planes',ar_airE:'Level {0}: your attacks move faster',d_how:'Guide',d_sug:'Ideas',d_sup:'Support',d_tt:'TikTok',h_quick:'A new map every time · ready now',h_play:'Play',h_onl:'With friends',h_left:'{0} h left',h_done:'Done',h_cus:'Your rules',ruinLeft:'Damaged city · rebuilt in {0} s',fixNow:'Repair now',ruinWhy:'A damaged city earns and defends less, and cannot be upgraded until it is repaired',m_fixed:'{0} repaired',b_atk:'Attack',b_annexS:'Annex',account:'Account',accName:'Your name in the game',accGames:'Battles',accNote:'Your name shows above your realm and in online rooms. Your data is saved on this device only.',news:'Latest updates',newsNew:'What is new?',ver:'Version',ok:'OK',
  mpSpawn:'Choose your civilization and found your capital. The battle starts when everyone has chosen, or after one minute',
  keys:'On PC: number keys build, Q and E set attack force, Space pauses, F is your special power, C jumps to the capital, drag with the right button to move the map, right-click opens a realm card.'});
 TX.en.help[1]=['Attacking','Pick from the Attack type list: “At a point” focuses your army in a narrow corridor toward the spot you tap, “Along every border” strikes across your whole shared border. You can hide the list and bring it back. On mobile the realm\'s options open first: attack, ally or gift.'];
@@ -3107,7 +3126,7 @@ function buildHud(){
   $('#hud').innerHTML=`<div id="top" class="pn"><button class="ib" data-a="pause" aria-label="menu">☰</button>
   <div class="stat" id="sT" title="${t('troops')}"><img src="${R.url.sword}" alt=""><div><b>0</b><small></small><i class="mt"><u></u></i></div></div>
   <div class="stat" id="sG"><span class="coin"></span><div><b>0</b><small></small></div></div>
-  <button id="bEra" class="era" data-a="era"></button><div id="sS"></div>
+  <button id="bEra" class="era" data-a="era"></button><button id="bArmy" class="armyb" data-a="army">🎖️ ${t('ar_btn')}</button><div id="sS"></div>
   <div id="spd"><button data-a="sp:0" aria-label="pause">Ⅱ</button><button data-a="sp:1">1×</button><button data-a="sp:2">2×</button><button data-a="sp:3">3×</button></div>
   <button class="ib" id="bLb" data-a="lb" aria-label="${t('ranking')}"><img src="${R.url.crown}" alt=""></button></div>
   <div id="hint" hidden></div><div id="amode" class="pn"></div><div id="fpick" class="pn" hidden></div><div id="feed"></div><div id="lb" class="pn"><h4>${t('ranking')}</h4><div id="lbr"></div></div><div id="atk"></div>
@@ -3178,6 +3197,21 @@ function sayLine(n,key){if(!n)return;const L=t('say_'+key);feed(`${nmh(n)} <span
 
 // nation card
 // your own realm: emoji, trade with everyone on/off, and automatic upgrades within the limits you set
+// ── army upgrades: soldiers, tanks and planes, five levels each, paid in gold and opened by age ──
+const ARMY=[
+  {k:'sol',ic:'🪖',cost:[600,1400,3000,5600,9500],era:[1,1,2,3,4],cnt:lv=>'+'+lv*15+'%'},
+  {k:'tank',ic:'🛡️',cost:[1500,3200,5800,9500,15000],era:[2,3,3,4,4],cnt:lv=>[0,10,25,45,70,100][lv]},
+  {k:'air',ic:'✈️',cost:[2500,5200,8500,13000,20000],era:[3,3,4,4,4],cnt:lv=>[0,4,10,18,28,40][lv]}];
+function openArmy(){const g=G,me=g.nations[g.human];if(!me||!me.alive)return;UI.bs=null;UI.sel=0;const c=$('#card');c.hidden=true;let p=$('#armyP');if(!p){p=document.createElement('div');p.id='armyP';$('#hud').appendChild(p);}
+  p.hidden=false;renderArmy();}
+function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden)return;const U=me.up||(me.up={sol:0,tank:0,air:0});
+  p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
+  <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost;
+    return `<div class="apc ${A.k}${lock?' lk':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:A.ic}</div><b>${t('ar_'+A.k)}</b>
+      <div class="apn"><em>${A.cnt(lv)}</em><small>${t('ar_'+A.k+'U')}</small></div>
+      <div class="apd">${[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div>
+      <p>${t('ar_'+A.k+'E',lv,mx?lv:lv+1)}</p>
+      ${mx?`<div class="apm">${t('upMax')}</div>`:lock?`<div class="apl">🔒 ${t('eras')[need-1]}</div>`:`<button class="btn sm ${poor?'':'ok'}" data-a="armyUp:${A.k}"${poor?' disabled':''}>⬆ <bdi dir="ltr">${A.cnt(lv+1)}</bdi> · ${fmt(cost)}</button>`}</div>`;}).join('')}</div>`;}
 function openSelf(){
   const g=G,me=g.nations[g.human];if(!me||!me.alive||UI.phase!=='play')return;UI.bs=null;UI.sel=me.id;UI.cardKey='';UI.cardAmt=null;
   const c=$('#card');c.hidden=false;
@@ -3384,6 +3418,7 @@ function act(a){
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
+    case'army':openArmy();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':{const me=G.nations[G.human],A=ARMY.find(a=>a.k===v),U=me.up||(me.up={sol:0,tank:0,air:0}),lv=U[v]|0;if(A&&lv<5&&me.era>=A.era[lv]&&me.gold>=A.cost[lv]){me.gold-=A.cost[lv];U[v]=lv+1;sfx('build');}renderArmy();}break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
