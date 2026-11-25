@@ -503,7 +503,7 @@ function admMsg(){const m=(($('#admMsgIn')||{}).value||'').trim().slice(0,140);i
 function newsCheck(){if(!cloudOn())return;fetch(LB_DB+'/msg.json').then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.m||!j.ts||UI.prof.msgSeen===j.ts)return;UI.prof.msgSeen=j.ts;saveProf();toast('📣 '+esc(j.m),'prop',9000);}).catch(()=>{});}
 const CHEATS=['gold','troops','build','era','msl'];
 function startMatch(o){
-  const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
+  UI.newSet=null;UI.newArmy=null;const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN)p.botsN=UI.mob?10:14;saveProf();
   // quick battle: a different world shape every time
   const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
   let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,30),minors:o.quick?60:tribesN(),diff:p.diff,faction:p.fac};
@@ -645,7 +645,7 @@ function openArmy(){const g=G,me=g.nations[g.human];if(!me||!me.alive)return;UI.
 function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden||!me)return;const U=me.up||(me.up={sol:0,tank:0,air:0,nav:0,def:0}),fx=UI.armyFx;UI.armyFx=null;
   p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><div class="apg2"><span class="coin"></span><b>${fmt(me.gold)}</b></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
   <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost,nums=armyNums(me,A.k,lv);
-    return `<div class="apc ${A.k}${lock?' lk':''}${mx?' mx':''}${fx===A.k?' upd':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:ART[A.k]}<span class="lvb">${lv}/5</span></div>
+    return `<div class="apc ${A.k}${lock?' lk':''}${mx?' mx':''}${fx===A.k?' upd':''}${UI.newArmy&&UI.newArmy.has(A.k)&&!lock&&!mx?' nw':''}"><div class="api">${A.k==='tank'?`<img src="${R.url.camp}" alt="">`:ART[A.k]}<span class="lvb">${lv}/5</span></div>
       <div class="apt"><b>${t('ar_'+A.k)}</b><small>${t('ar_'+A.k+'D')}</small></div>
       <div class="apn"><em data-to="${A.cnt(lv)}">${A.cnt(lv)}</em><small>${t('ar_'+A.k+'U')}</small></div>
       <div class="apd">${[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')}</div>
@@ -766,8 +766,13 @@ function cardRefresh(){if(UI.bs)return buildRefresh();if(G&&UI.sel===G.human&&!$
 // ── player actions ──
 function setMode(m){radClose();UI.mode=m;UI.pend=-1;if(UI.mob)UI.hover=-1;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();if(m)hint(m[0]==='b'?t('pick',t('s_'+m.slice(2))):m[0]==='s'?t('pickSea',natName(G.nations[+m.slice(2)])):t('aim'),true);else hint(null);hudUpdate();}
 // the phone's bottom sheet: build tiles, weapon tiles, or the attack controls (the same live elements, moved in)
-function dockDots(){for(const [k,f] of [['build','newB'],['arms','newA']]){const b=document.querySelector(`#dock [data-a="sh:${k}"]`);if(b)b.classList.toggle('dot',!!UI[f]);}const a=document.querySelector('#dock [data-a="army"]');if(a)a.classList.toggle('dot',!!UI.newB);}
-function sheetOpen(kind){if(kind==='build')UI.newB=0;if(kind==='arms')UI.newA=0;dockDots();const sh=$('#sheet');if(!sh)return;if(UI.sheet===kind&&!sh.hidden)return sheetClose();UI.sheet=kind;sh.hidden=false;sh.dataset.k=kind;
+// red marks: on each new building or weapon until it is tapped, on the dock button while it holds something new, on the army until it is opened
+function newMarks(){const N=UI.newSet||new Set(),arms=['rocket','nuke','doom','ult'];for(const e of document.querySelectorAll('.bb'))e.classList.toggle('nw',N.has(e.id.slice(3)));
+  const has=f=>[...N].some(f),set=(sel,on)=>{const b=document.querySelector(sel);if(b)b.classList.toggle('dot',!!on);};
+  set('#dock [data-a="sh:build"]',has(k=>!arms.includes(k)));set('#dock [data-a="sh:arms"]',has(k=>arms.includes(k)));set('#dock [data-a="army"]',UI.newArmy&&UI.newArmy.size);
+  const ab=$('#bArmy');if(ab)ab.classList.toggle('dot',!!(UI.newArmy&&UI.newArmy.size));}
+function dockDots(){newMarks();}
+function sheetOpen(kind){newMarks();const sh=$('#sheet');if(!sh)return;if(UI.sheet===kind&&!sh.hidden)return sheetClose();UI.sheet=kind;sh.hidden=false;sh.dataset.k=kind;
   $('#shT').textContent=t(kind==='build'?'dk_buildT':kind==='arms'?'dk_armsT':'dk_atkT');const B=$('#shB');B.innerHTML='';
   if(kind==='atk'){const r=$('#ratio'),m=UI.prof.amode||'pt';B.insertAdjacentHTML('beforeend',`<div class="amseg"><button data-a="am:pt" class="${m==='pt'?'on':''}"><i>🎯</i>${t('am_pt')}</button><button data-a="am:all" class="${m==='all'?'on':''}"><i>🌐</i>${t('am_all')}</button></div>`);B.appendChild(r);
     B.insertAdjacentHTML('beforeend',`<div class="rq">${[25,50,75,100].map(v=>`<button data-a="rq:${v}">${v}%</button>`).join('')}</div>`);}
@@ -834,7 +839,7 @@ function act(a){
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio,m:UI.prof.amode||'pt'});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
-    case'b':{const r=barAct(v);if(UI.sheet&&UI.sheet!=='atk')sheetClose();return r;}
+    case'b':{if(UI.newSet&&UI.newSet.delete(v))newMarks();const r=barAct(v);if(UI.sheet&&UI.sheet!=='atk')sheetClose();return r;}
     case'era':if(me&&me.era<4)eraCard(me.era+1,'next');break;case'eraGo':if(me&&me.era<4){if(me.gold<eraCost(me))return err('gold');send({k:'era'});{const p=$('#eraP');if(p)p.hidden=true;}}break;case'eraX':{const p=$('#eraP');if(p)p.hidden=true;}break;
     case'lb':$('#lb').classList.toggle('open');break;
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,7));break;
@@ -880,7 +885,7 @@ function act(a){
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
-    case'army':sheetClose();openArmy();break;case'sh':if(v==='x')sheetClose();else sheetOpen(v);break;case'rq':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();break;case'spc':if(NET.on&&!NET.host)return err('hostOnly');UI.speed=UI.speed>=3?1:UI.speed+1;UI.paused=false;hudUpdate();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':send({k:'army',t:v});break;
+    case'army':sheetClose();openArmy();break;case'sh':if(v==='x')sheetClose();else sheetOpen(v);break;case'rq':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();break;case'spc':if(NET.on&&!NET.host)return err('hostOnly');UI.speed=UI.speed>=3?1:UI.speed+1;UI.paused=false;hudUpdate();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;UI.newArmy=null;newMarks();}break;case'armyUp':send({k:'army',t:v});break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
@@ -939,7 +944,7 @@ function handleEvents(){
       case'peaceRej':if(e.b===me){const L=TX[UI.lang]['pr_'+e.why];feed(L?t('m_peaceRejX',nmh(A),L[(Math.random()*L.length)|0]):t('m_peaceNo',nmh(A)),'bad');}break;
       case'reject':if(e.b===me){const L=TX[UI.lang]['ar_'+(e.why||'trust')];feed(L?t('m_rejX',nmh(A),L[(Math.random()*L.length)|0]):t('m_rej',nmh(A)),'bad');}break;
       case'say':if(e.to==null||e.to===me)sayLine(A,e.key);break;
-      case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');UI.newB=1;UI.newA=Object.values(MSL).some(m=>m.era===e.era)||e.era===4?1:UI.newA;dockDots();}break;
+      case'era':if(e.a===me){banner(t('eras')[e.era-1]);feed(t('m_era',t('eras')[e.era-1]),'good');sfx('era');{const N=UI.newSet||(UI.newSet=new Set());for(const k in ST)if(ST[k].era===e.era)N.add(k);for(const k in MSL)if(MSL[k].era===e.era)N.add(k);UI.newArmy=new Set(ARMY.filter(A=>A.era.includes(e.era)).map(A=>A.k));}newMarks();}break;
       case'season':banner(t('seas')[e.s],'sea');if(UI.mob)feed(`<b>${t('seas')[e.s]}</b>: ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span>`);else{feed(t('seaTip')[e.s]);toast(`<span><b>${t('seas')[e.s]}</b> · ${t('seaGood')[e.s]}<br><span class="bad">${t('seaBad')[e.s]}</span></span>`,'prop',7000);}sfx('season'+e.s);break;
       case'rebel':feed(t('m_rebel',nmh(D)),e.d===me?'bad':'');addFx('ring',e.x,e.y,{r:9,col:'#ff7a4a',dur:1500});break;
       case'plague':feed(t('m_plague',nmh(D)),e.d===me?'bad':'');break;
