@@ -554,11 +554,17 @@ function buildHud(){
   <canvas id="mini" width="220" height="${Math.round(220*g.H/g.W)}"></canvas><button id="bHome" class="ib pn" data-a="home" aria-label="capital"><img src="${R.url.cap}" alt=""></button>
   <div id="bottom"><div id="ratio" class="pn"><span>${t('force')}</span><input type="range" id="rs" min="5" max="100" step="5" value="${Math.round(UI.ratio*100)}" aria-label="${t('force')}"><b id="rv"></b></div>
   <div id="bar" class="pn">${BAR.map((k,i)=>`<button class="bb" data-a="b:${k}" id="bb_${k}" title="${k==='ult'?t('fu_'+me.fac)+': '+t('fd_'+me.fac):t('s_'+k)+': '+t('d_'+k)}"><img src="${gl(k)}" alt=""><span class="nm">${k==='ult'?t('fu_'+me.fac):t('s_'+k)}</span><span class="ct"></span><kbd>${k==='ult'?'F':i+1}</kbd></button>`).join('')}</div></div>`;
+  if(UI.mob){$('#hud').insertAdjacentHTML('beforeend',`<div id="dock"><button data-a="sh:build"><i>🏗️</i><span>${t('dk_build')}</span></button><button data-a="sh:arms"><i>🚀</i><span>${t('dk_arms')}</span></button>
+      <button class="dka" data-a="sh:atk"><i>⚔️</i><span id="dkR"></span></button><button data-a="army"><i>🎖️</i><span>${t('ar_btn')}</span></button></div>
+    <div id="sheet" hidden><div class="shbg" data-a="sh:x"></div><div class="shp"><div class="shg"></div><div class="shh"><b id="shT"></b><button class="ib" data-a="sh:x" aria-label="close">✕</button></div><div id="shB"></div></div></div>`);
+    // big speed controls: one pause button and one button that cycles ×1 → ×2 → ×3
+    $('#spd').innerHTML=`<button data-a="sp:0" id="spP" aria-label="pause">Ⅱ</button><button data-a="spc" id="spC" dir="ltr">×1</button>`;}
   renderFac();renderAmode();
   $('#rs').addEventListener('input',e=>{UI.ratio=e.target.value/100;hudUpdate();});
   $('#mini').addEventListener('pointerdown',e=>{const r=e.target.getBoundingClientRect();lookAt((e.clientX-r.left)/r.width*g.W,(e.clientY-r.top)/r.height*g.H);});
 }
 function hudUpdate(){
+  {const d=$('#dkR');if(d)d.textContent=Math.round(UI.ratio*100)+'% · '+t((UI.prof.amode||'pt')==='all'?'am_allS':'am_ptS');const c=$('#spC');if(c){c.textContent='×'+UI.speed;c.classList.toggle('on',!UI.paused);}const pp=$('#spP');if(pp){pp.textContent=UI.paused?'▶':'Ⅱ';pp.classList.toggle('on',!!UI.paused);}}
   {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human],k=me?Math.floor(me.gold/100)+'|'+me.era+'|'+JSON.stringify(me.up):'';if(k!==UI.armyK&&!(performance.now()<(UI.armyHold||0))){UI.armyK=k;renderArmy();}}}
   const g=G;if(!g||g.o.demo||!$('#sT'))return;const me=g.nations[g.human],now=g.tick,T=$('#sT'),Gd=$('#sG');
   T.querySelector('b').textContent=fmt(me.troops);T.querySelector('small').textContent='/ '+fmt(me.maxT);T.querySelector('u').style.width=clamp(me.troops/me.maxT*100,0,100)+'%';
@@ -748,6 +754,15 @@ function cardRefresh(){if(UI.bs)return buildRefresh();if(G&&UI.sel===G.human&&!$
 
 // ── player actions ──
 function setMode(m){radClose();UI.mode=m;UI.pend=-1;if(UI.mob)UI.hover=-1;for(const d of document.querySelectorAll('.ts.cfm'))d.remove();if(m)hint(m[0]==='b'?t('pick',t('s_'+m.slice(2))):m[0]==='s'?t('pickSea',natName(G.nations[+m.slice(2)])):t('aim'),true);else hint(null);hudUpdate();}
+// the phone's bottom sheet: build tiles, weapon tiles, or the attack controls (the same live elements, moved in)
+function sheetOpen(kind){const sh=$('#sheet');if(!sh)return;if(UI.sheet===kind&&!sh.hidden)return sheetClose();UI.sheet=kind;sh.hidden=false;sh.dataset.k=kind;
+  $('#shT').textContent=t(kind==='build'?'dk_buildT':kind==='arms'?'dk_armsT':'dk_atkT');const B=$('#shB');B.innerHTML='';
+  if(kind==='atk'){const a=$('#amode'),r=$('#ratio');B.appendChild(a);B.appendChild(r);
+    B.insertAdjacentHTML('beforeend',`<div class="rq">${[25,50,75,100].map(v=>`<button data-a="rq:${v}">${v}%</button>`).join('')}</div>`);renderAmode();}
+  else{B.appendChild($('#bar'));}
+  for(const d of document.querySelectorAll('#dock button'))d.classList.toggle('on',d.dataset.a==='sh:'+kind);}
+function sheetClose(){const sh=$('#sheet');if(!sh||sh.hidden)return;sh.hidden=true;UI.sheet=null;const bt=$('#bottom');if(bt){bt.appendChild($('#ratio'));bt.appendChild($('#bar'));}const h=$('#hud'),a=$('#amode');if(h&&a)h.appendChild(a);
+  for(const d of document.querySelectorAll('#dock button'))d.classList.remove('on');}
 function barAct(k){
   const g=G,me=g.nations[g.human];if(UI.phase!=='play'||!me.alive)return;let r=0,m=null;
   if(k==='ult'){const u=FAC[me.fac].ult;if(g.tick<me.ultAt)r='cd';else if(me.gold<ULT[u].cost)r='gold';else if(ULT[u].tg)m='u:'+u;else send({k:'ult'});}
@@ -807,7 +822,7 @@ function act(a){
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio,m:UI.prof.amode||'pt'});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
-    case'b':return barAct(v);
+    case'b':{const r=barAct(v);if(UI.sheet&&UI.sheet!=='atk')sheetClose();return r;}
     case'era':if(me&&me.era<4){if(me.gold<eraCost(me))return err('gold');send({k:'era'});}break;
     case'lb':$('#lb').classList.toggle('open');break;
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,7));break;
@@ -853,7 +868,7 @@ function act(a){
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
-    case'army':openArmy();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':send({k:'army',t:v});break;
+    case'army':sheetClose();openArmy();break;case'sh':if(v==='x')sheetClose();else sheetOpen(v);break;case'rq':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();break;case'spc':if(NET.on&&!NET.host)return err('hostOnly');UI.speed=UI.speed>=3?1:UI.speed+1;UI.paused=false;hudUpdate();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;}break;case'armyUp':send({k:'army',t:v});break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
     case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
