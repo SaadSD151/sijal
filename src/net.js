@@ -9,13 +9,13 @@ function applyCmd(pid,c){
     if(g.started||n.spawned||!(c.i>=0&&c.i<g.N)||!canSpawn(g,c.i)){if(mine)err('spawn');return;}
     if(FAC[c.fac])n.fac=c.fac;if(!g.o.mp){n.color=FAC[n.fac].c;natPix(n);R.full=true;}
     spawn(g,n,c.i);
-    if(mine){const tx=c.i%W,ty=(c.i/W)|0;sfx('city');lookAt(tx,ty,Math.max(fitZoom(g)*2.4,UI.mob?5:6));for(let k=0;k<3;k++)addFx('ring',tx,ty,{r:6+k*3,dur:900+k*500,col:'#ffe9a8'});if(g.o.mp){UI.phase='wait';buildHud();hint(t('mpWait'),true);}}
+    if(mine){const tx=c.i%W,ty=(c.i/W)|0;sfx('city');lookAt(tx,ty,Math.max(fitZoom(g)*3,UI.mob?7:8.5));for(let k=0;k<3;k++)addFx('ring',tx,ty,{r:6+k*3,dur:900+k*500,col:'#ffe9a8'});if(g.o.mp){UI.phase='wait';buildHud();hint(t('mpWait'),true);}}
     if(!g.o.mp){startGame(g);UI.phase='play';buildHud();UI.hintT=performance.now();hint(null);}
     return;
   }
   if(c.k==='go'){
     if(g.started)return;for(const m of g.nations)if(m&&m.human&&!m.spawned){const i=pickSpawn(g,12);if(i>=0)spawn(g,m,i);else m.alive=false;}
-    startGame(g);UI.phase='play';renderFac();UI.hintT=performance.now();hint(null);const me=g.nations[g.human];if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(fitZoom(g)*2.4,UI.mob?5:6));return;
+    startGame(g);UI.phase='play';renderFac();UI.hintT=performance.now();hint(null);const me=g.nations[g.human];if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(fitZoom(g)*3,UI.mob?7:8.5));return;
   }
   if(c.k==='drop'){if(n.human){n.human=false;feed(t('mpLeft',nmh(n)),'warn');}return;}
   if(!g.started||!n.alive)return;

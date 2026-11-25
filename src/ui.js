@@ -4,7 +4,7 @@ let G=null,acc=0,lastTs=0;
 // online leaderboard (Firebase Realtime Database + anonymous sign-in); empty = turned off
 const LB_DB='https://sijal-fa367-default-rtdb.firebaseio.com',LB_KEY='AIzaSyABuacot7I8S6r-7bsTHbYgMWhQC7OHXi4';
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
-const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[594,374],[764,480],[962,606],[1188,746]],BOTS=[6,10,14,18,23];
+const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
@@ -810,7 +810,7 @@ function act(a){
     case'b':return barAct(v);
     case'era':if(me&&me.era<4){if(me.gold<eraCost(me))return err('gold');send({k:'era'});}break;
     case'lb':$('#lb').classList.toggle('open');break;
-    case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,5));break;
+    case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,7));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
     case'nameSave':{const v=(UI.nameDraft!=null?UI.nameDraft:p.name)||'';p.name=v;UI.nameDraft=null;saveProf();cloudSync();renderAccount();const m=$('#nameMsg');if(m)m.textContent=t('nameSaved',v||t('defName'));break;}
     case'nameUndo':UI.nameDraft=null;renderAccount();break;
