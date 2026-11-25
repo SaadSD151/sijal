@@ -447,12 +447,17 @@ function launchMissile(g,a,type,ti){
   A.gold-=cost;silo.cd=now+Math.round(m.cd*(1-.15*(silo.level-1)));if(o)react(g,g.nations[o],A,type==='rocket'?28:10);if(type==='nuke')A.st.nukes++;
   g.missiles.push({a,type,sx:silo.x,sy:silo.y,tx,ty,t:0,dur:clamp(bd*.55,22,80)});emit(g,'launch',{a,type,x:tx,y:ty,d:o});return 0;
 }
+const IC_SEE=.3,IC_MEET=.62;
 function tickMissiles(g){
-  for(let j=g.missiles.length-1;j>=0;j--){const m=g.missiles[j];m.t+=1/m.dur;if(m.t<1)continue;g.missiles.splice(j,1);
-    let hit=true;
-    for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
-      s.cd=g.tick+SH_CD(s.level);if(g.rng()<SH_P[m.type][s.level]){hit=false;emit(g,'intercept',{x:m.tx,y:m.ty,a:s.owner});break;}}
-    if(hit){const R2=MSL[m.type].r**2;for(const T of g.tanks)if(T.a!==m.a&&!g.nations[T.a].ally[m.a]&&(T.x-.5-m.tx)**2+(T.y-.5-m.ty)**2<=R2)T.hp=0;
+  for(let j=g.missiles.length-1;j>=0;j--){const m=g.missiles[j];m.t+=1/m.dur;
+    // a dome spots the missile early in its flight and fires right away; the interceptor meets it high in the air, well short of the target
+    if(!m.ck&&m.t>=IC_SEE){m.ck=1;let ic=null;
+      for(const s of g.structs)if(!s.dead&&!s.build&&s.type==='shield'&&s.owner!==m.a&&!g.nations[s.owner].ally[m.a]&&s.cd<=g.tick&&(s.x-m.tx)**2+(s.y-m.ty)**2<=SH_R(s.level)**2){
+        s.cd=g.tick+SH_CD(s.level);ic={s:s.i,a:s.owner,l:m.t,at:IC_MEET,ok:g.rng()<SH_P[m.type][s.level]};if(ic.ok)break;}
+      if(ic)m.ic=ic;}
+    if(m.ic&&m.ic.ok&&m.t>=m.ic.at){g.missiles.splice(j,1);emit(g,'intercept',{x:m.tx,y:m.ty,a:m.ic.a});continue;}
+    if(m.t<1)continue;g.missiles.splice(j,1);
+    {const R2=MSL[m.type].r**2;for(const T of g.tanks)if(T.a!==m.a&&!g.nations[T.a].ally[m.a]&&(T.x-.5-m.tx)**2+(T.y-.5-m.ty)**2<=R2)T.hp=0;
       const nk=m.type==='nuke',dm=m.type==='doom';blast(g,m.tx,m.ty,MSL[m.type].r,m.a,{fall:dm?460:nk?320:70,kill:dm?4:nk?3:1.6,lvl:dm?3:nk?2:1,ruin:nk?900:400,wipe:dm});emit(g,'boom',{x:m.tx,y:m.ty,r:MSL[m.type].r,type:m.type,a:m.a});}}
 }
 // missile damage to a city: rockets and bombs leave it in ruins (no growth, no income, weaker defence) for a while;

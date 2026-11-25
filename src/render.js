@@ -398,9 +398,9 @@ function draw(g,dt,ts){
         while(d>=step){m._lp.x+=dx/d*step;m._lp.y+=dy/d*step;puff(m._lp.x,m._lp.y,(dm?.85:nk?.65:.45)*Math.min(1,.35+m.t*12),dm?5000:nk?4000:3000,dm,-Math.min(1500,d/step*30));dx=P.x-m._lp.x;dy=P.y-m._lp.y;d=Math.hypot(dx,dy);}}
       else{c.strokeStyle='rgba(200,200,205,.6)';c.lineWidth=2;c.beginPath();for(let k=0;k<=12;k++){const t0=Math.max(0,m.t-k*.02),a=mslPos(m,t0);k?c.lineTo(a.x,a.y):c.moveTo(a.x,a.y);}c.stroke();}
       c.globalCompositeOperation='lighter';for(let k=1;k<=(q?9:4);k++){const t0=m.t-span*k/N;if(t0<0)break;const a=mslPos(m,t0),f=1-k/10;c.fillStyle=`rgba(255,${120+k*12},${30+k*6},${.75*f})`;c.beginPath();c.arc(a.x,a.y,r0*(1.3+k*.3),0,7);c.fill();}c.globalCompositeOperation='source-over';}
-    if(!m.iv&&m.t>.72){m.iv=1;for(const s of g.structs){if(s.dead||s.build||s.type!=='shield'||s.owner===m.a||g.nations[s.owner].ally[m.a]||s.cd>g.tick||(s.x-m.tx)**2+(s.y-m.ty)**2>SH_R(s.level)**2)continue;
-      const mt=.95,d=Math.hypot(m.tx-m.sx,m.ty-m.sy),mx=lerp(m.sx,m.tx,mt)+.5,my=lerp(m.sy,m.ty,mt)+.5-Math.sin(Math.PI*mt)*d*.28,ms=Math.max(250,(mt-m.t)*m.dur*100/Math.max(1,UI.speed||1));
-      (R.iv||(R.iv=[])).push({tx:m.tx,ty:m.ty,mx,my,until:performance.now()+ms+1500});addFx('intc',s.x,s.y,{mx,my,dur:ms});addFx('flash',s.x,s.y,{dur:300});break;}}
+    // the dome's interceptor follows the game clock, so it always meets the missile where the game says it does
+    if(m.ic&&!m._ic){m._ic=1;const I=m.ic,M=mslW(m,I.at),sx=I.s%g.W,sy=(I.s/g.W)|0;
+      if(I.ok)(R.iv||(R.iv=[])).push({tx:m.tx,ty:m.ty,mx:M.x,my:M.y,until:performance.now()+60000});addFx('intc',sx,sy,{mx:M.x,my:M.y,m,dur:1e9});addFx('flash',sx,sy,{dur:300});}
     const h=mslPos(m,m.t),tp=w2s(m.tx+.5,m.ty+.5);
     // launch: a flash and a cloud of smoke rolling out at the silo, and the missile grows out of it instead of popping in
     if(!m._seen){m._seen=1;const q=R.q==null?2:R.q;addFx('flash',m.sx,m.sy,{dur:450});addFx('ring',m.sx,m.sy,{r:2.2,dur:700,col:'rgba(255,200,140,.9)'});
@@ -435,7 +435,9 @@ function draw(g,dt,ts){
     if(T.k&&g.tick-T.fire<3&&R.q!==0&&Math.random()<.04)addFx('ring',T.x-.5+T.vx*3,T.y-.5+T.vy*3,{r:1.4,dur:450,col:'rgba(255,170,80,.9)'});}}
   // effects
   for(let i=R.fx.length-1;i>=0;i--){
-    const f=R.fx[i];f.t+=dt/f.dur;if(f.t>=1){R.fx.splice(i,1);continue;}const p=w2s(f.x+.5,f.y+.5),e=1-(1-f.t)*(1-f.t);
+    const f=R.fx[i];f.t+=dt/f.dur;
+    if(f.m){const I=f.m.ic;f.t=Math.min(1,Math.max(f.t,(f.m.t-I.l)/(I.at-I.l)));if(f.t>=1&&!I.ok)addFx('airburst',0,0,{mx:f.mx+.9,my:f.my-.7,dur:450});}
+    if(f.t>=1){R.fx.splice(i,1);continue;}const p=w2s(f.x+.5,f.y+.5),e=1-(1-f.t)*(1-f.t);
     if(f.type==='boom'){const q=R.q==null?2:R.q,k=f.kind||(f.nuke?'nuke':'rocket'),big=k==='doom',nk=k==='nuke'||big,fa=1-f.t;
       // smoke left behind by the blast, once
       if(!f.sm){f.sm=1;const n=q===2?(big?34:nk?22:9):q===1?(big?14:nk?9:4):0,R0=f.r/(big?1.6:nk?1.6:1.25);
