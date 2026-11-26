@@ -683,7 +683,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 window.SIJAL_MODE='pc';(function(){"use strict";
-const BUILD_ID='07760bfa42';
+const BUILD_ID='3afd047aa0';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -3729,7 +3729,6 @@ function act(a){
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
     case'copyLink':{const l=location.origin+location.pathname;try{navigator.clipboard.writeText(l).then(()=>toast(t('gg_copied'),'prop',2500)).catch(()=>toast(l,'prop',5000));}catch(e){toast(l,'prop',5000);}break;}
     case'moveGo':{saveProf();const raw=localStorage.getItem('sijal.v1')||'',rc=(location.hash||'').slice(1).toUpperCase(),h=[];if(raw.length>2)h.push('mv='+b64u(raw));if(/^[A-Z0-9]{5}$/.test(rc))h.push('r='+rc);stat('moved');statFlush(true);location.href=NEW_SITE+(h.length?'#'+h.join('&'):'');break;}
-    case'moveX':{const d=$('#moved');if(d)d.remove();break;}
     case'hist':renderHist();show('help');break;
     case'supMenu':UI.supFrom='menu';renderDonate();show('help');break;
     case'supPay':stat('payclick');break;case'donPay':stat('donclick');break;
@@ -3937,8 +3936,10 @@ function moveIn(){
 }
 function moveNotice(){
   if(location.hostname!==OLD_HOST||$('#moved'))return;const d=document.createElement('div');d.id='moved';
-  d.innerHTML=`<div class="mvc"><div class="mvi">🎉</div><h2>${t('mvT')}</h2><p>${t('mvD')}</p><div class="mvl" dir="ltr">sijalwar.com</div><button class="btn big ok" data-a="moveGo">${t('mvGo')}</button><p class="mvs">${t('mvKeep')}</p><button class="btn sm" data-a="moveX">${t('mvStay')}</button></div>`;
+  d.innerHTML=`<div class="mvc"><div class="mvi">🎉</div><h2>${t('mvT')}</h2><p>${t('mvD')}</p><div class="mvl" dir="ltr">sijalwar.com</div><button class="btn big ok" data-a="moveGo">${t('mvGo')} <span id="mvN">5</span></button><p class="mvs">${t('mvKeep')}</p></div>`;
   $('#app').appendChild(d);
+  // no staying behind: the move happens by itself after a short countdown
+  let n=5;const tm=setInterval(()=>{n--;const e=$('#mvN');if(e)e.textContent=n>0?n:'';if(n<=0){clearInterval(tm);act('moveGo');}},1000);
 }
 function boot(){
   moveIn();
