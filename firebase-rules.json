@@ -7,7 +7,7 @@
         "h"
       ],
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val()))",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game'))",
         ".validate": "newData.hasChildren(['n','w','h']) && newData.child('n').isString() && newData.child('n').val().length <= 18 && newData.child('w').isNumber() && newData.child('w').val() >= 0 && newData.child('h').isNumber() && newData.child('h').val() >= 0"
       }
     },
@@ -18,31 +18,31 @@
       }
     },
     "names": {
-      ".read": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())",
+      ".read": "auth != null && (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game')",
       "$name": {
         ".read": "auth != null",
         ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid)"
       }
     },
     "admins": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val()))",
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game'))",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())"
+        ".write": "auth != null && (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game')"
       }
     },
     "msg": {
       ".read": true,
-      ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val()))"
+      ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game'))"
     },
     "grants": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())"
+        ".write": "auth != null && (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game')"
       }
     },
     "stats": {
-      ".read": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())",
+      ".read": "auth != null && (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game')",
       "d": {
         "$day": {
           "$k": {
@@ -58,16 +58,12 @@
         }
       },
       "on": {
-        ".write": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())",
+        ".write": "auth != null && (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game')",
         "$id": {
           ".write": "$id.matches(/^[a-z0-9]+$/) && $id.length >= 8 && $id.length <= 16",
           ".validate": "newData.hasChildren(['t','s']) && newData.child('t').isNumber() && newData.child('t').val() <= now"
         }
       }
-    },
-    "owner": {
-      ".read": "auth != null",
-      ".write": "auth != null && auth.token.email === 'saadsd@players.sijal.game' && newData.isString() && newData.val() === auth.uid"
     }
   }
 }
