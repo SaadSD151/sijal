@@ -210,13 +210,14 @@ const cloudOn=()=>!!(LB_DB&&LB_KEY&&/^https?:/.test(location.protocol)&&!navigat
 function cloudSync(){
   const p=UI.prof;if(!cloudOn())return Promise.resolve();if(UI.syncing)return UI.syncing;
   if(!p.cloudInit){p.cloudInit=1;p.pend={wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)};saveProf();}
+  if(!p.histUp){p.histUp=1;p.histPend=(p.hist||[]).slice();saveProf();}
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
-  const sent=Object.assign({},p.pend||{});let uid;
-  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}
+  const sent=Object.assign({},p.pend||{}),hSent=(Array.isArray(p.histPend)?p.histPend:[]).slice();let uid;
+  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
     const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
-      if(!u||(p.fb||{}).uid!==uid)return;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
+      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       fetch(LB_DB+'/grants/'+uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(gr=>{if(gr&&(p.passT==null?-1:p.passT)<PASS.length){p.passT=PASS.length;p.supporter=1;saveProf();toast(t('supOn'),'prop',6000);fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:PASS.length})}).catch(()=>{});}}).catch(()=>{});
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
@@ -239,7 +240,7 @@ function accEnter(j,F,okMsg){
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
     p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;setTimeout(adminCheck,500);
     const gpt=p.passT==null?-1:p.passT;p.passT=Math.max(guest?gpt:-1,u&&u.pt!=null?u.pt|0:-1);
-    for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
+    for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};if(guest)p.histPend=(p.hist||[]).slice();else{p.hist=[];p.histPend=[];}for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
 }
 function accRegister(){
   const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('weak');if(!cloudOn())return accDone('net');loading(true);
@@ -249,7 +250,7 @@ function accLogin(){
   const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);
   accReq('signInWithPassword',F).then(j=>j.idToken?accEnter(j,F,'in'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
-function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.hist=[];p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
+function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.hist=[];p.histPend=[];p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
 function renderLB(){
   const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
   const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
@@ -529,11 +530,19 @@ function startMatch(o){
   UI.lastOpt=opt;loading(true);
   setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},40);
 }
-// battle history: the last 40 games on this device, newest first
+// battle history: the last 40 games, newest first; kept in the account (users/<uid>/hist), so every device shows the same log
+function histMerge(p,cloud,sent,uid,tok){
+  const gone=new Set(sent.map(e=>e.d));p.histPend=(p.histPend||[]).filter(e=>!gone.has(e.d));
+  const all=new Map();for(const e of (p.hist||[]))all.set(e.d,e);const C=cloud&&typeof cloud==='object'?Object.values(cloud).filter(e=>e&&e.d):[];for(const e of C)all.set(e.d,e);
+  p.hist=[...all.values()].sort((a,b)=>b.d-a.d).slice(0,40);
+  // keep only the newest 40 in the cloud too
+  if(C.length>40){const keep=new Set(p.hist.map(e=>e.d)),cut={};for(const e of C)if(!keep.has(e.d))cut['hist/h'+e.d]=null;fetch(LB_DB+'/users/'+uid+'.json?auth='+tok,{method:'PATCH',body:JSON.stringify(cut)}).catch(()=>{});}
+  if(UI.screen==='help'&&$('.hlist'))renderHist();
+}
 function histAdd(g,res,xp){
   const p=UI.prof,me=g.nations[g.human];if(!me)return;const si=SIZES.findIndex(s=>s[0]===g.W&&s[1]===g.H);
   const e={d:Date.now(),r:res,xp:xp|0,m:g.o.daily?'d':NET.on?'o':UI.mType||'c',s:si,f:g.o.diff|0,t:Math.round(g.tick/TPS),c:me.st.cities|0,k:me.st.kills|0,ch:g.o.cheats?1:0};
-  p.hist=[e].concat(Array.isArray(p.hist)?p.hist:[]).slice(0,40);saveProf();
+  p.hist=[e].concat(Array.isArray(p.hist)?p.hist:[]).slice(0,40);p.histPend=(Array.isArray(p.histPend)?p.histPend:[]).concat([e]).slice(-40);saveProf();
 }
 function renderHist(){
   const H=Array.isArray(UI.prof.hist)?UI.prof.hist:[],w=H.filter(e=>e.r==='w').length,xs=H.reduce((a,e)=>a+(e.xp|0),0),L=UI.lang==='ar';
