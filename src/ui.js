@@ -278,7 +278,7 @@ function accForgot(){
   authPost('sendOobCode',{requestType:'PASSWORD_RESET',email:v.toLowerCase()},1).then(()=>accDone('fgSent')).catch(()=>accDone('net'));
 }
 // Google sign-in: Google's own button gives an ID token, and Firebase turns it into a Sijal account (or links it to the one you are in)
-const GOOGLE_CID='';
+const GOOGLE_CID=location.hostname==='saadsd151.github.io'?'':'79742214940-mtg3fatfeo2064v40mrtrhocedru9t2o.apps.googleusercontent.com';
 const inAppBrowser=()=>/FBAN|FBAV|Instagram|TikTok|musical_ly|Bytedance|Snapchat|Line\//i.test(navigator.userAgent);
 function gMount(mode){
   const box=$('#gBtn');if(!box||!GOOGLE_CID)return;
