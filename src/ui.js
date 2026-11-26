@@ -118,7 +118,7 @@ function renderMenu(){
   <div class="home">
     <button class="hero" data-a="quick"><span class="sx" aria-hidden="true"><svg class="a" viewBox="0 0 40 160"><use href="#swd"/></svg><svg class="b" viewBox="0 0 40 160"><use href="#swd"/></svg><em></em></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
-    <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><a href="${TIKTOK}" target="_blank" rel="noopener">${TT} ${t('d_tt')}</a></div>
+    <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><button data-a="social">📱 ${t('d_follow')}</button></div>
   </div>
   <div class="mf"><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>${mtabs('menu')}`;
 }
@@ -377,7 +377,17 @@ function renderSkins(){
 // ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
 const ADMIN_ROOT='saadsd';
 // supporting the developer: 10 riyals by STC Pay unlocks the whole season once the owner confirms it
-const TIKTOK='https://www.tiktok.com/@sijal_2';const STC_PAY='0538053242',SUPPORT_SAR=10;
+const TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/saadsd_17';
+// the game's social accounts, as big cards
+function renderSocial(){
+  const TT='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>',
+    IG='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/></svg>';
+  $('#help').innerHTML=`<h2>📱 ${t('d_follow')}</h2><p class="keys">${t('socD')}</p><div class="socs">
+    <a class="soc tt" href="${TIKTOK}" target="_blank" rel="noopener">${TT}<span><b>${t('d_tt')}</b><small dir="ltr">@sijal_2</small></span></a>
+    <a class="soc ig" href="${INSTA}" target="_blank" rel="noopener">${IG}<span><b>${t('d_ig')}</b><small dir="ltr">@saadsd_17</small></span></a></div>
+  <div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
+}
+const STC_PAY='0538053242',SUPPORT_SAR=10;
 // ── game statistics for the owner: anonymous counters per Saudi day and all-time, and who has the game open right now ──
 const sDay=o=>new Date(Date.now()+3*36e5-(o||0)*864e5).toISOString().slice(0,10),sHour=()=>new Date(Date.now()+3*36e5).getUTCHours();
 const SQ={q:{},ms:0};
@@ -857,6 +867,7 @@ function act(a){
     case'skins':renderSkins();show('help');break;
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');break;
+    case'social':renderSocial();show('help');break;
     case'supMenu':UI.supFrom='menu';renderSupport();show('help');break;
     case'supCopy':try{navigator.clipboard.writeText(STC_PAY);toast(t('supCopied'),'prop',1500);}catch(e){}break;
     case'supSend':supSend();break;
