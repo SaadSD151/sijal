@@ -290,10 +290,11 @@ function draw(g,dt,ts){
   let shx=0,shy=0;if(R.q===0)R.shake=0;if(R.shake>.3){shx=(Math.random()-.5)*R.shake;shy=(Math.random()-.5)*R.shake;R.shake*=.9;}
   c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#092440';c.fillRect(0,0,cw,ch);
   c.setTransform(dpr*z,0,0,dpr*z,dpr*(cw/2-cam.x*z+shx),dpr*(ch/2-cam.y*z+shy));
-  c.imageSmoothingEnabled=true;c.drawImage(R.land,0,0,g.W,g.H);
+  // map smoothing is a setting, off by default: crisp tiles unless the player turns it on
+  c.imageSmoothingEnabled=!!(UI.prof&&UI.prof.smooth);c.drawImage(R.land,0,0,g.W,g.H);
   if(R.winter>.01){c.globalAlpha=R.winter;c.drawImage(R.snow,0,0,g.W,g.H);c.globalAlpha=1;}
   if(R.autumn>.01){c.fillStyle=`rgba(214,120,30,${R.autumn*.09})`;c.fillRect(0,0,g.W,g.H);}
-  c.drawImage(R.own,0,0,g.W,g.H);c.drawImage(R.water,0,0,g.W,g.H);
+  c.drawImage(R.own,0,0,g.W,g.H);c.drawImage(R.water,0,0,g.W,g.H);c.imageSmoothingEnabled=true;
   c.setTransform(dpr,0,0,dpr,0,0);c.lineCap=c.lineJoin='round';c.textAlign='center';c.textBaseline='middle';
   if(g.fallList.length)drawFire(c,g,z,cw,ch,ts);
   // offensives that involve the player: where they start and where they are headed

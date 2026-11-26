@@ -26,6 +26,8 @@ function aiThink(g,n){
   for(const k of g.attacks){if(k.a===id){myAtk++;if(!k.d&&!k.naval)neut=k;}else if(k.d===id){inc+=k.troops;if(k.troops>wt){wt=k.troops;worst=k.a;}}}
   if(n.era<4&&n.gold>=eraCost(n)*(n.cnt.city<2?1.6:1))eraUp(g,n);
   if(now>=ai.nextBuild){ai.nextBuild=now+25+rng()*30;aiBuild(g,n,worst);}
+  // a tribe boxed in on every side by this realm is swallowed in one go, the way a player annexes it
+  if((now+id)%30===0)for(const m of g.nations)if(m&&m.alive&&m.minor&&g.nb[id*K+m.id]>0&&canAnnex(g,id,m.id))annex(g,id,m.id);
   if(now>=ai.nextDip){ai.nextDip=now+50;aiDip(g,n);}
   if(inc>n.troops*.45){
     if(neut)neut.cancel=true;

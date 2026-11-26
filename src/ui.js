@@ -190,6 +190,7 @@ function renderSettings(){
   <div><h3>${t('volS')}</h3><div class="rng"><input type="range" id="volS" min="0" max="100" step="5" value="${vs}" aria-label="${t('volS')}"><b id="volSv">${vs}</b></div></div>
   <div><h3>${t('langName')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${UI.lang==='ar'?' on':''}" data-a="lang:ar">العربية</button><button class="chip${UI.lang==='en'?' on':''}" data-a="lang:en">English</button></div></div>
   <div><h3>${t('gfx')}</h3><div class="chips" style="justify-content:flex-start">${t('gfxs').map((x,i)=>`<button class="chip${gfxLv()===i?' on':''}" data-a="gfx:${i}">${x}</button>`).join('')}</div><div class="gfxp">${[0,1,2].map(i=>`<button class="${gfxLv()===i?'on':''}" data-a="gfx:${i}"><img src="${gfxPreview(i)}" alt="${t('gfxs')[i]}"><span>${t('gfxs')[i]}</span></button>`).join('')}</div><div class="gfxd">${t('gfxD')[gfxLv()]}</div></div>
+  <div><h3>${t('smT')}</h3><div class="chips" style="justify-content:flex-start"><button class="chip${p.smooth?'':' on'}" data-a="smooth:0">${t('smOff')}</button><button class="chip${p.smooth?' on':''}" data-a="smooth:1">${t('smOn')}</button></div><div class="gfxd">${t('smD')}</div></div>
   <div><h3>${t('iface')}</h3><div class="chips" style="justify-content:flex-start">${t('ifs').map((x,i)=>`<button class="chip${p.ui===i?' on':''}" data-a="ifc:${i}">${x}</button>`).join('')}</div></div></div>
   <div class="row"><button class="btn big" data-a="setBack">${t('ok')}</button></div>`;
 }
@@ -668,7 +669,8 @@ function buildHud(){
 }
 function hudUpdate(){
   {const d=$('#dkR');if(d){d.textContent=((UI.prof.amode||'pt')==='all'?'🌐 ':'🎯 ')+t((UI.prof.amode||'pt')==='all'?'am_allS':'am_ptS');$('#dkP').textContent='⚔️ '+Math.round(UI.ratio*100)+'%';}document.querySelectorAll('.amseg button').forEach(b=>b.classList.toggle('on',b.dataset.a==='am:'+(UI.prof.amode||'pt')));const c=$('#spC');if(c){c.textContent='×'+UI.speed;c.classList.toggle('on',!UI.paused);}const pp=$('#spP');if(pp){pp.textContent=UI.paused?'▶':'Ⅱ';pp.classList.toggle('on',!!UI.paused);}}
-  {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human],k=me?Math.floor(me.gold/100)+'|'+me.era+'|'+JSON.stringify(me.up):'';if(k!==UI.armyK&&!(performance.now()<(UI.armyHold||0))){UI.armyK=k;renderArmy();}}}
+  // the army panel is rebuilt only when an age or a level changes; gold only updates the numbers and buttons in place, so a tap is never lost to a redraw
+  {const p=$('#armyP');if(p&&!p.hidden){const me=G&&G.nations[G.human];if(me){const k=me.era+'|'+JSON.stringify(me.up);if(k!==UI.armyK){if(!(performance.now()<(UI.armyHold||0))){UI.armyK=k;renderArmy();}}else armyGold(me,p);}}}
   const g=G;if(!g||g.o.demo||!$('#sT'))return;const me=g.nations[g.human],now=g.tick,T=$('#sT'),Gd=$('#sG');
   T.querySelector('b').textContent=fmt(me.troops);T.querySelector('small').textContent='/ '+fmt(me.maxT);T.querySelector('u').style.width=clamp(me.troops/me.maxT*100,0,100)+'%';
   Gd.querySelector('b').textContent=fmt(me.gold);Gd.querySelector('small').textContent='+'+me.income.toFixed(0);
@@ -744,7 +746,11 @@ function armyNums(me,k,lv){const f=(a)=>a,nx=lv+1;
   if(k==='nav'){const sl=boatSlots(me);return[[t('ar_bspd'),Math.round(100*(1+.15*lv))+'%',Math.round(100*(1+.15*nx))+'%'],[t('ar_boats'),sl,sl+((nx===3||nx===5)?1:0)]];}
   return[[t('ar_dfn'),'×'+(1+.1*lv).toFixed(1),'×'+(1+.1*nx).toFixed(1)]];}
 function openArmy(){const g=G,me=g.nations[g.human];if(!me||!me.alive)return;UI.bs=null;UI.sel=0;const c=$('#card');c.hidden=true;let p=$('#armyP');if(!p){p=document.createElement('div');p.id='armyP';$('#hud').appendChild(p);}
-  p.hidden=false;UI.armyK='';renderArmy();}
+  p.hidden=false;renderArmy();{const me=G.nations[G.human];if(me)UI.armyK=me.era+'|'+JSON.stringify(me.up);}}
+function armyGold(me,p){
+  const gb=p.querySelector('.apg2 b');if(gb){const v=fmt(me.gold);if(gb.textContent!==v)gb.textContent=v;}const U=me.up||{};
+  for(const A of ARMY){const b=p.querySelector(`[data-a="armyUp:${A.k}"]`);if(!b)continue;const lv=U[A.k]|0,poor=me.gold<A.cost[lv];if(b.disabled!==poor){b.disabled=poor;b.classList.toggle('ok',!poor);}}
+}
 function renderArmy(){const g=G,me=g.nations[g.human],p=$('#armyP');if(!p||p.hidden||!me)return;const U=me.up||(me.up={sol:0,tank:0,air:0,nav:0,def:0}),fx=UI.armyFx;UI.armyFx=null;
   p.innerHTML=`<div class="aph"><div><b>🎖️ ${t('ar_t')}</b><small>${t('ar_sub')}</small></div><div class="apg2"><span class="coin"></span><b>${fmt(me.gold)}</b></div><button class="ib" data-a="armyX" aria-label="close">✕</button></div>
   <div class="apg">${ARMY.map(A=>{const lv=U[A.k]|0,mx=lv>=5,need=mx?0:A.era[lv],lock=!mx&&me.era<need,cost=mx?0:A.cost[lv],poor=!mx&&!lock&&me.gold<cost,nums=armyNums(me,A.k,lv);
@@ -995,6 +1001,7 @@ function act(a){
     case'auSet':{const a=auCfg();a[v]=w==='1';saveProf();auOpen();UI.cardKey='';UI.auNext=0;break;}
     case'auY':if(UI.auPend>=0){send({k:'up',i:UI.auPend});(UI.auLog||(UI.auLog=[])).push(G.tick);}UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+2000;break;
     case'auN':UI.auPend=-1;if(UI.auToast)UI.auToast.remove();UI.auNext=performance.now()+60000;break;
+    case'smooth':UI.prof.smooth=v==='1'?1:0;saveProf();renderSettings();break;
     case'gfx':UI.prof.gfx=+v;saveProf();applyGfx();renderSettings();break;
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
     case'army':sheetClose();openArmy();break;case'sh':if(v==='x')sheetClose();else sheetOpen(v);break;case'rq':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();break;case'spc':if(NET.on&&!NET.host)return err('hostOnly');UI.speed=UI.speed>=3?1:UI.speed+1;UI.paused=false;hudUpdate();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;UI.newArmy=null;newMarks();}break;case'armyUp':send({k:'army',t:v});break;
@@ -1039,7 +1046,7 @@ function handleEvents(){
       case'allyEnd':if(e.a===me||e.b===me){const P=N[e.a===me?e.b:e.a];for(const d of document.querySelectorAll('.ts[data-ally="'+P.id+'"]'))d.remove();feed(t('m_allyEnd',nmh(P)),'warn');UI.cardKey='';}break;
       case'ally':if(e.a===me||e.b===me){feed(t('m_ally',nmh(N[e.a]),nmh(N[e.b])),'good');sfx('city');sayLine(N[e.a===me?e.b:e.a],'ally');UI.cardKey='';}break;
       case'betray':if(e.a===me||e.b===me){feed(t('m_betray',nmh(N[e.a]),nmh(N[e.b])),'bad');if(e.b===me)sfx('alert');UI.cardKey='';}break;
-      case'armyUp':if(e.a===me){UI.armyFx=e.k;sfx('era');renderArmy();const M=N[me];UI.armyK=Math.floor(M.gold/100)+'|'+M.era+'|'+JSON.stringify(M.up);UI.armyHold=performance.now()+900;}break;
+      case'armyUp':if(e.a===me){UI.armyFx=e.k;sfx('era');renderArmy();const M=N[me];UI.armyK=M.era+'|'+JSON.stringify(M.up);UI.armyHold=performance.now()+900;}break;
       case'repair':if(e.a===me){addFx('ring',e.s.x,e.s.y,{r:5,col:'#7ee08a',dur:800});feed(t('m_fixed',cn),'good');}break;
       case'cityHit':addFx('ring',e.s.x,e.s.y,{r:4,col:'#b9b0a6',dur:900});if(e.d===me)feed(t('m_cityRuinYou',cn),'bad');else if(e.a===me)feed(t('m_cityRuin',cn),'good');break;
       case'cityGone':addFx('ring',e.s.x,e.s.y,{r:8,col:'#ff9a5a',dur:1500});if(e.d===me){feed(t('m_cityGoneYou',cn),'bad');banner(t('m_cityGoneYou',cn),'bad');}else if(e.a===me)feed(t('m_cityGone',cn),'good');break;
