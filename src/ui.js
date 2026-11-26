@@ -558,19 +558,26 @@ function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();
 function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/grants/'+uid+'.json',{method:'PUT',body:JSON.stringify({by:'owner',ts:{'.sv':'timestamp'}})});}).then(()=>{toast('💜 '+t('supGranted',u),'prop',3000);$('#grUser').value='';}).catch(e=>err(e===1?'admNoUser':'admFail'));}
 // the instant pass: PayPal's own buttons inside the game; our server (worker/index.js) makes the order for this account and, once paid, unlocks the season
+// PayPal's script is fetched ahead of time (soon after start, and when the season tab opens), so the buttons are there the moment the page opens
+function ppPrep(){
+  if(UI.ppReady)return UI.ppReady;const f=UI.prof.fb||{};if(!f.user||!cloudOn())return Promise.resolve(null);
+  return UI.ppReady=fetch('/api/pay-config').then(r=>r.ok?r.json():null).then(c=>{if(!c||!c.clientId)return null;if(window.paypal)return c;
+    return new Promise(ok=>{const sc=document.createElement('script');sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(c.clientId)+'&currency=USD&intent=capture&components=buttons&enable-funding=card';sc.onload=()=>ok(c);sc.onerror=()=>{UI.ppReady=null;ok(null);};document.head.appendChild(sc);});}).catch(()=>{UI.ppReady=null;return null;});
+}
 function ppMount(){
   const w=$('#ppWrap'),box=$('#ppBox'),f=UI.prof.fb||{};if(!w||!box||!f.user||!cloudOn())return;
+  // shown at once with a loading line; hidden only if payments turn out to be off
+  w.hidden=false;if(!window.paypal)box.innerHTML=`<div class="ppload">⏳ ${t('ppLoad')}</div>`;
   const msg=(k,bad,code)=>{const m=$('#ppMsg');if(m){m.textContent=t(k)+(code?' ('+code+')':'');m.className='ppm'+(bad?' bad':' good');}if(code)stat('pperr_'+String(code).slice(0,5));};
-  fetch('/api/pay-config').then(r=>r.ok?r.json():null).then(c=>{if(!c||!c.clientId)return;
-    const go=()=>{if(!window.paypal||!$('#ppBox'))return;w.hidden=false;const alt=$('.ppalt');if(alt)alt.hidden=false;
+  ppPrep().then(c=>{if(!c||!window.paypal){w.hidden=true;return;}
+    const go=()=>{if(!window.paypal||!$('#ppBox'))return;$('#ppBox').innerHTML='';w.hidden=false;const alt=$('.ppalt');if(alt)alt.hidden=false;
       paypal.Buttons({style:{layout:'vertical',shape:'pill',label:'pay',height:44},
         createOrder:()=>lbAuth().then(f=>fetch('/api/order',{method:'POST',body:JSON.stringify({tok:f.tok})})).then(r=>r.json()).then(j=>{if(!j||!j.id)throw 0;stat('ppstart');return j.id;}),
         onApprove:d=>{msg('ppWait');return lbAuth().then(f=>fetch('/api/pass',{method:'POST',body:JSON.stringify({order:d.orderID,tok:f.tok})})).then(r=>r.json()).then(j=>{
           if(j&&j.ok){stat('ppdone');statFlush();msg('ppOk');cloudSync().then(()=>{if(UI.screen==='help'&&$('#ppWrap'))$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supOn')}</p><div class="row"><button class="btn big ok" data-a="pass">${t('ok')}</button></div>`;});}
           else msg(j&&j.why==='unpaid'?'ppUnpaid':'ppFail',1,j&&j.why||'x');}).catch(()=>msg('ppFail',1,'net'));},
         onCancel:()=>msg('ppCancel',1),onError:e=>msg('ppFail',1,UI.relog?'login':'sdk')}).render('#ppBox').catch(()=>{});};
-    if(window.paypal)return go();
-    const sc=document.createElement('script');sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(c.clientId)+'&currency=USD&intent=capture&components=buttons&enable-funding=card';sc.onload=go;document.head.appendChild(sc);}).catch(()=>{});
+    go();});
 }
 // the main menu's support: any amount, no account needed and nothing to unlock; the Season Zero pass has its own page
 function renderDonate(){
@@ -981,7 +988,7 @@ function act(a){
     case'nameUndo':UI.nameDraft=null;renderAccount();break;
     case'cheat':{const c=p.cheat||(p.cheat={});c[v]=!c[v];saveProf();renderSetup();break;}
     case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
-    case'pass':renderPass();show('help');break;
+    case'pass':renderPass();show('help');if((UI.prof.passT==null?-1:UI.prof.passT)<PASS.length)ppPrep();break;
     case'skins':renderSkins();show('help');break;
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');ppMount();break;
@@ -1221,6 +1228,8 @@ function boot(){
   statBoot();
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
+  // players without the full season get PayPal ready in the background a few seconds after start
+  setTimeout(()=>{if((UI.prof.passT==null?-1:UI.prof.passT)<PASS.length)ppPrep();},5000);
   moveNotice();if(UI.movedIn)setTimeout(()=>toast(t('mvDone'),'prop',4500),1200);
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,setOwnerX:(i,o)=>setOwner(G,i,o),stat:{flush:statFlush,ping:statPing},acc:{gCred,accInfoLoad},run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }

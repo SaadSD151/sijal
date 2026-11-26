@@ -295,6 +295,8 @@ function tShape(c,type,x,y,r){
 }
 // where the icon sits inside each outline
 const TGY={silo:.12,shield:.12,fort:-.05};
+// text widths are measured once per string and size: measuring every label every frame was a large share of a zoom
+const TW=new Map();function textW(c,s,f){const k=f+'|'+s;let w=TW.get(k);if(w==null){if(TW.size>4000)TW.clear();w=c.measureText(s).width;TW.set(k,w);}return w;}
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
 function draw(g,dt,ts){
@@ -374,7 +376,7 @@ function draw(g,dt,ts){
     if(!city&&s.level>1&&z>=2.6){c.beginPath();c.arc(p.x+r*.8,p.y-r*.8,6,0,7);c.fillStyle='#0b1826';c.fill();c.font=`700 10px ${FONT}`;c.fillStyle='#f6dc9a';c.fillText(s.level,p.x+r*.8,p.y-r*.75);}
     if(s.upAt>g.tick){c.strokeStyle='#f6dc9a';c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,r+4,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.upAt-g.tick)/60));c.stroke();}
     if(city&&z>=4.2){
-      c.font=`600 ${clamp(z*1.9,10,13)}px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.8)';txt(c,cityName(s.name,UI.lang),p.x,p.y+r+9,'#f6ecd2');
+      c.font=`600 ${Math.round(clamp(z*1.9,10,13))}px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.8)';txt(c,cityName(s.name,UI.lang),p.x,p.y+r+9,'#f6ecd2');
       c.beginPath();c.arc(p.x+r*.8,p.y-r*.8,6,0,7);c.fillStyle='#0b1826';c.fill();c.font=`700 10px ${FONT}`;c.fillStyle='#f6dc9a';c.fillText(s.level,p.x+r*.8,p.y-r*.75);
     }
     if(s.type==='mon'){const left=Math.max(0,Math.ceil((s.cd-g.tick)/TPS));c.font=`700 13px ${FONT}`;c.lineWidth=3;c.strokeStyle='rgba(6,12,20,.9)';txt(c,left+'s',p.x,p.y-r-9,'#ffe9a8');
@@ -389,9 +391,9 @@ function draw(g,dt,ts){
     // the label glides to the middle of the realm instead of jumping
     if(n.lx==null||Math.abs(n.lx-n.cx)>80||Math.abs(n.ly-n.cy)>80){n.lx=n.cx;n.ly=n.cy;}else{n.lx+=(n.cx-n.lx)*.06;n.ly+=(n.cy-n.ly)*.06;}
     const p=w2s(n.lx+.5,n.ly+.5);if(p.x<-300||p.y<-100||p.x>cw+300||p.y>ch+100)continue;
-    let f=Math.max(fs,11),y=0,hw=0,ok=false;
+    let f=Math.round(Math.max(fs,11)/2)*2,y=0,hw=0,ok=false;
     for(let tries=0;tries<3&&!ok;tries++){
-      c.font=`700 ${f}px ${FONT}`;hw=c.measureText(nm).width/2+6;const st=Math.min(f,30)*1.1;
+      c.font=`700 ${f}px ${FONT}`;hw=textW(c,nm,f)/2+6;const st=Math.min(f,30)*1.1;
       for(const k of[0,-1.4,1.4,-2.8,2.8]){
         const yy=p.y-f*.6+k*st,top=yy-f*.75,bot=yy+f*1.65;
         let hit=false;for(const L of LB)if(Math.abs(L.x-p.x)<L.hw+hw&&top<L.b&&bot>L.t){hit=true;break;}
@@ -407,7 +409,7 @@ function draw(g,dt,ts){
     const H=me?g.nations[me]:null,rel=H&&n.id!==me?(H.ally[n.id]?'#a6f0be':(g.tick-H.lastHit[n.id]<300||g.tick-n.lastHit[me]<300)?'#ffb3a8':'#f4e3b0'):'#f4e3b0';
     c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';txt(c,nm,p.x,y,'#fff');
     if(n.badge){const q=Math.max(16,f*1.25);c.font=`700 ${f}px ${FONT}`;drawBadge(c,p.x+c.measureText(nm).width/2+q*.62,y,q,ts);c.font=`700 ${f}px ${FONT}`;c.lineWidth=Math.max(2.5,f*.2);c.strokeStyle='rgba(6,12,20,.78)';}
-    c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
+    c.font=`600 ${Math.round(f*.72)}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
     if(H&&n.id!==me&&H.ally[n.id]){const q=Math.max(14,f*.95);c.font=`${q}px sans-serif`;c.fillText('🤝',p.x-hw-q*.75,y);c.font=`700 ${f}px ${FONT}`;}
     if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,ez=UI.emoZ||1,q=Math.max(18,f*1.5)*ez*(age<.08?.5+age*6.25:1);c.globalAlpha=age>.85?(1-age)/.15:1;drawEmo(c,EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5)-q*.4*(ez-1),q,ts);c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
@@ -417,7 +419,7 @@ function draw(g,dt,ts){
   // troops pushing on each front that involves me, drawn over the cities so the number is always readable
   if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const FL=R.front[k.id];if(!FL||!FL.length)continue;for(const F of FL){if(F.sx==null)continue;
     F.sh=F.share;F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa=clamp(F.sa+da*.1,-.52,.52);F.ss+=(F.sz-F.ss)*.1;
-    const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
+    const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=Math.round(clamp(F.ss*z,12,46)/2)*2;
     c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops*F.sh),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}}
   drawSmoke(c,z,cw,ch);
   for(const m of g.missiles){

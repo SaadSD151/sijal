@@ -643,3 +643,4 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 /* instant pass with PayPal's buttons */
 .ppi{border:1.5px solid rgba(95,211,122,.5)!important}.ppi h3,.ppalt{margin:0 0 6px}#ppBox{min-height:46px;margin:8px 0}
 .ppm{margin:6px 0 0;text-align:center;font-weight:700}.ppm.bad{color:#ff8a8a}.ppm.good{color:#8fe3a8}
+.ppload{height:44px;display:grid;place-items:center;border-radius:22px;background:rgba(255,196,57,.15);color:#ffd36b;font-weight:700;animation:ppl 1.2s ease-in-out infinite}@keyframes ppl{50%{opacity:.55}}
