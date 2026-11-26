@@ -557,6 +557,21 @@ function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/admins/'+uid+'.json',{method:'PUT',body:JSON.stringify(u)});}).then(()=>{toast('🛠️ '+t('admGiven',u),'prop',2500);openAdmin();}).catch(e=>err(e===1?'admNoUser':'admFail'));}
 function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/grants/'+uid+'.json',{method:'PUT',body:JSON.stringify({by:'owner',ts:{'.sv':'timestamp'}})});}).then(()=>{toast('💜 '+t('supGranted',u),'prop',3000);$('#grUser').value='';}).catch(e=>err(e===1?'admNoUser':'admFail'));}
+// the instant pass: PayPal's own buttons inside the game; our server (worker/index.js) makes the order for this account and, once paid, unlocks the season
+function ppMount(){
+  const w=$('#ppWrap'),box=$('#ppBox'),f=UI.prof.fb||{};if(!w||!box||!f.user||!cloudOn())return;
+  const msg=(k,bad)=>{const m=$('#ppMsg');if(m){m.textContent=t(k);m.className='ppm'+(bad?' bad':' good');}};
+  fetch('/api/pay-config').then(r=>r.ok?r.json():null).then(c=>{if(!c||!c.clientId)return;
+    const go=()=>{if(!window.paypal||!$('#ppBox'))return;w.hidden=false;const alt=$('.ppalt');if(alt)alt.hidden=false;
+      paypal.Buttons({style:{layout:'vertical',shape:'pill',label:'pay',height:44},
+        createOrder:()=>lbAuth().then(f=>fetch('/api/order',{method:'POST',body:JSON.stringify({tok:f.tok})})).then(r=>r.json()).then(j=>{if(!j||!j.id)throw 0;stat('ppstart');return j.id;}),
+        onApprove:d=>{msg('ppWait');return lbAuth().then(f=>fetch('/api/pass',{method:'POST',body:JSON.stringify({order:d.orderID,tok:f.tok})})).then(r=>r.json()).then(j=>{
+          if(j&&j.ok){stat('ppdone');statFlush();msg('ppOk');cloudSync().then(()=>{if(UI.screen==='help'&&$('#ppWrap'))$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supOn')}</p><div class="row"><button class="btn big ok" data-a="pass">${t('ok')}</button></div>`;});}
+          else msg(j&&j.why==='unpaid'?'ppUnpaid':'ppFail',1);}).catch(()=>msg('ppFail',1));},
+        onCancel:()=>msg('ppCancel',1),onError:()=>msg('ppFail',1)}).render('#ppBox').catch(()=>{});};
+    if(window.paypal)return go();
+    const sc=document.createElement('script');sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(c.clientId)+'&currency=USD&intent=capture&components=buttons&enable-funding=card';sc.onload=go;document.head.appendChild(sc);}).catch(()=>{});
+}
 // the main menu's support: any amount, no account needed and nothing to unlock; the Season Zero pass has its own page
 function renderDonate(){
   $('#help').innerHTML=`<div class="socH"><h2>💛 ${t('dnT')}</h2><p>${t('dnD')}</p></div>
@@ -566,8 +581,8 @@ function renderDonate(){
 function renderSupport(){
   const p=UI.prof,f=p.fb||{};
   $('#help').innerHTML=`<h2>💜 ${t('supT',SUPPORT_SAR)}</h2><p class="keys">${t('supD')}</p>
-  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:`<div class="hp trust"><h3>🛡️ ${t('trT')}</h3><ul>${t('trL').map(x=>`<li>${x.replace('{0}',SUPPORT_SAR)}</li>`).join('')}</ul></div><div class="hp sups">
-    <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><a class="btn big ok paybtn" href="${PAY_LINK}" target="_blank" rel="noopener" data-a="supPay">💳 ${t('supPay')}</a><div class="payl"><span>Apple Pay</span><span>VISA</span><span>Mastercard</span><span>PayPal</span></div>
+  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:`<div class="hp sups ppi" id="ppWrap" hidden><h3>⚡ ${t('ppT')}</h3><p class="keys">${t('ppD',SUPPORT_SAR)}</p><div id="ppBox"></div><p class="ppm" id="ppMsg"></p></div><div class="hp trust"><h3>🛡️ ${t('trT')}</h3><ul>${t('trL').map(x=>`<li>${x.replace('{0}',SUPPORT_SAR)}</li>`).join('')}</ul></div><div class="hp sups">
+    <h3 class="ppalt" hidden>${t('ppAlt')}</h3><p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><a class="btn big ok paybtn" href="${PAY_LINK}" target="_blank" rel="noopener" data-a="supPay">💳 ${t('supPay')}</a><div class="payl"><span>Apple Pay</span><span>VISA</span><span>Mastercard</span><span>PayPal</span></div>
     <p><b>2.</b> ${t('supStep2')}</p><input id="supMail" type="email" maxlength="80" dir="ltr" autocapitalize="none" spellcheck="false" placeholder="name@gmail.com">
     <p><b>3.</b> ${t('supStep3')}</p><input id="supUser" maxlength="16" dir="ltr" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="${t('ac_user')}" value="${esc(f.user||'')}">
     <p><b>4.</b> ${t('supStep4')}</p><button class="btn big" data-a="supSend">${t('supSend')}</button></div>`}
@@ -969,7 +984,7 @@ function act(a){
     case'pass':renderPass();show('help');break;
     case'skins':renderSkins();show('help');break;
     case'bpBuy':passBuy();break;
-    case'supOpen':UI.supFrom='pass';renderSupport();show('help');break;
+    case'supOpen':UI.supFrom='pass';renderSupport();show('help');ppMount();break;
     case'social':renderSocial();show('help');break;
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
     case'copyLink':{const l=location.origin+location.pathname;try{navigator.clipboard.writeText(l).then(()=>toast(t('gg_copied'),'prop',2500)).catch(()=>toast(l,'prop',5000));}catch(e){toast(l,'prop',5000);}break;}

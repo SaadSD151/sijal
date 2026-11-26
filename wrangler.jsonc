@@ -1,9 +1,13 @@
-// Cloudflare Workers: serves the ready-built game (dist/site) on sijalwar.com
+// Cloudflare Workers: serves the ready-built game (dist/site) on sijalwar.com,
+// and runs worker/index.js for /api/* (the automatic Season Zero pass after a PayPal payment)
 {
   "name": "sijal",
+  "main": "worker/index.js",
   "compatibility_date": "2025-11-01",
   "assets": {
     "directory": "./dist/site",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   }
 }

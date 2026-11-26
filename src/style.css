@@ -640,3 +640,6 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .sup{background:linear-gradient(180deg,rgba(46,26,92,.95),rgba(24,12,54,.95))}
 .bpbar{background:rgba(6,12,22,.88)}
 #help>h2{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px #000}
+/* instant pass with PayPal's buttons */
+.ppi{border:1.5px solid rgba(95,211,122,.5)!important}.ppi h3,.ppalt{margin:0 0 6px}#ppBox{min-height:46px;margin:8px 0}
+.ppm{margin:6px 0 0;text-align:center;font-weight:700}.ppm.bad{color:#ff8a8a}.ppm.good{color:#8fe3a8}
