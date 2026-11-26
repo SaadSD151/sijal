@@ -198,7 +198,7 @@ const hrs=ms=>(ms/3.6e6).toFixed(ms<3.6e7?1:0);
 function lbAuth(){
   const f=UI.prof.fb||(UI.prof.fb={});if(f.tok&&f.exp>Date.now()+6e4)return Promise.resolve(f);
   const done=j=>{if(!j||!(j.idToken||j.id_token))throw 0;f.tok=j.idToken||j.id_token;f.rt=j.refreshToken||j.refresh_token||f.rt;f.uid=j.localId||j.user_id||f.uid;f.exp=Date.now()+(+(j.expiresIn||j.expires_in)||3600)*1000;saveProf();return f;};
-  if(f.rt)return fetch('https://securetoken.googleapis.com/v1/token?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(f.rt)}).then(r=>r.json()).then(done).catch(()=>{f.rt='';return lbAuth();});
+  if(f.rt)return fetch('https://securetoken.googleapis.com/v1/token?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(f.rt)}).then(r=>r.json()).then(j=>{if(j&&j.error){if(f.user){UI.relog=1;f.tok='';saveProf();throw 0;}f.rt='';return lbAuth();}return done(j);});
   return fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:'{"returnSecureToken":true}'}).then(r=>r.json()).then(done);
 }
 // progress lives in the cloud under the player's id: each device sends only what it added since the last sync (server-side increments),
@@ -213,7 +213,7 @@ function cloudSync(){
   if(!p.histUp){p.histUp=1;p.histPend=(p.hist||[]).slice();saveProf();}
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{}),hSent=(Array.isArray(p.histPend)?p.histPend:[]).slice();let uid;
-  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
+  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
     const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
@@ -228,17 +228,20 @@ const lbPush=cloudSync;
 // real accounts: a username and password (Firebase email/password under the hood) carry the same progress to every device
 const accMail=u=>u.toLowerCase()+'@players.sijal.game';
 function accErr(j){const m=(j&&j.error&&j.error.message)||'';return /EMAIL_EXISTS/.test(m)?'taken':/WEAK_PASSWORD/.test(m)?'weak':/TOO_MANY/.test(m)?'many':/OPERATION_NOT_ALLOWED|ADMIN_ONLY/.test(m)?'off':/INVALID|NOT_FOUND|PASSWORD/.test(m)?'bad':'net';}
-function accForm(){const u=($('#inUser')||{}).value||'',pw=($('#inPass')||{}).value||'';if(!/^[A-Za-z0-9_]{3,16}$/.test(u.trim()))return null;if(pw.length<6)return'pw';return{u:u.trim(),pw};}
+const isMail=s=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
+function accForm(login){const u=(($('#inUser')||{}).value||'').trim(),pw=($('#inPass')||{}).value||'',m=login&&isMail(u);if(!m&&!/^[A-Za-z0-9_]{3,16}$/.test(u))return null;if(pw.length<6)return'pw';return{u:m?'':u,mail:m?u.toLowerCase():'',pw};}
 function accDone(code){UI.accMsg=code;loading(false);renderAccount();}
 const AUTH='https://identitytoolkit.googleapis.com/v1/accounts:';
-function accReq(kind,F){return fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json());}
+function accReq(kind,F){return fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:F.mail||accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json());}
+const authPost=(kind,body,lang)=>fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},lang?{'X-Firebase-Locale':UI.lang}:{}),body:JSON.stringify(body)}).then(r=>r.json());
 // entering an account: a guest's progress on this device moves into it, and the guest's own entries are removed so nobody shows up twice
 function accEnter(j,F,okMsg){
-  const p=UI.prof,old=p.fb||{};if(okMsg==='made')stat('signup');if(j.localId===old.uid){old.user=F.u;saveProf();return accDone(okMsg);}
+  const p=UI.prof,old=p.fb||{};if(okMsg==='made')stat('signup');UI.relog=0;UI.accInfo=null;UI.gNew=null;
+  if(j.localId===old.uid){old.user=F.u||old.user;old.tok=j.idToken;old.rt=j.refreshToken||old.rt;old.exp=Date.now()+(+j.expiresIn||3600)*1000;saveProf();return accDone(okMsg);}
   const guest=!old.user&&old.uid?{wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)}:null,gTok=old.tok,gUid=old.uid;
   const drop=guest&&gTok?Promise.all(['lb','users'].map(k=>fetch(LB_DB+'/'+k+'/'+gUid+'.json?auth='+gTok,{method:'DELETE'}).catch(()=>{}))):Promise.resolve();
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
-    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u};p.cloudInit=1;setTimeout(adminCheck,500);
+    p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u||(u&&u.u)||(F.mail||'player').split('@')[0].replace(/[^A-Za-z0-9_]/g,'').slice(0,16)||'player'};p.cloudInit=1;setTimeout(adminCheck,500);
     const gpt=p.passT==null?-1:p.passT;p.passT=Math.max(guest?gpt:-1,u&&u.pt!=null?u.pt|0:-1);
     for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};if(guest)p.histPend=(p.hist||[]).slice();else{p.hist=[];p.histPend=[];}for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
 }
@@ -247,10 +250,61 @@ function accRegister(){
   lbAuth().catch(()=>{}).then(()=>cloudSync()).then(()=>accReq('signUp',F)).then(j=>j.idToken?accEnter(j,F,'made'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
 function accLogin(){
-  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);
-  accReq('signInWithPassword',F).then(j=>j.idToken?accEnter(j,F,'in'):accDone(accErr(j))).catch(()=>accDone('net'));
+  const F=accForm(true);if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);
+  accReq('signInWithPassword',F).then(j=>j.idToken?accEnter(j,F,'in'):accDone(F.mail?accErr(j):accErr(j)==='bad'?'badU':accErr(j))).catch(()=>accDone('net'));
 }
-function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.hist=[];p.histPend=[];p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
+// a real email on the account: Firebase sends a link, and once it is opened the email becomes the way to sign in and to reset the password
+function accInfoLoad(){
+  if(UI.accInfoBusy||!cloudOn())return;UI.accInfoBusy=1;
+  lbAuth().then(f=>authPost('lookup',{idToken:f.tok})).then(j=>{const u=j&&j.users&&j.users[0];if(!u)throw 0;
+    UI.accInfo={email:u.email||'',google:(u.providerUserInfo||[]).some(x=>x.providerId==='google.com'),pw:(u.providerUserInfo||[]).some(x=>x.providerId==='password')};
+    if($('#help .accb'))renderAccount();}).catch(()=>{if(UI.relog&&$('#help .accb'))renderAccount();}).then(()=>{UI.accInfoBusy=0;});
+}
+const realMail=e=>!!e&&!/@players\.sijal\.game$/i.test(e);
+function mailLink(){
+  const em=(($('#inMail')||{}).value||'').trim().toLowerCase(),pw=($('#inPass2')||{}).value||'',f=UI.prof.fb||{},I=UI.accInfo||{};
+  if(!isMail(em))return accDone('mlBad');if(pw.length<6)return accDone('bad');loading(true);
+  // Firebase wants a fresh sign-in before the email changes
+  authPost('signInWithPassword',{email:I.email||accMail(f.user),password:pw,returnSecureToken:true}).then(j=>{if(!j.idToken)return accDone(accErr(j));
+    f.tok=j.idToken;f.rt=j.refreshToken||f.rt;f.exp=Date.now()+(+j.expiresIn||3600)*1000;saveProf();
+    return cloudSync().then(()=>authPost('sendOobCode',{requestType:'VERIFY_AND_CHANGE_EMAIL',idToken:j.idToken,newEmail:em},1)).then(r=>{
+      if(r&&r.email!=null||r&&!r.error){UI.mailTo=em;stat('mail');return accDone('mlSent');}const m=(r.error&&r.error.message)||'';accDone(/EMAIL_EXISTS/.test(m)?'mlTaken':/INVALID_EMAIL/.test(m)?'mlBad':/TOO_MANY/.test(m)?'many':'net');});})
+  .catch(()=>accDone('net'));
+}
+function accForgot(){
+  const v=(($('#inUser')||{}).value||'').trim();if(!isMail(v))return accDone('fgNeed');if(!cloudOn())return accDone('net');loading(true);
+  // the same answer whether or not the email is linked, so nobody can probe which emails play here
+  authPost('sendOobCode',{requestType:'PASSWORD_RESET',email:v.toLowerCase()},1).then(()=>accDone('fgSent')).catch(()=>accDone('net'));
+}
+// Google sign-in: Google's own button gives an ID token, and Firebase turns it into a Sijal account (or links it to the one you are in)
+const GOOGLE_CID='';
+const inAppBrowser=()=>/FBAN|FBAV|Instagram|TikTok|musical_ly|Bytedance|Snapchat|Line\//i.test(navigator.userAgent);
+function gMount(mode){
+  const box=$('#gBtn');if(!box||!GOOGLE_CID)return;
+  if(inAppBrowser()){box.innerHTML=`<p class="keys">${t('gg_app')}</p><button class="btn sm" data-a="copyLink">📋 ${t('gg_copy')}</button>`;return;}
+  const go=()=>{try{google.accounts.id.initialize({client_id:GOOGLE_CID,callback:r=>gCred(r.credential,mode),ux_mode:'popup',auto_select:false});
+    google.accounts.id.renderButton(box,{theme:'filled_black',size:'large',shape:'pill',text:mode==='link'?'continue_with':'signin_with',locale:UI.lang,width:Math.min(320,box.clientWidth||300)});}catch(e){}};
+  if(window.google&&google.accounts&&google.accounts.id)return go();
+  if(UI.gsi)return UI.gsi.then(go);
+  UI.gsi=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=ok;s.onerror=no;document.head.appendChild(s);}).then(go).catch(()=>{UI.gsi=null;box.innerHTML=`<p class="keys">${t('acm_net')}</p>`;});
+}
+function gCred(cred,mode){
+  if(!cred)return;loading(true);
+  const send=tok=>authPost('signInWithIdp',Object.assign({postBody:'id_token='+cred+'&providerId=google.com',requestUri:location.origin,returnSecureToken:true,returnIdpCredential:true},tok?{idToken:tok}:{}));
+  if(mode==='link')return lbAuth().then(f=>send(f.tok)).then(j=>{if(!j.idToken){const m=(j.error&&j.error.message)||'';return accDone(/ALREADY_LINKED|EMAIL_EXISTS|CREDENTIAL_ALREADY/.test(m)?'ggUsed':'ggFail');}
+    const f=UI.prof.fb;f.tok=j.idToken;f.rt=j.refreshToken||f.rt;f.exp=Date.now()+(+j.expiresIn||3600)*1000;saveProf();UI.accInfo=null;stat('glink');accDone('ggLinked');}).catch(()=>accDone('net'));
+  send(null).then(j=>{if(!j.idToken)return accDone(j.needConfirmation?'ggNeedPw':'ggFail');
+    return fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken).then(r=>r.ok?r.json():null).then(u=>{
+      if(u&&u.u)return accEnter(j,{u:u.u},'in');
+      // a new player: pick a username once
+      UI.gNew=j;UI.accMsg='';loading(false);renderAccount();});}).catch(()=>accDone('net'));
+}
+function gName(){
+  const j=UI.gNew,u=(($('#inUser')||{}).value||'').trim();if(!j)return;if(!/^[A-Za-z0-9_]{3,16}$/.test(u))return accDone('user');loading(true);const k=encodeURIComponent(u.toLowerCase());
+  fetch(LB_DB+'/names/'+k+'.json?auth='+j.idToken).then(r=>r.ok?r.json():null).then(v=>{if(v&&v!==j.localId)return accDone('taken');
+    return fetch(LB_DB+'/names/'+k+'.json?auth='+j.idToken,{method:'PUT',body:JSON.stringify(j.localId)}).then(r=>{if(!r.ok)return accDone('taken');stat('gnew');return accEnter(j,{u},'made');});}).catch(()=>accDone('net'));
+}
+function accLogout(){const p=UI.prof;UI.accInfo=null;UI.relog=0;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.hist=[];p.histPend=[];p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
 function renderLB(){
   const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
   const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
@@ -304,10 +358,19 @@ function renderAmode(){
   placeAmode();
 }
 function accPanel(){
-  const p=UI.prof,f=p.fb||{},m=UI.accMsg?`<p class="${/made|in|out/.test(UI.accMsg)?'good':'bad'}">${t('acm_'+UI.accMsg)}</p>`:'';
+  const p=UI.prof,f=p.fb||{},m=UI.accMsg?`<p class="${/^(made|in|out|mlSent|fgSent|ggLinked)$/.test(UI.accMsg)?'good':'bad'}">${t('acm_'+UI.accMsg,`<b dir="ltr">${esc(UI.mailTo||'')}</b>`)}</p>`:'';
   if(!cloudOn())return`<p class="keys">${t('accNote')}</p>`;
-  if(f.user)return`<div class="accb"><p>${t('ac_signed',`<b dir="ltr">${esc(f.user)}</b>`)}</p><p class="keys">${t('ac_signedNote')}</p>${m}<button class="btn sm" data-a="accOut">${t('ac_out')}</button></div>`;
-  return`<div class="accb"><h3>${t('ac_title')}</h3><p class="keys">${t('ac_note')}</p><div class="accf"><input id="inUser" dir="ltr" maxlength="16" placeholder="${t('ac_user')}" autocomplete="username" autocapitalize="none" spellcheck="false"><input id="inPass" dir="ltr" type="password" maxlength="64" placeholder="${t('ac_pass')}" autocomplete="current-password"></div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div></div>`;
+  const userIn=(ph,ac)=>`<input id="inUser" dir="ltr" maxlength="${ac==='email'?80:16}" placeholder="${ph}" autocomplete="${ac}" autocapitalize="none" spellcheck="false">`;
+  // a new Google player picks a username once
+  if(UI.gNew)return`<div class="accb"><h3>${t('gg_pick')}</h3><p class="keys">${t('gg_pickD')}</p><div class="accf">${userIn(t('ac_user'),'username')}</div>${m}<div class="row"><button class="btn ok" data-a="gName">${t('gg_pickGo')}</button><button class="btn" data-a="gCancel">${t('back')}</button></div></div>`;
+  if(f.user&&!UI.relog){
+    const I=UI.accInfo;if(!I)setTimeout(accInfoLoad,0);
+    const mail=!I?'':realMail(I.email)?`<p class="mlok">📧 ${t('ml_on',`<b dir="ltr">${esc(I.email)}</b>`)}</p>`:I.pw?`<div class="mlb"><h3>📧 ${t('ml_t')}</h3><p class="keys">${t('ml_d')}</p><div class="accf"><input id="inMail" type="email" dir="ltr" maxlength="80" placeholder="name@gmail.com" autocomplete="email" autocapitalize="none" spellcheck="false"><input id="inPass2" type="password" dir="ltr" maxlength="64" placeholder="${t('ml_pw')}" autocomplete="current-password"></div><button class="btn sm ok" data-a="mailLink">${t('ml_go')}</button></div>`:'';
+    const gg=GOOGLE_CID&&I?(I.google?`<p class="mlok">✅ ${t('gg_on')}</p>`:`<div class="mlb"><h3>${t('gg_link')}</h3><div id="gBtn"></div></div>`):'';if(GOOGLE_CID&&I&&!I.google)setTimeout(()=>gMount('link'),0);
+    return`<div class="accb"><p>${t('ac_signed',`<b dir="ltr">${esc(f.user)}</b>`)}</p><p class="keys">${t('ac_signedNote')}</p>${m}${mail}${gg}<button class="btn sm" data-a="accOut">${t('ac_out')}</button></div>`;
+  }
+  if(GOOGLE_CID)setTimeout(()=>gMount('in'),0);
+  return`<div class="accb"><h3>${t('ac_title')}</h3>${UI.relog?`<p class="bad">${t('ac_relog')}</p>`:''}<p class="keys">${t('ac_note')}</p><div class="accf">${userIn(t('ac_userIn'),'email')}<input id="inPass" dir="ltr" type="password" maxlength="64" placeholder="${t('ac_pass')}" autocomplete="current-password"></div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div><button class="lnkb" data-a="accForgot">🔑 ${t('fg_btn')}</button>${GOOGLE_CID?`<div class="gor"><span>${t('gg_or')}</span></div><div id="gBtn"></div>`:''}</div>`;
 }
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
@@ -408,7 +471,7 @@ function statBoot(){const p=UI.prof;if(!p.did){p.did=(Math.random().toString(36)
 function adminCheck(){
   const p=UI.prof,f=p.fb||{};if(!cloudOn()||!f.user)return;const was=UI.admin;
   lbAuth().then(f=>{fetch(LB_DB+'/names/'+encodeURIComponent(f.user.toLowerCase())+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).catch(()=>{});
-    UI.owner=!!(ADMIN_ROOT&&f.user.toLowerCase()===ADMIN_ROOT);if(UI.owner)return true;return fetch(LB_DB+'/admins/'+f.uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(v=>!!v);})
+    UI.owner=!!(ADMIN_ROOT&&f.user.toLowerCase()===ADMIN_ROOT);if(UI.owner){if(!p.ownSet)fetch(LB_DB+'/owner.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(f.uid)}).then(r=>{if(r.ok){p.ownSet=1;saveProf();}}).catch(()=>{});return true;}return fetch(LB_DB+'/admins/'+f.uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(v=>!!v);})
   .then(a=>{UI.admin=!!a;if(UI.admin!==!!was)renderMenu();if(UI.owner&&UI.screen==='help'&&$('#help .bpg'))renderPass();}).catch(()=>{});
 }
 function admReq(path,o){return lbAuth().then(f=>fetch(LB_DB+path+(path.includes('?')?'&':'?')+'auth='+f.tok,o||{}).then(r=>{if(!r.ok)throw 0;return r.json();}));}
@@ -896,6 +959,8 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');break;
     case'social':renderSocial();show('help');break;
+    case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
+    case'copyLink':{const l=location.origin+location.pathname;try{navigator.clipboard.writeText(l).then(()=>toast(t('gg_copied'),'prop',2500)).catch(()=>toast(l,'prop',5000));}catch(e){toast(l,'prop',5000);}break;}
     case'moveGo':{saveProf();const raw=localStorage.getItem('sijal.v1')||'',rc=(location.hash||'').slice(1).toUpperCase(),h=[];if(raw.length>2)h.push('mv='+b64u(raw));if(/^[A-Z0-9]{5}$/.test(rc))h.push('r='+rc);stat('moved');statFlush(true);location.href=NEW_SITE+(h.length?'#'+h.join('&'):'');break;}
     case'moveX':{const d=$('#moved');if(d)d.remove();break;}
     case'hist':renderHist();show('help');break;
@@ -1128,6 +1193,6 @@ function boot(){
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
   moveNotice();if(UI.movedIn)setTimeout(()=>toast(t('mvDone'),'prop',4500),1200);
-  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,setOwnerX:(i,o)=>setOwner(G,i,o),stat:{flush:statFlush,ping:statPing},run:n=>{for(let i=0;i<n;i++)tick(G);}};
+  window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,setOwnerX:(i,o)=>setOwner(G,i,o),stat:{flush:statFlush,ping:statPing},acc:{gCred,accInfoLoad},run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
 boot();

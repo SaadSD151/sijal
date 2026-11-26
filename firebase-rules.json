@@ -2,9 +2,12 @@
   "rules": {
     "lb": {
       ".read": true,
-      ".indexOn": ["w", "h"],
+      ".indexOn": [
+        "w",
+        "h"
+      ],
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || auth.token.email === 'saadsd@players.sijal.game')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists() || (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val()))",
         ".validate": "newData.hasChildren(['n','w','h']) && newData.child('n').isString() && newData.child('n').val().length <= 18 && newData.child('w').isNumber() && newData.child('w').val() >= 0 && newData.child('h').isNumber() && newData.child('h').val() >= 0"
       }
     },
@@ -15,31 +18,31 @@
       }
     },
     "names": {
-      ".read": "auth != null && auth.token.email === 'saadsd@players.sijal.game'",
+      ".read": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())",
       "$name": {
         ".read": "auth != null",
         ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid)"
       }
     },
     "admins": {
-      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || auth.token.email === 'saadsd@players.sijal.game')",
+      ".read": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val()))",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.token.email === 'saadsd@players.sijal.game'"
+        ".write": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())"
       }
     },
     "msg": {
       ".read": true,
-      ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || auth.token.email === 'saadsd@players.sijal.game')"
+      ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val()))"
     },
     "grants": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.token.email === 'saadsd@players.sijal.game'"
+        ".write": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())"
       }
     },
     "stats": {
-      ".read": "auth != null && auth.token.email === 'saadsd@players.sijal.game'",
+      ".read": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())",
       "d": {
         "$day": {
           "$k": {
@@ -55,12 +58,16 @@
         }
       },
       "on": {
-        ".write": "auth != null && auth.token.email === 'saadsd@players.sijal.game'",
+        ".write": "auth != null && (auth.token.email === 'saadsd@players.sijal.game' || auth.uid === root.child('owner').val())",
         "$id": {
           ".write": "$id.matches(/^[a-z0-9]+$/) && $id.length >= 8 && $id.length <= 16",
           ".validate": "newData.hasChildren(['t','s']) && newData.child('t').isNumber() && newData.child('t').val() <= now"
         }
       }
+    },
+    "owner": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'saadsd@players.sijal.game' && newData.isString() && newData.val() === auth.uid"
     }
   }
 }

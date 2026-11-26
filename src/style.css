@@ -624,3 +624,9 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #moved .mvi{font-size:44px}#moved h2{margin:6px 0 8px;color:#ffe08a}#moved p{margin:0 0 10px;font-size:16px;line-height:1.55;color:#e4edf7}
 #moved .mvl{margin:4px auto 14px;padding:10px 16px;border-radius:999px;background:rgba(241,207,110,.14);border:1px solid rgba(241,207,110,.5);color:#ffe08a;font-weight:800;font-size:22px;width:max-content;max-width:100%}
 #moved .btn.big{width:100%}#moved .mvs{margin:10px 0 8px;font-size:13.5px;color:#b9c8d8}
+/* account: email and Google */
+.accb .mlb{margin:12px 0;padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}.accb .mlb h3{margin:0 0 4px}
+.accb .mlok{margin:10px 0;padding:8px 12px;border-radius:12px;background:rgba(95,211,122,.12);border:1px solid rgba(95,211,122,.35)}
+.accb .lnkb{display:block;margin:10px auto 0;background:none;border:0;color:#9fd0ff;font-size:14px;text-decoration:underline;cursor:pointer}
+.accb .gor{display:flex;align-items:center;gap:10px;margin:12px 0 8px;color:#9fb0c3;font-size:13px}.accb .gor::before,.accb .gor::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.15)}
+#gBtn{display:flex;justify-content:center;min-height:44px}
