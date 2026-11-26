@@ -159,29 +159,38 @@ const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.
 // troop count of each front I am in: drawn behind the front line, along it, sized by its length (from the attack's own frontier tiles)
 function frontSpots(g,me,ts){
   R.front=R.front||{};if(ts-(R.frontT||0)<400)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,out={};
-  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const P=R.front[k.id],T=k.heap.v;let F=[];
+  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const PL=R.front[k.id]||[],T=k.heap.v,F=[];
     for(let m=0;m<T.length;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;let ax=0,ay=0,hit=false;
       if(x>0&&own[i-1]===k.a){ax-=1;hit=true;}if(x<W-1&&own[i+1]===k.a){ax+=1;hit=true;}if(y>0&&own[i-W]===k.a){ay-=1;hit=true;}if(y<H-1&&own[i+W]===k.a){ay+=1;hit=true;}
       if(hit)F.push(x,y,ax,ay);}
-    const stats=(cx,cy,r2)=>{let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0,bx=0,by=0,dmin=1e18;for(let m=0;m<F.length;m+=4){const x=F[m],y=F[m+1];if(r2&&(x-cx)**2+(y-cy)**2>r2)continue;n++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;bx+=F[m+2];by+=F[m+3];}
-      if(n<2)return null;const mx=sx/n,my=sy/n;for(let m=0;m<F.length;m+=4){const d=(F[m]-mx)**2+(F[m+1]-my)**2;if(d<dmin)dmin=d;}return{n,mx,my,cxx:sxx/n-mx*mx,cyy:syy/n-my*my,cxy:sxy/n-mx*my,bx,by,dmin};};
-    // an attack can press on several separate stretches (two sides of a realm): group the front into stretches and label the biggest,
-    // sticking with the one already labelled while it stays at least half as big, so the number never sits between them or jumps back and forth
-    if(F.length>8){const n=F.length/4,cell=new Map(),comp=new Int32Array(n).fill(-1),key=(x,y)=>((x>>2)<<16)|(y>>2);
-      for(let m=0;m<n;m++){const kk=key(F[m*4],F[m*4+1]);let a=cell.get(kk);if(!a)cell.set(kk,a=[]);a.push(m);}
-      const sizes=[];let nc=0;for(let m=0;m<n;m++){if(comp[m]>=0)continue;const st=[m];comp[m]=nc;let sz=0;
-        while(st.length){const v=st.pop();sz++;const x=F[v*4],y=F[v*4+1];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const a=cell.get(key(x+dx*4,y+dy*4));if(!a)continue;
-          for(const w of a)if(comp[w]<0&&(F[w*4]-x)**2+(F[w*4+1]-y)**2<=16){comp[w]=nc;st.push(w);}}}sizes.push(sz);nc++;}
-      if(nc>1){let best=0;for(let c2=1;c2<nc;c2++)if(sizes[c2]>sizes[best])best=c2;
-        if(P){let pc=-1,pd=1e18;for(let m=0;m<n;m++){const d=(F[m*4]-P.x)**2+(F[m*4+1]-P.y)**2;if(d<pd){pd=d;pc=comp[m];}}if(pc>=0&&pd<64&&sizes[pc]>=sizes[best]*.5)best=pc;}
-        const F2=[];for(let m=0;m<n;m++)if(comp[m]===best)F2.push(F[m*4],F[m*4+1],F[m*4+2],F[m*4+3]);F=F2;}}
-    let S=stats();if(!S){if(P)out[k.id]=P;continue;}
-    // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
-    if(S.dmin>36){const ax=k.fx!=null?k.fx:P?P.x:S.mx,ay=k.fx!=null?k.fy:P?P.y:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
-    const th=.5*Math.atan2(2*S.cxy,S.cxx-S.cyy),ev=(S.cxx+S.cyy)/2+Math.sqrt(((S.cxx-S.cyy)/2)**2+S.cxy*S.cxy),len=Math.max(4,Math.sqrt(ev)*3.4);
-    let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;ang=clamp(ang,-.52,.52);
-    const bl=Math.hypot(S.bx,S.by)||1,back=2.5+Math.min(10,len*.12),x=S.mx+S.bx/bl*back,y=S.my+S.by/bl*back,sz=clamp(Math.sqrt(len)*1.35,3,14);
-    out[k.id]=P&&P.sx!=null?{x,y,ang,sz,sx:P.sx,sy:P.sy,sa:P.sa,ss:P.ss}:{x,y,ang,sz,sx:x,sy:y,sa:ang,ss:sz};}
+    const n=F.length/4;if(n<2){if(PL.length)out[k.id]=PL;continue;}
+    // an attack can press on several separate stretches (two sides of a realm): group the front into stretches,
+    // and give each real stretch its own number, its share of the troops by how long it is
+    const cell=new Map(),comp=new Int32Array(n).fill(-1),key=(x,y)=>((x>>2)<<16)|(y>>2);
+    for(let m=0;m<n;m++){const kk=key(F[m*4],F[m*4+1]);let a=cell.get(kk);if(!a)cell.set(kk,a=[]);a.push(m);}
+    const sizes=[];let nc=0;for(let m=0;m<n;m++){if(comp[m]>=0)continue;const st=[m];comp[m]=nc;let sz=0;
+      while(st.length){const v=st.pop();sz++;const x=F[v*4],y=F[v*4+1];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const a=cell.get(key(x+dx*4,y+dy*4));if(!a)continue;
+        for(const w of a)if(comp[w]<0&&(F[w*4]-x)**2+(F[w*4+1]-y)**2<=16){comp[w]=nc;st.push(w);}}}sizes.push(sz);nc++;}
+    const parts=sizes.map(sz=>({F:[],n:sz}));for(let m=0;m<n;m++)parts[comp[m]].F.push(F[m*4],F[m*4+1],F[m*4+2],F[m*4+3]);
+    parts.sort((a,b)=>b.n-a.n);
+    const near=(F,x,y)=>{let d=1e18;for(let m=0;m<F.length;m+=4)d=Math.min(d,(F[m]-x)**2+(F[m+1]-y)**2);return d;};
+    // a stretch gets a label once it is a real share of the front; one already labelled keeps it a little longer, so labels do not blink
+    const keep=parts.filter((q,j)=>j===0||(q.n>=3&&(q.n>=n*.15||(q.n>=n*.07&&PL.some(P=>near(q.F,P.x,P.y)<100))))).slice(0,3),tot=keep.reduce((s2,q)=>s2+q.n,0),used=new Set(),res=[];
+    for(const q of keep){
+      const stats=(cx,cy,r2)=>{const F=q.F;let c=0,sx=0,sy=0,sxx=0,syy=0,sxy=0,bx=0,by=0,dmin=1e18;for(let m=0;m<F.length;m+=4){const x=F[m],y=F[m+1];if(r2&&(x-cx)**2+(y-cy)**2>r2)continue;c++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;bx+=F[m+2];by+=F[m+3];}
+        if(c<2)return null;const mx=sx/c,my=sy/c;for(let m=0;m<F.length;m+=4){const d=(F[m]-mx)**2+(F[m+1]-my)**2;if(d<dmin)dmin=d;}return{mx,my,cxx:sxx/c-mx*mx,cyy:syy/c-my*my,cxy:sxy/c-mx*my,bx,by,dmin};};
+      let S=stats();if(!S)continue;
+      // the previous label nearest this stretch carries on, so it glides with the line instead of popping
+      let P=null,pd=144;for(const Q of PL){if(used.has(Q))continue;const d=near(q.F,Q.x,Q.y);if(d<pd){pd=d;P=Q;}}if(P)used.add(P);
+      // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
+      if(S.dmin>36){const ax=P?P.x:k.fx!=null?k.fx:S.mx,ay=P?P.y:k.fx!=null?k.fy:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
+      const th=.5*Math.atan2(2*S.cxy,S.cxx-S.cyy),ev=(S.cxx+S.cyy)/2+Math.sqrt(((S.cxx-S.cyy)/2)**2+S.cxy*S.cxy),len=Math.max(4,Math.sqrt(ev)*3.4);
+      let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;ang=clamp(ang,-.52,.52);
+      const bl=Math.hypot(S.bx,S.by)||1,back=2.5+Math.min(10,len*.12),x=S.mx+S.bx/bl*back,y=S.my+S.by/bl*back,sz=clamp(Math.sqrt(len)*1.35,3,14),share=q.n/tot;
+      res.push(P&&P.sx!=null?{x,y,ang,sz,share,sx:P.sx,sy:P.sy,sa:P.sa,ss:P.ss,sh:P.sh}:{x,y,ang,sz,share,sx:x,sy:y,sa:ang,ss:sz,sh:share});}
+    // two labels that would sit almost on top of each other read as one: fold the smaller into the bigger
+    const fin=[];for(const F of res){const o=fin.find(G=>(G.x-F.x)**2+(G.y-F.y)**2<100);if(o)o.share+=F.share;else fin.push(F);}
+    out[k.id]=fin.length?fin:PL;}
   R.front=out;
 }
 // a sword drawn in place: pivot at the hand, blade pointing up at angle 0
@@ -387,10 +396,10 @@ function draw(g,dt,ts){
   R.lb=LB;
   // missiles and pending strikes
   // troops pushing on each front that involves me, drawn over the cities so the number is always readable
-  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
-    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa=clamp(F.sa+da*.1,-.52,.52);F.ss+=(F.sz-F.ss)*.1;
+  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const FL=R.front[k.id];if(!FL||!FL.length)continue;for(const F of FL){if(F.sx==null)continue;
+    F.sh=F.share;F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa=clamp(F.sa+da*.1,-.52,.52);F.ss+=(F.sz-F.ss)*.1;
     const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
-    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
+    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops*F.sh),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}}
   drawSmoke(c,z,cw,ch);
   for(const m of g.missiles){
     {const dm=m.type==='doom',nk=m.type==='nuke',q=R.q==null?2:R.q,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs,span=.42,N=40;

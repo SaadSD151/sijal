@@ -633,7 +633,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='e31c8870b6';
+const BUILD_ID='c7629bb025';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -1880,29 +1880,38 @@ const mslPos=(m,t)=>w2s(lerp(m.sx,m.tx,t)+.5,lerp(m.sy,m.ty,t)+.5-Math.sin(Math.
 // troop count of each front I am in: drawn behind the front line, along it, sized by its length (from the attack's own frontier tiles)
 function frontSpots(g,me,ts){
   R.front=R.front||{};if(ts-(R.frontT||0)<400)return;R.frontT=ts;const W=g.W,H=g.H,own=g.owner,out={};
-  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const P=R.front[k.id],T=k.heap.v;let F=[];
+  for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d)continue;const PL=R.front[k.id]||[],T=k.heap.v,F=[];
     for(let m=0;m<T.length;m++){const i=T[m];if(own[i]!==k.d)continue;const x=i%W,y=(i/W)|0;let ax=0,ay=0,hit=false;
       if(x>0&&own[i-1]===k.a){ax-=1;hit=true;}if(x<W-1&&own[i+1]===k.a){ax+=1;hit=true;}if(y>0&&own[i-W]===k.a){ay-=1;hit=true;}if(y<H-1&&own[i+W]===k.a){ay+=1;hit=true;}
       if(hit)F.push(x,y,ax,ay);}
-    const stats=(cx,cy,r2)=>{let n=0,sx=0,sy=0,sxx=0,syy=0,sxy=0,bx=0,by=0,dmin=1e18;for(let m=0;m<F.length;m+=4){const x=F[m],y=F[m+1];if(r2&&(x-cx)**2+(y-cy)**2>r2)continue;n++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;bx+=F[m+2];by+=F[m+3];}
-      if(n<2)return null;const mx=sx/n,my=sy/n;for(let m=0;m<F.length;m+=4){const d=(F[m]-mx)**2+(F[m+1]-my)**2;if(d<dmin)dmin=d;}return{n,mx,my,cxx:sxx/n-mx*mx,cyy:syy/n-my*my,cxy:sxy/n-mx*my,bx,by,dmin};};
-    // an attack can press on several separate stretches (two sides of a realm): group the front into stretches and label the biggest,
-    // sticking with the one already labelled while it stays at least half as big, so the number never sits between them or jumps back and forth
-    if(F.length>8){const n=F.length/4,cell=new Map(),comp=new Int32Array(n).fill(-1),key=(x,y)=>((x>>2)<<16)|(y>>2);
-      for(let m=0;m<n;m++){const kk=key(F[m*4],F[m*4+1]);let a=cell.get(kk);if(!a)cell.set(kk,a=[]);a.push(m);}
-      const sizes=[];let nc=0;for(let m=0;m<n;m++){if(comp[m]>=0)continue;const st=[m];comp[m]=nc;let sz=0;
-        while(st.length){const v=st.pop();sz++;const x=F[v*4],y=F[v*4+1];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const a=cell.get(key(x+dx*4,y+dy*4));if(!a)continue;
-          for(const w of a)if(comp[w]<0&&(F[w*4]-x)**2+(F[w*4+1]-y)**2<=16){comp[w]=nc;st.push(w);}}}sizes.push(sz);nc++;}
-      if(nc>1){let best=0;for(let c2=1;c2<nc;c2++)if(sizes[c2]>sizes[best])best=c2;
-        if(P){let pc=-1,pd=1e18;for(let m=0;m<n;m++){const d=(F[m*4]-P.x)**2+(F[m*4+1]-P.y)**2;if(d<pd){pd=d;pc=comp[m];}}if(pc>=0&&pd<64&&sizes[pc]>=sizes[best]*.5)best=pc;}
-        const F2=[];for(let m=0;m<n;m++)if(comp[m]===best)F2.push(F[m*4],F[m*4+1],F[m*4+2],F[m*4+3]);F=F2;}}
-    let S=stats();if(!S){if(P)out[k.id]=P;continue;}
-    // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
-    if(S.dmin>36){const ax=k.fx!=null?k.fx:P?P.x:S.mx,ay=k.fx!=null?k.fy:P?P.y:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
-    const th=.5*Math.atan2(2*S.cxy,S.cxx-S.cyy),ev=(S.cxx+S.cyy)/2+Math.sqrt(((S.cxx-S.cyy)/2)**2+S.cxy*S.cxy),len=Math.max(4,Math.sqrt(ev)*3.4);
-    let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;ang=clamp(ang,-.52,.52);
-    const bl=Math.hypot(S.bx,S.by)||1,back=2.5+Math.min(10,len*.12),x=S.mx+S.bx/bl*back,y=S.my+S.by/bl*back,sz=clamp(Math.sqrt(len)*1.35,3,14);
-    out[k.id]=P&&P.sx!=null?{x,y,ang,sz,sx:P.sx,sy:P.sy,sa:P.sa,ss:P.ss}:{x,y,ang,sz,sx:x,sy:y,sa:ang,ss:sz};}
+    const n=F.length/4;if(n<2){if(PL.length)out[k.id]=PL;continue;}
+    // an attack can press on several separate stretches (two sides of a realm): group the front into stretches,
+    // and give each real stretch its own number, its share of the troops by how long it is
+    const cell=new Map(),comp=new Int32Array(n).fill(-1),key=(x,y)=>((x>>2)<<16)|(y>>2);
+    for(let m=0;m<n;m++){const kk=key(F[m*4],F[m*4+1]);let a=cell.get(kk);if(!a)cell.set(kk,a=[]);a.push(m);}
+    const sizes=[];let nc=0;for(let m=0;m<n;m++){if(comp[m]>=0)continue;const st=[m];comp[m]=nc;let sz=0;
+      while(st.length){const v=st.pop();sz++;const x=F[v*4],y=F[v*4+1];for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const a=cell.get(key(x+dx*4,y+dy*4));if(!a)continue;
+        for(const w of a)if(comp[w]<0&&(F[w*4]-x)**2+(F[w*4+1]-y)**2<=16){comp[w]=nc;st.push(w);}}}sizes.push(sz);nc++;}
+    const parts=sizes.map(sz=>({F:[],n:sz}));for(let m=0;m<n;m++)parts[comp[m]].F.push(F[m*4],F[m*4+1],F[m*4+2],F[m*4+3]);
+    parts.sort((a,b)=>b.n-a.n);
+    const near=(F,x,y)=>{let d=1e18;for(let m=0;m<F.length;m+=4)d=Math.min(d,(F[m]-x)**2+(F[m+1]-y)**2);return d;};
+    // a stretch gets a label once it is a real share of the front; one already labelled keeps it a little longer, so labels do not blink
+    const keep=parts.filter((q,j)=>j===0||(q.n>=3&&(q.n>=n*.15||(q.n>=n*.07&&PL.some(P=>near(q.F,P.x,P.y)<100))))).slice(0,3),tot=keep.reduce((s2,q)=>s2+q.n,0),used=new Set(),res=[];
+    for(const q of keep){
+      const stats=(cx,cy,r2)=>{const F=q.F;let c=0,sx=0,sy=0,sxx=0,syy=0,sxy=0,bx=0,by=0,dmin=1e18;for(let m=0;m<F.length;m+=4){const x=F[m],y=F[m+1];if(r2&&(x-cx)**2+(y-cy)**2>r2)continue;c++;sx+=x;sy+=y;sxx+=x*x;syy+=y*y;sxy+=x*y;bx+=F[m+2];by+=F[m+3];}
+        if(c<2)return null;const mx=sx/c,my=sy/c;for(let m=0;m<F.length;m+=4){const d=(F[m]-mx)**2+(F[m+1]-my)**2;if(d<dmin)dmin=d;}return{mx,my,cxx:sxx/c-mx*mx,cyy:syy/c-my*my,cxy:sxy/c-mx*my,bx,by,dmin};};
+      let S=stats();if(!S)continue;
+      // the previous label nearest this stretch carries on, so it glides with the line instead of popping
+      let P=null,pd=144;for(const Q of PL){if(used.has(Q))continue;const d=near(q.F,Q.x,Q.y);if(d<pd){pd=d;P=Q;}}if(P)used.add(P);
+      // a ring-shaped front (pushing out on every side) has its middle far from the line: use the stretch that is actually advancing
+      if(S.dmin>36){const ax=P?P.x:k.fx!=null?k.fx:S.mx,ay=P?P.y:k.fx!=null?k.fy:S.my;const S2=stats(ax,ay,22*22);if(S2)S=S2;}
+      const th=.5*Math.atan2(2*S.cxy,S.cxx-S.cyy),ev=(S.cxx+S.cyy)/2+Math.sqrt(((S.cxx-S.cyy)/2)**2+S.cxy*S.cxy),len=Math.max(4,Math.sqrt(ev)*3.4);
+      let ang=th;if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;ang=clamp(ang,-.52,.52);
+      const bl=Math.hypot(S.bx,S.by)||1,back=2.5+Math.min(10,len*.12),x=S.mx+S.bx/bl*back,y=S.my+S.by/bl*back,sz=clamp(Math.sqrt(len)*1.35,3,14),share=q.n/tot;
+      res.push(P&&P.sx!=null?{x,y,ang,sz,share,sx:P.sx,sy:P.sy,sa:P.sa,ss:P.ss,sh:P.sh}:{x,y,ang,sz,share,sx:x,sy:y,sa:ang,ss:sz,sh:share});}
+    // two labels that would sit almost on top of each other read as one: fold the smaller into the bigger
+    const fin=[];for(const F of res){const o=fin.find(G=>(G.x-F.x)**2+(G.y-F.y)**2<100);if(o)o.share+=F.share;else fin.push(F);}
+    out[k.id]=fin.length?fin:PL;}
   R.front=out;
 }
 // a sword drawn in place: pivot at the hand, blade pointing up at angle 0
@@ -2108,10 +2117,10 @@ function draw(g,dt,ts){
   R.lb=LB;
   // missiles and pending strikes
   // troops pushing on each front that involves me, drawn over the cities so the number is always readable
-  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const F=R.front[k.id];if(!F||F.sx==null)continue;
-    F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa=clamp(F.sa+da*.1,-.52,.52);F.ss+=(F.sz-F.ss)*.1;
+  if(me){frontSpots(g,me,ts);for(const k of g.attacks){if((k.a!==me&&k.d!==me)||!k.d||k.troops<1)continue;const FL=R.front[k.id];if(!FL||!FL.length)continue;for(const F of FL){if(F.sx==null)continue;
+    F.sh=F.share;F.sx+=(F.x-F.sx)*.1;F.sy+=(F.y-F.sy)*.1;let da=F.ang-F.sa;if(da>Math.PI/2)da-=Math.PI;if(da<-Math.PI/2)da+=Math.PI;F.sa=clamp(F.sa+da*.1,-.52,.52);F.ss+=(F.sz-F.ss)*.1;
     const q=w2s(F.sx+.5,F.sy+.5);if(q.x<-80||q.y<-40||q.x>cw+80||q.y>ch+40)continue;const fs=clamp(F.ss*z,12,46);
-    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}
+    c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops*F.sh),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}}
   drawSmoke(c,z,cw,ch);
   for(const m of g.missiles){
     {const dm=m.type==='doom',nk=m.type==='nuke',q=R.q==null?2:R.q,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs,span=.42,N=40;
@@ -2443,7 +2452,7 @@ TX.en.help[8]=['The road to victory','Hold 99% of the world\'s land. Every realm
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:"5.5",d:"2026-11-26",ar:["🏕️ القبائل مثل الدول الكبيرة: أخذ مدينتها ما يعطيك أرضها كلها، لازم تاخذها بنفسك"],en:["🏕️ Tribes now work like big realms: taking their village no longer hands you all their land"]},
+ {v:"5.5",d:"2026-11-26",ar:["⚔️ لما الهجوم ينقسم لأكثر من جبهة، كل جبهة يطلع عليها رقم جنودها وما يتلخبط","🏕️ القبائل مثل الدول الكبيرة: أخذ مدينتها ما يعطيك أرضها كلها، لازم تاخذها بنفسك"],en:["⚔️ When an attack splits into several fronts, each front shows its own troop number","🏕️ Tribes now work like big realms: taking their village no longer hands you all their land"]},
  {v:"5.4",d:"2026-11-25",ar:["🤖 دول كبيرة أكثر في كل الخرايط","🕊️ البوت ما يطلب السلام إلا بعد 12 ثانية من الحرب، وما يجيك طلبين ورا بعض","🗺️ أخذ مدن الدولة ما يعطيك كل أرضها: لازم تسيطر على أرضها كاملة بنفسك","🛡️ القبة الدفاعية تطلق صاروخها بدري وتصيد الصاروخ في الجو قبل ما يوصل","🏕️ ضاعفنا عدد القبائل الصغيرة عشان المنافسة على الأرض تصير أقوى","✨ علامة «جديد» تختفي أول ما تفتح القائمة وتطلع منها","⚖️ توازن الصعوبة المتوسطة: جيوش الدول الكبيرة صارت تكبر أسرع","🎖️ قائمة جديدة «تطوير الجيش»: طوّر الجنود والدبابات والطيارات والبحرية والدفاع، لكل وحدة 5 مستويات، وشلنا معسكر الدبابات","🏕️ القبائل صارت كثيرة ومنتشرة في كل الخريطة، تهجم من ألف جندي وتحتل أسرع","📱 شاشة المعركة في الجوال صارت أسهل: 4 أزرار كبيرة تحت (بناء، أسلحة، هجوم، جيش)، وشريط قوة الهجوم فوقها، وأزرار سريعة 25% إلى 100%","🏛️ زر العصر يوريك وش يعطيك العصر الجاي ووش يفتح لك قبل ما تدفع","🔴 علامة «جديد» على كل مبنى أو سلاح أو تطوير انفتح لك، لين تضغطه","🧭 بداية المعركة صارت أبسط: اختر حضارتك وحط عاصمتك بس","🔔 إشعارات السلام والتحالف في الجوال صارت بأزرار كبيرة","🗺️ المربعات تطلع أكبر واللعبة صارت أخف على الجوال","🗡️ سيفين يتحركون في بطاقة المعركة السريعة"],en:["🤖 More big nations on every map","🕊️ Bots ask for peace only after 12 s of war, and never two requests back to back","🗺️ Taking a realm's cities no longer hands you all its land: you have to conquer every tile","🛡️ The dome fires early and downs the missile mid-air, well before it lands","🏕️ Twice as many small tribes, for a fiercer race for land","✨ \"New\" badges clear once you open a panel and close it","⚖️ Medium balance: big nations' armies now grow faster","🎖️ New Army upgrades menu: upgrade Soldiers, Tanks, Planes, Navy and Defence, five levels each; the tank camp is gone","🏕️ Many more tribes spread across the whole map; they raid from 1,000 troops and take land faster","📱 An easier phone battle screen: four big buttons at the bottom (Build, Weapons, Attack, Army), the attack-strength bar above them, and quick 25% to 100% buttons","🏛️ The age button shows what the next age gives and unlocks before you pay","🔴 A New badge on every building, weapon or upgrade that unlocks, until you tap it","🧭 A simpler battle start: pick your realm and place your capital","🔔 Peace and alliance notifications on phones have big buttons","🗺️ Tiles look bigger and the game runs lighter on phones","🗡️ Animated swords on the quick battle card"]},
  {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650','⚡ الجيش الكبير صار يكتسح بسرعة: إذا جيشك أكبر بأربع مرات يمسح المنطقة خلال ثواني. الغابة تبطّئه شوي بس، والجبال تبطّئه أكثر','🔢 عدد الجنود على الجبهة صار يطلع فوق المدن بدل ما ينغطى تحتها','💥 لكل سلاح انفجاره: الصاروخ انفجار صغير بشرار، والنووي سحابة فطر صغيرة، والفناء سحابة فطر كبيرة بموجة صدمة','🌫️ دخان الصواريخ والانفجارات يبقى في الجو ويختفي شوي شوي، وأخف في الجرافيكس المتوسط، وما يطلع في المنخفض عشان الجوالات الضعيفة','⏳ دائرة البناء صارت تبدأ من الصفر','🚀 الصاروخ يطلع من المنصة بوميض ودخان ويكبر شوي شوي بدل ما يطلع فجأة','⚔️ الجيش ما عاد يذوب بسرعة على أرض العدو: الخسائر صارت أغلبها من قتال جنوده، فـ120 ألف ضد 50 ألف يمسح الدولة كاملة ويبقى معك جيش','🔢 رقم الجنود صار يطلع على الجبهة الرئيسية إذا هجمت من أكثر من جهة، بدل ما يطلع بالنص بينهم','⚡ تحسّن الهجوم: الجبهة تمشي كخط واحد، والجيش الأقوى بكثير ياخذ دولة صغيرة في حوالي 6 ثواني، وسرعته تتغير حسب ارتفاع الأرض: الأخضر الفاتح سريع ويهدأ شوي عند المرتفعات الصغيرة، والغابات أبطأ شوي، والمرتفعات أبطأ، والجبال العالية أبطأ شي'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200','⚡ Big armies sweep fast: four times the enemy army clears the area in seconds. Forest slows it only a little, mountains more','🔢 The troop count on a front now shows above cities instead of hiding under them','💥 Each weapon has its own blast: a small burst with sparks for the rocket, a small mushroom cloud for the nuke, a big one with a shockwave for doom','🌫️ Missile and blast smoke stays in the air and fades slowly; lighter on Medium graphics and off on Low for weaker phones','⏳ The building progress ring now starts from zero','🚀 Missiles leave the silo with a flash and smoke and grow into view instead of popping in','⚔️ Armies no longer melt on enemy land: losses now come mostly from fighting their soldiers, so 120K against 50K wipes the realm out with an army to spare','🔢 When you attack on several sides the troop count sits on the main front, not between them','⚡ Better attacks: the front advances as one line, a much stronger army takes a small realm in about 6 seconds, and its pace follows the height of the land: fast on open green, easing over small rises, a little slower in forest, slower on hills, slowest on high mountains']},
  {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
