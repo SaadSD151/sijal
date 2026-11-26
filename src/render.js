@@ -363,9 +363,11 @@ function draw(g,dt,ts){
     const p=w2s(s.x+.5,s.y+.5);if(p.x<-40||p.y<-40||p.x>cw+40||p.y>ch+40)continue;
     const n=g.nations[s.owner],r=Math.max(2.5,z*(city?2.5+(s.capital?.7:0)+s.level*.15:2.6));if(s.build>g.tick)c.globalAlpha=.55;
     const rn=city&&s.ruin>g.tick,BS=!rn&&n&&n.bld?BSTY[n.bld]:null;SP.push(p.x,p.y,r);
+    // far away a building is a few pixels wide: a plain dot in its owner's colour is all the eye can see, and it is many times cheaper
+    if(r<4&&!s.capital){c.fillStyle=rn?'#5f5650':BS?BS.f:n?n.css:'#8a8d92';const d=r*1.7;c.fillRect(p.x-d/2,p.y-d/2,d,d);c.globalAlpha=1;continue;}
     // cities keep the skin's outline; every other building wears the outline of its type, in the skin's colours
     const shp=(rr)=>city?bShape(c,BS?BS.sh:'c',p.x,p.y,rr):tShape(c,s.type,p.x,p.y,rr);
-    if(BS){shp(r);if(BS.gl&&R.q){c.save();c.shadowColor=BS.gl;c.shadowBlur=r*.9;c.fillStyle=BS.f;c.fill();c.restore();}else{c.fillStyle=BS.f;c.fill();}c.lineWidth=Math.max(1.6,r*.16);c.strokeStyle=BS.s;c.stroke();c.lineWidth=Math.max(1.2,r*.1);c.strokeStyle=n.css;shp(r+c.lineWidth*1.4);c.stroke();}
+    if(BS){shp(r);if(BS.gl&&R.q&&r>=6){c.save();c.shadowColor=BS.gl;c.shadowBlur=r*.9;c.fillStyle=BS.f;c.fill();c.restore();}else{c.fillStyle=BS.f;c.fill();}c.lineWidth=Math.max(1.6,r*.16);c.strokeStyle=BS.s;c.stroke();c.lineWidth=Math.max(1.2,r*.1);c.strokeStyle=n.css;shp(r+c.lineWidth*1.4);c.stroke();}
     else{shp(r);c.fillStyle=rn?'#5f5650':n?n.css:'#8a8d92';c.fill();c.lineWidth=s.capital?2.2:1.4;c.strokeStyle=s.capital?'#ffe9a8':'rgba(6,12,20,.9)';c.lineJoin='round';c.stroke();}
     if(r>5.5){const q=r*(city?1.5:1.35);c.drawImage(R.glyph[rn?'ruin':s.capital?'cap':s.type],p.x-q/2,p.y-q/2+(TGY[s.type]||0)*r,q,q);}
     if(rn){c.strokeStyle=n?n.css:'#888';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+2,0,7);c.stroke();for(let k=0;k<3;k++){const ph=(ts/1400+k/3)%1;c.fillStyle=`rgba(70,66,62,${.55*(1-ph)})`;c.beginPath();c.arc(p.x+Math.sin(k*2.1+ph*3)*r*.4,p.y-r-ph*r*2.4,r*(.35+ph*.55),0,7);c.fill();}}
