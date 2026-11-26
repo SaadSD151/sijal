@@ -444,8 +444,8 @@ function renderSkins(){
 }
 // ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
 const ADMIN_ROOT='saadsd';
-// supporting the developer: 10 riyals by STC Pay unlocks the whole season once the owner confirms it
-const TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/sijal_202';
+// supporting the developer: 10 riyals through PayPal (Apple Pay, cards or PayPal) unlocks the whole season once the owner confirms it
+const PAY_LINK='https://www.paypal.com/ncp/payment/C7USHQMD77V8J',TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/sijal_202';
 // the game's social accounts, as big cards
 function renderSocial(){
   const TT='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>',
@@ -455,7 +455,7 @@ function renderSocial(){
     <a class="soc ig" href="${INSTA}" target="_blank" rel="noopener">${IG}<span><b>${t('d_ig')}</b><small dir="ltr">@sijal_202</small></span></a></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
 }
-const STC_PAY='0538053242',SUPPORT_SAR=10;
+const SUPPORT_SAR=10;
 // ── game statistics for the owner: anonymous counters per Saudi day and all-time, and who has the game open right now ──
 const sDay=o=>new Date(Date.now()+3*36e5-(o||0)*864e5).toISOString().slice(0,10),sHour=()=>new Date(Date.now()+3*36e5).getUTCHours();
 const SQ={q:{},ms:0};
@@ -560,18 +560,18 @@ function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();
 function renderSupport(){
   const p=UI.prof,f=p.fb||{};
   $('#help').innerHTML=`<h2>💜 ${t('supT',SUPPORT_SAR)}</h2><p class="keys">${t('supD')}</p>
-  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:!STC_PAY?`<div class="hp"><p>${t('supSoon')}</p></div>`:`<div class="hp trust"><h3>🛡️ ${t('trT')}</h3><ul>${t('trL').map(x=>`<li>${x.replace('{0}',SUPPORT_SAR)}</li>`).join('')}</ul></div><div class="hp sups">
-    <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><div class="stc" dir="ltr"><b>${esc(STC_PAY)}</b><button class="btn sm" data-a="supCopy">${t('supCopy')}</button></div>
-    <p><b>2.</b> ${t('supStep2')}</p><input id="supPhone" maxlength="10" inputmode="numeric" dir="ltr" placeholder="05XXXXXXXX">
-    <p><b>3.</b> ${t('supStep3')}</p><input id="supUser" maxlength="16" dir="ltr" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="${t('ac_user')}">
-    <p><b>4.</b> ${t('supStep4')}</p><button class="btn big ok" data-a="supSend">${t('supSend')}</button></div>`}
+  ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:`<div class="hp trust"><h3>🛡️ ${t('trT')}</h3><ul>${t('trL').map(x=>`<li>${x.replace('{0}',SUPPORT_SAR)}</li>`).join('')}</ul></div><div class="hp sups">
+    <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><a class="btn big ok paybtn" href="${PAY_LINK}" target="_blank" rel="noopener" data-a="supPay">💳 ${t('supPay')}</a><div class="payl"><span> Pay</span><span>VISA</span><span>Mastercard</span><span>PayPal</span></div>
+    <p><b>2.</b> ${t('supStep2')}</p><input id="supMail" type="email" maxlength="80" dir="ltr" autocapitalize="none" spellcheck="false" placeholder="name@gmail.com">
+    <p><b>3.</b> ${t('supStep3')}</p><input id="supUser" maxlength="16" dir="ltr" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="${t('ac_user')}" value="${esc(f.user||'')}">
+    <p><b>4.</b> ${t('supStep4')}</p><button class="btn big" data-a="supSend">${t('supSend')}</button></div>`}
   <div class="row"><button class="btn" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('back')}</button></div>`;
 }
 function supSend(){
-  const p=UI.prof,f=p.fb||{},ph=(($('#supPhone')||{}).value||'').replace(/\D/g,''),us=(($('#supUser')||{}).value||'').trim();if(!f.user)return;
-  if(!/^05\d{8}$/.test(ph))return err('supPhone');if(!/^[A-Za-z0-9_]{3,16}$/.test(us))return err('admUser');if(us.toLowerCase()!==f.user.toLowerCase())return err('supUserBad');const ref=ph;if(!/^https?:/.test(location.protocol))return err('sgSite');
+  const p=UI.prof,f=p.fb||{},em=(($('#supMail')||{}).value||'').trim().toLowerCase(),us=(($('#supUser')||{}).value||'').trim();if(!f.user)return;
+  if(!isMail(em))return err('supMail');if(!/^[A-Za-z0-9_]{3,16}$/.test(us))return err('admUser');if(us.toLowerCase()!==f.user.toLowerCase())return err('supUserBad');if(!/^https?:/.test(location.protocol))return err('sgSite');
   if(Date.now()-(p.supAt||0)<6e4)return err('supWait');loading(true);
-  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (STC Pay)',phone:ph,message:'Support claim · username: '+f.user+' · paid from phone: '+ph+' · amount: '+SUPPORT_SAR+' SAR'})})
+  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (PayPal)',paypal_email:em,message:'Support claim · username: '+f.user+' · paid with PayPal/card, payer email: '+em+' · amount: '+SUPPORT_SAR+' SAR'})})
   .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;stat('sup');statFlush();p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
 }
 function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
@@ -971,7 +971,7 @@ function act(a){
     case'moveX':{const d=$('#moved');if(d)d.remove();break;}
     case'hist':renderHist();show('help');break;
     case'supMenu':UI.supFrom='menu';renderSupport();show('help');break;
-    case'supCopy':try{navigator.clipboard.writeText(STC_PAY);toast(t('supCopied'),'prop',1500);}catch(e){}break;
+    case'supPay':stat('payclick');break;
     case'supSend':supSend();break;
     case'admGrant':admGrant();break;
     case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
