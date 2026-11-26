@@ -1092,6 +1092,8 @@ function frame(ts){
 }
 function boot(){
   cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();
+  // offline play on the website: keep a copy of the game on the device
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
   {const c=mk(64,64),x=c.getContext('2d');x.translate(32,32);x.rotate(.8);x.drawImage(R.glyph.silo,-32,-32);R.glyph.rocket=c;R.url.rocket=c.toDataURL();}
   {const c=mk(64,64),x=c.getContext('2d');x.drawImage(R.glyph.nuke,8,8,48,48);x.strokeStyle='#fff';x.lineWidth=4;x.beginPath();x.arc(32,32,29,0,7);x.stroke();R.glyph.doom=c;R.url.doom=c.toDataURL();}
   resize();addEventListener('resize',()=>{applyMode();resize();placeAmode();});
