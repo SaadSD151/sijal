@@ -634,3 +634,9 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .sups .paybtn{display:block;text-align:center;text-decoration:none;margin:6px 0 8px}
 .sups .payl{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:12px}
 .sups .payl span{padding:3px 10px;border-radius:8px;background:#fff;color:#111;font-weight:800;font-size:12.5px;direction:ltr;font-family:-apple-system,system-ui,sans-serif}
+/* text never sits bare on the moving map: a dark plate behind loose lines on the menu, season and customise pages */
+#help>.keys,#help>p.best,#help>.bpbar+.keys,#menu .made{width:fit-content;max-width:min(560px,100%);margin-inline:auto;padding:7px 14px;border-radius:12px;background:rgba(6,12,22,.88);border:1px solid rgba(255,255,255,.08);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#help>.keys{color:#dfe8f2}#menu .made{color:#c9d6e3}#menu .mf .made{opacity:1}#menu .made.beta{color:var(--warn)}
+.sup{background:linear-gradient(180deg,rgba(46,26,92,.95),rgba(24,12,54,.95))}
+.bpbar{background:rgba(6,12,22,.88)}
+#help>h2{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px #000}
