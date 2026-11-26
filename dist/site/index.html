@@ -627,6 +627,9 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .soc span{display:flex;flex-direction:column;align-items:flex-start;gap:2px}.soc small{opacity:.85;font-size:13px}
 .soc.tt{background:linear-gradient(135deg,#111 0%,#1b1b1b 60%);border:1.5px solid #25f4ee;box-shadow:-3px 0 0 #fe2c55 inset,0 6px 18px rgba(0,0,0,.35)}
 .soc.ig{background:linear-gradient(135deg,#feda75 0%,#fa7e1e 25%,#d62976 55%,#962fbf 80%,#4f5bd5 100%)}
+.socH{width:min(420px,100%);margin:0 auto 4px;padding:14px 18px;border-radius:16px;background:rgba(6,12,22,.86);border:1px solid rgba(241,207,110,.35);box-shadow:0 6px 18px rgba(0,0,0,.4);text-align:center}
+.socH h2{margin:0 0 6px}.socH p{margin:0;font-size:17px;line-height:1.5;color:#eaf2fb;font-weight:600}
+.soc.ig small{opacity:1;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45)}.soc.ig b{text-shadow:0 1px 3px rgba(0,0,0,.35)}
 
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
@@ -664,7 +667,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='2d8ae1773b';
+const BUILD_ID='25ac93ba7c';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -3115,7 +3118,7 @@ const TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/
 function renderSocial(){
   const TT='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>',
     IG='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/></svg>';
-  $('#help').innerHTML=`<h2>📱 ${t('d_follow')}</h2><p class="keys">${t('socD')}</p><div class="socs">
+  $('#help').innerHTML=`<div class="socH"><h2>📱 ${t('d_follow')}</h2><p>${t('socD')}</p></div><div class="socs">
     <a class="soc tt" href="${TIKTOK}" target="_blank" rel="noopener">${TT}<span><b>${t('d_tt')}</b><small dir="ltr">@sijal_2</small></span></a>
     <a class="soc ig" href="${INSTA}" target="_blank" rel="noopener">${IG}<span><b>${t('d_ig')}</b><small dir="ltr">@saadsd_17</small></span></a></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;

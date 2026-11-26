@@ -382,7 +382,7 @@ const TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/
 function renderSocial(){
   const TT='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>',
     IG='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="currentColor"/></svg>';
-  $('#help').innerHTML=`<h2>📱 ${t('d_follow')}</h2><p class="keys">${t('socD')}</p><div class="socs">
+  $('#help').innerHTML=`<div class="socH"><h2>📱 ${t('d_follow')}</h2><p>${t('socD')}</p></div><div class="socs">
     <a class="soc tt" href="${TIKTOK}" target="_blank" rel="noopener">${TT}<span><b>${t('d_tt')}</b><small dir="ltr">@sijal_2</small></span></a>
     <a class="soc ig" href="${INSTA}" target="_blank" rel="noopener">${IG}<span><b>${t('d_ig')}</b><small dir="ltr">@saadsd_17</small></span></a></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
