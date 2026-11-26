@@ -58,7 +58,7 @@ Narrator: "تحالف، أهدِ ذهب، وأرسل جنود لحليفك… و
 **المرجع:** `sijal-logo.png`
 
 ```
-Clip 5 of 5 (8 seconds). The camera pulls back to show the whole world map almost entirely golden, then fades to a dark navy background where the golden logo "سِجال" (use the attached logo exactly) shines in the centre with light rays, and below it the line "صُنعت في المملكة العربية السعودية" appears, then the text "saadsd151.github.io/sijal". Final big drum hit.
+Clip 5 of 5 (8 seconds). The camera pulls back to show the whole world map almost entirely golden, then fades to a dark navy background where the golden logo "سِجال" (use the attached logo exactly) shines in the centre with light rays, and below it the line "صُنعت في المملكة العربية السعودية" appears, then the text "sijalwar.com". Final big drum hit.
 Narrator: "لعبة صُنعت في السعودية… مجانية، على الجوال والكمبيوتر، بدون تحميل. الرابط في البايو!"
 ```
 

@@ -94,7 +94,7 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
     #brand{position:absolute;left:10px;bottom:12px;width:74px;opacity:.85;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}
   </style></head><body><img id="bg"><div id="vig"></div><div id="red"></div><div id="scan"></div>
     ${C.map((c,i)=>`<div class="cap ${c[3]||''}" id="c${i}">${c[2]}</div>`).join('')}<img id="brand" src="${LOGO}">
-    <div id="out"><img src="${LOGO}"><div class="q">${CTA}</div><div class="s">العبها مجاناً من المتصفح · بدون تحميل</div><div class="l">saadsd151.github.io/sijal</div><div class="b">🔗 الرابط في البايو</div></div><div id="split"></div><div id="ua"></div><div id="ub"></div><div id="hud2"><span id="tmr">⏱️ 0:00</span><span id="pct">🗺️ 0%</span></div><div id="fl"></div></body></html>`);await pg.goto('file://'+page);
+    <div id="out"><img src="${LOGO}"><div class="q">${CTA}</div><div class="s">العبها مجاناً من المتصفح · بدون تحميل</div><div class="l">sijalwar.com</div><div class="b">🔗 الرابط في البايو</div></div><div id="split"></div><div id="ua"></div><div id="ub"></div><div id="hud2"><span id="tmr">⏱️ 0:00</span><span id="pct">🗺️ 0%</span></div><div id="fl"></div></body></html>`);await pg.goto('file://'+page);
   await pg.waitForTimeout(1500);await pg.evaluate(()=>document.fonts.ready);
   for(let i=0;i<frames.length;i++){
     const F=frames[i],t=i/FPS,src='file://'+path.join(RAW,'f',String(F.s).padStart(5,'0')+'.jpg');

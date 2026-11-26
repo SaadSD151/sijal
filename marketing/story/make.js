@@ -75,8 +75,8 @@ const LOGO='data:image/png;base64,'+fs.readFileSync(path.join(__dirname,'../sija
     #out{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(4,10,20,.78);backdrop-filter:blur(6px);opacity:0}
     #out img{width:72%}#out .q{color:#fff;font-weight:700;font-size:24px;-webkit-text-stroke:3px #000;paint-order:stroke fill}#out .l{direction:ltr;padding:10px 20px;border-radius:999px;background:linear-gradient(180deg,#f1cf6e,#c9952d);color:#1a1205;font-weight:700;font-size:21px}#out .s{color:#d7e6f5;font-size:15px}
     #brand{position:absolute;left:10px;top:12px;width:64px;opacity:.85}
-  </style></head><body><img id="bg"><div id="code"><div class="tag">🤖 الذكاء الاصطناعي يكتب…</div><pre id="cd"></pre></div><div id="shade"></div><div id="caps"></div><div id="url">saadsd151.github.io/sijal</div><img id="brand" src="${LOGO}">
-    <div id="out"><img src="${LOGO}"><div class="q">جرّبوها… وقولوا لي رايكم 💛</div><div class="l">saadsd151.github.io/sijal</div><div class="s">مجانية · من المتصفح · بدون تحميل</div></div></body></html>`);
+  </style></head><body><img id="bg"><div id="code"><div class="tag">🤖 الذكاء الاصطناعي يكتب…</div><pre id="cd"></pre></div><div id="shade"></div><div id="caps"></div><div id="url">sijalwar.com</div><img id="brand" src="${LOGO}">
+    <div id="out"><img src="${LOGO}"><div class="q">جرّبوها… وقولوا لي رايكم 💛</div><div class="l">sijalwar.com</div><div class="s">مجانية · من المتصفح · بدون تحميل</div></div></body></html>`);
   await pg.goto('file://'+page);await pg.waitForTimeout(1500);await pg.evaluate(()=>document.fonts.ready);
   const STILL={online:'file://'+path.join(UI,'online.jpg'),suggest:'file://'+path.join(UI,'suggest.jpg')};
   for(let i=0;i<total;i++){const t=i/FPS,P=plan[i];

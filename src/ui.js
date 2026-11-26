@@ -896,6 +896,8 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');break;
     case'social':renderSocial();show('help');break;
+    case'moveGo':{saveProf();const raw=localStorage.getItem('sijal.v1')||'',rc=(location.hash||'').slice(1).toUpperCase(),h=[];if(raw.length>2)h.push('mv='+b64u(raw));if(/^[A-Z0-9]{5}$/.test(rc))h.push('r='+rc);stat('moved');statFlush(true);location.href=NEW_SITE+(h.length?'#'+h.join('&'):'');break;}
+    case'moveX':{const d=$('#moved');if(d)d.remove();break;}
     case'hist':renderHist();show('help');break;
     case'supMenu':UI.supFrom='menu';renderSupport();show('help');break;
     case'supCopy':try{navigator.clipboard.writeText(STC_PAY);toast(t('supCopied'),'prop',1500);}catch(e){}break;
@@ -1090,7 +1092,23 @@ function frame(ts){
   if(ts-UI.lastHud>250){UI.lastHud=ts;hudUpdate();const m=$('#mini');if(m&&!UI.mob&&!g.o.demo&&!UI.screen)drawMini(g,m);}
   if(UI.screen==='end')repStep(dt);
 }
+// the game moved to its own domain: the old address offers a one-tap move that carries this device's progress along
+const NEW_SITE='https://sijalwar.com/',OLD_HOST='saadsd151.github.io';
+const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),unb64u=s=>decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/'))));
+function moveIn(){
+  const m=/(?:^#|&)mv=([A-Za-z0-9_-]+)/.exec(location.hash||'');if(!m)return;const r=/(?:^#|&)r=([A-Z0-9]{5})/.exec(location.hash);
+  try{const raw=unb64u(m[1]),imp=JSON.parse(raw);let cur={};try{cur=JSON.parse(localStorage.getItem('sijal.v1')||'{}')||{};}catch(e){}
+    // never overwrite an account or more progress already on this site
+    if(imp&&typeof imp==='object'&&!(cur.fb&&cur.fb.user)&&(cur.games|0)<=(imp.games|0)){localStorage.setItem('sijal.v1',raw);UI.movedIn=1;}}catch(e){}
+  history.replaceState(null,'',location.pathname+location.search+(r?'#'+r[1]:''));
+}
+function moveNotice(){
+  if(location.hostname!==OLD_HOST||$('#moved'))return;const d=document.createElement('div');d.id='moved';
+  d.innerHTML=`<div class="mvc"><div class="mvi">🎉</div><h2>${t('mvT')}</h2><p>${t('mvD')}</p><div class="mvl" dir="ltr">sijalwar.com</div><button class="btn big ok" data-a="moveGo">${t('mvGo')}</button><p class="mvs">${t('mvKeep')}</p><button class="btn sm" data-a="moveX">${t('mvStay')}</button></div>`;
+  $('#app').appendChild(d);
+}
 function boot(){
+  moveIn();
   cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();
   // offline play on the website: keep a copy of the game on the device
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -1109,6 +1127,7 @@ function boot(){
   statBoot();
   if(UI.prof.seen!==LOG[0].v){renderNews(true);show('help');UI.prof.seen=LOG[0].v;saveProf();}
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
+  moveNotice();if(UI.movedIn)setTimeout(()=>toast(t('mvDone'),'prop',4500),1200);
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,setOwnerX:(i,o)=>setOwner(G,i,o),stat:{flush:statFlush,ping:statPing},run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
 boot();

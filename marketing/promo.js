@@ -39,7 +39,7 @@ const CAPS=[ // [start, end, text] seconds
     document.head.appendChild(st);
     const d=document.createElement('div');d.id='pr';d.innerHTML=`<div id="prCap"><span></span></div>
       <div id="prIn"><img src="${logo}" alt=""><div class="q">تبي لعبة حرب… سعودية مية بالمية؟</div></div>
-      <div id="prOut"><img src="${logo}" alt=""><div class="m">صُنعت في المملكة العربية السعودية</div><div class="s">مجانية · جوال وكمبيوتر · بدون تحميل</div><div class="l">saadsd151.github.io/sijal</div><div class="m">العب الحين</div></div>`;
+      <div id="prOut"><img src="${logo}" alt=""><div class="m">صُنعت في المملكة العربية السعودية</div><div class="s">مجانية · جوال وكمبيوتر · بدون تحميل</div><div class="l">sijalwar.com</div><div class="m">العب الحين</div></div>`;
     document.body.appendChild(d);
     for(const e of document.querySelectorAll('#menu > *'))e.style.visibility='hidden';
   },[LOGO,V]);

@@ -51,9 +51,9 @@ const T=AD?{start:.2,expand:[1.4,4.2],tanks:3.6,city:4.2,cityEnd:7,msl1:7.2,msl2
       #amode,#feed,#hint,#fpick,.anx,#threat,#mini,#lb{display:none!important}
       ${AD?'#hud{display:none!important}':''}`;
     document.head.appendChild(st);
-    const d=document.createElement('div');d.id='pr';d.innerHTML=`<div id="prVig"></div><div id="prFlash"></div><div id="prWm">saadsd151.github.io/sijal</div><div id="prCap"><span></span></div>
+    const d=document.createElement('div');d.id='pr';d.innerHTML=`<div id="prVig"></div><div id="prFlash"></div><div id="prWm">sijalwar.com</div><div id="prCap"><span></span></div>
       <div id="prIn"><img src="${logo}" alt=""><div class="q">${AD?'الحرب بدأت…':'لعبة حرب استراتيجية… سعودية 🇸🇦'}</div></div>
-      <div id="prOut"><img src="${logo}" alt=""><div class="m">${AD?'العب الحين مجاناً':'حرب المدن بانتظارك'}</div><div class="s">${AD?'جوال وكمبيوتر · بدون تحميل · أونلاين مع أخوياك':'أونلاين مع أخوياك لين 32 لاعب · جوال وكمبيوتر · بدون تحميل'}</div><div class="l">saadsd151.github.io/sijal</div></div>`;
+      <div id="prOut"><img src="${logo}" alt=""><div class="m">${AD?'العب الحين مجاناً':'حرب المدن بانتظارك'}</div><div class="s">${AD?'جوال وكمبيوتر · بدون تحميل · أونلاين مع أخوياك':'أونلاين مع أخوياك لين 32 لاعب · جوال وكمبيوتر · بدون تحميل'}</div><div class="l">sijalwar.com</div></div>`;
     document.body.appendChild(d);
     for(const e of document.querySelectorAll('#menu > *'))e.style.visibility='hidden';
   },[LOGO,V,AD]);
