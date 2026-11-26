@@ -371,7 +371,8 @@ function draw(g,dt,ts){
     const shp=(rr)=>city?bShape(c,BS?BS.sh:'c',p.x,p.y,rr):tShape(c,s.type,p.x,p.y,rr);
     if(BS){shp(r);if(BS.gl&&R.q&&r>=6){c.save();c.shadowColor=BS.gl;c.shadowBlur=r*.9;c.fillStyle=BS.f;c.fill();c.restore();}else{c.fillStyle=BS.f;c.fill();}c.lineWidth=Math.max(1.6,r*.16);c.strokeStyle=BS.s;c.stroke();c.lineWidth=Math.max(1.2,r*.1);c.strokeStyle=n.css;shp(r+c.lineWidth*1.4);c.stroke();}
     else{shp(r);c.fillStyle=rn?'#5f5650':n?n.css:'#8a8d92';c.fill();c.lineWidth=s.capital?2.2:1.4;c.strokeStyle=s.capital?'#ffe9a8':'rgba(6,12,20,.9)';c.lineJoin='round';c.stroke();}
-    if(r>5.5){const q=r*(city?1.5:1.35);c.drawImage(R.glyph[rn?'ruin':s.capital?'cap':s.type],p.x-q/2,p.y-q/2+(TGY[s.type]||0)*r,q,q);}
+    // the icon inside a building only when zoomed in enough to read it; from afar the coloured outline says enough and costs far less
+    if(r>8.5){const q=r*(city?1.5:1.35);c.drawImage(R.glyph[rn?'ruin':s.capital?'cap':s.type],p.x-q/2,p.y-q/2+(TGY[s.type]||0)*r,q,q);}
     if(rn){c.strokeStyle=n?n.css:'#888';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+2,0,7);c.stroke();for(let k=0;k<3;k++){const ph=(ts/1400+k/3)%1;c.fillStyle=`rgba(70,66,62,${.55*(1-ph)})`;c.beginPath();c.arc(p.x+Math.sin(k*2.1+ph*3)*r*.4,p.y-r-ph*r*2.4,r*(.35+ph*.55),0,7);c.fill();}}
     if(!city&&s.level>1&&z>=2.6){c.beginPath();c.arc(p.x+r*.8,p.y-r*.8,6,0,7);c.fillStyle='#0b1826';c.fill();c.font=`700 10px ${FONT}`;c.fillStyle='#f6dc9a';c.fillText(s.level,p.x+r*.8,p.y-r*.75);}
     if(s.upAt>g.tick){c.strokeStyle='#f6dc9a';c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,r+4,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.upAt-g.tick)/60));c.stroke();}
