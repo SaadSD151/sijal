@@ -117,7 +117,7 @@ function renderMenu(){
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
     <button class="hero" data-a="quick"><span class="sx" aria-hidden="true"><svg class="a" viewBox="0 0 40 160"><use href="#swd"/></svg><svg class="b" viewBox="0 0 40 160"><use href="#swd"/></svg><em></em></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
-    <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
+    <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),(done?'✓ '+t('h_done'):t('h_left',left))+(dStreakNow(p)?' · 🔥'+dStreakNow(p):''),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><button data-a="social">📱 ${t('d_follow')}</button><button data-a="hist">📜 ${t('hiT')}</button></div>
   </div>
   <div class="mf"><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>${mtabs('menu')}`;
@@ -164,11 +164,34 @@ function renderHelp(){
   $('#help').innerHTML=`<h2>${t('how')}</h2><div class="hl">${t('help').map(h=>`<div><b>${h[0]}</b><p>${h[1]}</p></div>`).join('')}</div><p class="keys">${t('keys')}</p><div class="row"><button class="btn big" data-a="helpBack">${t('back')}</button></div>`;
 }
 const dayKey=()=>{const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();};
+// the daily challenge: one world and one rule of the day for everyone, one attempt, a board of the fastest wins, and a streak
+const DMODS=['nomsl','army','rich','hard'],dMod=k=>DMODS[((k%97)+Math.floor(k/100)%7)%4];
+const dPrev=k=>{const D=new Date(Math.floor(k/10000),Math.floor(k/100)%100-1,k%100-1);return D.getFullYear()*10000+(D.getMonth()+1)*100+D.getDate();};
+const dStreakNow=p=>{const k=dayKey();return p.dLast===k||p.dLast===dPrev(k)?p.dStreak|0:0;};
+function dailyBoard(key){
+  if(!cloudOn())return Promise.resolve(null);const base=LB_DB+'/daily/'+key+'.json';
+  return fetch(base+'?orderBy=%22t%22&limitToFirst=20').then(r=>r.ok?r.json():fetch(base).then(r=>r.ok?r.json():null)).then(top=>
+    fetch(base+'?shallow=true').then(r=>r.ok?r.json():null).then(all=>({top:top?Object.entries(top).map(([uid,v])=>Object.assign({uid},v)).filter(v=>v&&v.t>0).sort((a,b)=>a.t-b.t).slice(0,20):[],n:all?Object.keys(all).length:0}))).catch(()=>null);
+}
+function dailySubmit(key,tk){
+  const p=UI.prof;if(!cloudOn())return Promise.resolve();
+  return lbAuth().then(f=>fetch(LB_DB+'/daily/'+key+'/'+f.uid+'.json').then(r=>r.ok?r.json():null).then(old=>{if(old&&old.t<=tk)return;
+    return fetch(LB_DB+'/daily/'+key+'/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:(p.name||t('defName')).slice(0,18),t:tk,s:dStreakNow(p)})});})).catch(()=>{});
+}
+function boardHTML(B,key){
+  const me=(UI.prof.fb||{}).uid;if(!B)return`<p class="keys">${t('dOff')}</p>`;
+  if(!B.top.length)return`<p class="dcount">${t('dNoOne')}</p>`;
+  return`<p class="dcount">${t('dCount',B.n)}</p><ol class="dbrd">${B.top.slice(0,10).map((e,i)=>`<li class="${e.uid===me?'me':''}"><span class="rk">${['🥇','🥈','🥉'][i]||i+1}</span><b>${esc(e.n||t('defName'))}${e.uid===me?` <small>(${t('dYou')})</small>`:''}</b>${e.s>1?`<em>🔥${e.s}</em>`:''}<i dir="ltr">${clock(e.t)}</i></li>`).join('')}</ol>`;
+}
 function renderDaily(){
-  const key=dayKey(),ty=Object.keys(TX.ar.types)[key%9],b=UI.prof.daily[key];
-  $('#help').innerHTML=`<h2>${t('daily')}</h2><div class="wt on" style="width:min(300px,100%)"><img src="${worldThumb(ty)}" alt=""><span>${t('dWorld')}: ${t('types')[ty]}</span></div><p class="dxp">⭐ ${t('dXp')}</p>
-  <div class="hl" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">${t('dInfo').map(h=>`<div><b>${h[0]}</b><p>${h[1]}</p></div>`).join('')}</div>
-  <p class="best">${b?t('best',clock(b)):t('dNone')}</p>${UI.prof.dailyDone===key?`<p class="dlock">🔒 ${t('dDone')}</p>`:''}<div class="row"><button class="btn" data-a="menu">${t('back')}</button>${UI.prof.dailyDone===key?'':`<button class="btn big" data-a="dailyGo">${t('dGo')}</button>`}</div>`;
+  const p=UI.prof,key=dayKey(),ty=Object.keys(TX.ar.types)[key%9],b=p.daily[key],mod=dMod(key),done=p.dailyDone===key,st=dStreakNow(p);
+  $('#help').innerHTML=`<h2>📅 ${t('daily')}</h2>
+  <div class="dmod"><small>${t('dRule')}</small><b>${t('dm_'+mod)}</b></div>
+  <div class="dtop"><div class="wt on"><img src="${worldThumb(ty)}" alt=""><span>${t('dWorld')}: ${t('types')[ty]}</span></div>
+    <div class="dme"><div>${st?t('dStreak',st):t('dStreak0')}</div><div>${b?'⏱️ '+t('best',clock(b)):t('dNone')}</div><div class="drew">${t('dRew')}</div></div></div>
+  <div class="dbox"><h3>${t('dBoardT')}</h3><div id="dBoard"><p class="keys">⏳</p></div></div>
+  ${done?`<p class="dlock">🔒 ${t('dDone')}</p>`:`<p class="dxp">${t('dOne')}</p>`}<div class="row"><button class="btn" data-a="menu">${t('back')}</button>${done?'':`<button class="btn big ok" data-a="dailyGo">${t('dGo')}</button>`}</div>`;
+  dailyBoard(key).then(B=>{const e=$('#dBoard');if(e)e.innerHTML=boardHTML(B,key);});
 }
 // quick battle: more rivals on bigger maps and harder difficulties
 const quickBots=p=>clamp([14,20,52,68][p.size<0?1:p.size]+[0,2,4,6][p.diff|0],6,80);
@@ -214,11 +237,11 @@ function cloudSync(){
   if(!p.histUp){p.histUp=1;p.histPend=(p.hist||[]).slice();saveProf();}
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{}),hSent=(Array.isArray(p.histPend)?p.histPend:[]).slice();let uid;
-  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
+  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;if(p.dLast){body.dl=p.dLast;body.ds=p.dStreak|0;}if(p.dailyDone)body.dd=p.dailyDone;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
     const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
-      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
+      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);if(u.dl>(p.dLast|0)){p.dLast=u.dl;p.dStreak=u.ds|0;}if(u.dd>(p.dailyDone|0))p.dailyDone=u.dd;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       fetch(LB_DB+'/grants/'+uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(gr=>{if(gr&&(p.passT==null?-1:p.passT)<PASS.length){p.passT=PASS.length;p.supporter=1;saveProf();toast(t('supOn'),'prop',6000);fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:PASS.length})}).catch(()=>{});}}).catch(()=>{});
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
@@ -616,7 +639,7 @@ function startMatch(o){
   const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
   let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,80),xpm:xpMul(p),minors:o.quick?'auto':tribesN(),diff:p.diff,faction:p.fac};
   opt.skin=mySkin();const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
-  if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
+  if(o.daily){const key=dayKey();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key,mod:dMod(key)};}
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
   if(o.same&&UI.lastOpt)opt=Object.assign({},UI.lastOpt,{seed:UI.lastOpt.daily?UI.lastOpt.seed:(Math.random()*2**31)|0});
   UI.lastOpt=opt;loading(true);
@@ -653,8 +676,12 @@ function quitXp(){
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1))+(g.o.daily&&o.win?50:0);histAdd(g,o.win?'w':'l',xp);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
-  let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
+  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats;
+  // a daily win keeps the streak going: +150, +20 for every day in a row, and +500 every seventh day
+  let dBonus=0;if(g.o.daily&&o.win&&!cheat){const k=g.o.daily;if(p.dLast!==k){p.dStreak=p.dLast===dPrev(k)?(p.dStreak|0)+1:1;p.dLast=k;}dBonus=150+Math.min(200,20*((p.dStreak|0)-1))+((p.dStreak|0)%7===0?500:0);stat('dwin');}
+  const xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1))+dBonus;histAdd(g,o.win?'w':'l',xp);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
+  let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p><p class="dend">${t('dStreak',p.dStreak|0)}</p><p class="dend" id="dRank">⏳</p>`;
+    if(!cheat){const k=g.o.daily,tk=g.tick;setTimeout(()=>dailySubmit(k,tk).then(()=>dailyBoard(k)).then(B=>{const e=$('#dRank');if(!e)return;const me=(p.fb||{}).uid,i=B?B.top.findIndex(x=>x.uid===me):-1;e.textContent=B?(i>=0?t('dRank',i+1,B.n):t('dCount',B.n)):'';}),300);}}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
   $('#end').innerHTML=`<div class="endbox pn ${o.win?'won':'lost'}"><h1>${t(o.win?'win':'lose')}</h1><p>${why}</p>${best}<div class="stats">${st.map(s=>`<div><small>${s[0]}</small><b>${s[1]}</b></div>`).join('')}</div>

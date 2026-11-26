@@ -30,12 +30,12 @@ function addNation(g,p){
   g.nations.push(n);if(n.human)g.human=id;return n;
 }
 function setupNations(g){
-  const o=g.o,rng=g.rng,idx=shuffle([...NAT.ar.keys()],rng);
+  const o=g.o,rng=g.rng,idx=shuffle([...NAT.ar.keys()],rng),xi=shuffle([...NATX.ar.keys()],rng);
   if(o.players){o.players.forEach((p,i)=>{const n=addNation(g,{human:true,fac:FAC[p.fac]?p.fac:'hawks',color:PAL[i%PAL.length],nameIdx:-1});n.pname=String(p.name||'').slice(0,18)||'P'+(i+1);n.pat=PATS.includes(p.pat)?p.pat:'';n.bld=BLDS.includes(p.bld)?p.bld:'';n.badge=!!p.badge;n.pass=!!p.pass;});g.human=(o.me|0)+1;}
   else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;n.pass=!!k.pass;}
   const pc=o.demo||o.players?null:FAC[o.faction||'hawks'].c,pal=shuffle(PAL.filter((c,i)=>o.players?i>=o.players.length||o.players.length>=PAL.length:!pc||Math.abs(c[0]-pc[0])+Math.abs(c[1]-pc[1])+Math.abs(c[2]-pc[2])>90),rng);
   for(let b=0;b<o.bots;b++){
-    const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);n.nsuf=(b/idx.length)|0;
+    const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:b<idx.length?idx[b]:1000+xi[b-idx.length]}),i=pickSpawn(g);
     if(i<0){n.alive=false;continue;}spawn(g,n,i);
   }
   // minor tribes: weak villages scattered over the map, easy prey for whoever reaches them first
@@ -43,6 +43,7 @@ function setupNations(g){
   const mc=o.minors==null?60:o.minors==='auto'?Math.max(120,Math.min(250-g.nations.length,Math.round(g.M.land/450))):o.minors,tn=shuffle([...Array(600).keys()],rng);
   for(let b=0;b<mc&&g.nations.length<251;b++){const i=pickSpawn(g,mc>180?5:mc>90?6:8);if(i<0)break;
     const n=addNation(g,{fac:'merchants',pers:'sage',color:[135+((rng()*50)|0),125+((rng()*45)|0),105+((rng()*45)|0)],nameIdx:-2});n.minor=true;n.tribe=tn[b];n.ai.nextWar=60+rng()*120;n.troops=2500;spawn(g,n,i);n.cap.level=1;}
+  if(o.mod==='hard')for(const n of g.nations)if(n&&!n.human&&!n.minor)n.troops*=2.5;
   for(const n of g.nations)if(n&&!n.human)for(const m of g.nations)if(m&&m!==n)n.att[m.id]=rng()*40-15+(PERS[n.pers].trust-.5)*20+(m.human?[30,10,-5,-20][o.diff==null?1:o.diff]:0);
 }
 function canSpawn(g,i){
@@ -59,7 +60,9 @@ function pickSpawn(g,md){
   return -1;
 }
 function spawn(g,n,i){
-  const W=g.W,x=i%W,y=(i/W)|0;n.spawned=true;const R2=n.minor?20:50;
+  const W=g.W,x=i%W,y=(i/W)|0;n.spawned=true;
+  // the daily challenge's rule of the day
+  if(n.human&&g.o.mod==='army')n.troops=Math.max(n.troops,50000);if(n.human&&g.o.mod==='rich')n.gold=(n.gold||0)+6000;const R2=n.minor?20:50;
   for(let dy=-7;dy<=7;dy++)for(let dx=-7;dx<=7;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=W||Y>=g.H||dx*dx+dy*dy>R2)continue;const j=Y*W+X;if(g.M.ter[j]>1&&!g.owner[j]&&!g.structAt[j])setOwner(g,j,n.id);}
   setOwner(g,i,n.id);n.cap=addStruct(g,'city',i,n.id,2,newCityName(g));n.cap.capital=true;n.cx=x;n.cy=y;
 }
@@ -87,7 +90,7 @@ function portOk(g,i){const W=g.W,b=g.M.big,x=i%W;return(x>0&&b[i-1])||(x<W-1&&b[
 // price rises with how many of that kind you have built yourself (captured ones do not count): ×mul for the first 6, then +12% of that each
 function buildCost(g,n,type){const s=ST[type],b=n.bc[type]|0;let c=s.cost;for(let k=0;k<Math.min(b,6);k++)c*=s.mul;if(b>6)c*=1+.12*(b-6);if(type==='fort'&&FAC[n.fac].fort)c*=FAC[n.fac].fort;return Math.round(c/10)*10;}
 function canBuild(g,n,type,i){
-  const s=ST[type];if(n.era<s.era)return'era';if(n.gold<buildCost(g,n,type))return'gold';if(type==='mon'&&n.mon)return'busy';
+  const s=ST[type];if(type==='silo'&&g.o.mod==='nomsl')return'mod';if(n.era<s.era)return'era';if(n.gold<buildCost(g,n,type))return'gold';if(type==='mon'&&n.mon)return'busy';
   if(i==null||i<0)return 0;
   if(g.owner[i]!==n.id)return'own';if(g.structAt[i]||g.fall[i]>g.tick)return'busy';
   const x=i%g.W,y=(i/g.W)|0;
@@ -441,7 +444,7 @@ function snapPort(g,n,i,R,ty){ty=ty||'port';
 // ── missiles, blasts, ultimates ──
 function mslCost(n,type){return Math.round(MSL[type].cost*(FAC[n.fac].msl||1));}
 function launchMissile(g,a,type,ti){
-  const A=g.nations[a],m=MSL[type],now=g.tick;if(A.era<m.era)return'era';const cost=mslCost(A,type);if(A.gold<cost)return'gold';
+  const A=g.nations[a],m=MSL[type],now=g.tick;if(g.o.mod==='nomsl')return'mod';if(A.era<m.era)return'era';const cost=mslCost(A,type);if(A.gold<cost)return'gold';
   if(ti==null||ti<0||g.M.ter[ti]<2)return'no';const o=g.owner[ti];if(o&&A.ally[o])return'ally';if(o&&now<A.truce[o])return'truce';
   const tx=ti%g.W,ty=(ti/g.W)|0;let silo=null,bd=1e9;
   for(const s of g.structs)if(!s.dead&&s.owner===a&&s.type==='silo'&&!s.build&&s.cd<=now){const d=hyp(s.x-tx,s.y-ty);if(d<bd){bd=d;silo=s;}}

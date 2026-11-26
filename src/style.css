@@ -644,3 +644,17 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .ppi{border:1.5px solid rgba(95,211,122,.5)!important}.ppi h3,.ppalt{margin:0 0 6px}#ppBox{min-height:46px;margin:8px 0}
 .ppm{margin:6px 0 0;text-align:center;font-weight:700}.ppm.bad{color:#ff8a8a}.ppm.good{color:#8fe3a8}
 .ppload{height:44px;display:grid;place-items:center;border-radius:22px;background:rgba(255,196,57,.15);color:#ffd36b;font-weight:700;animation:ppl 1.2s ease-in-out infinite}@keyframes ppl{50%{opacity:.55}}
+/* daily challenge */
+.dmod{width:min(520px,100%);margin:0 auto 10px;padding:12px 16px;border-radius:16px;text-align:center;background:linear-gradient(180deg,rgba(120,70,10,.92),rgba(60,30,6,.92));border:1.5px solid #f1cf6e;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+.dmod small{display:block;color:#ffd98a;font-weight:700}.dmod b{display:block;font-size:19px;margin-top:4px;color:#fff}
+.dtop{display:flex;gap:10px;align-items:stretch;width:min(520px,100%);margin:0 auto 10px}.dtop .wt{flex:1;min-width:0}
+.dme{flex:1.2;display:flex;flex-direction:column;gap:6px;justify-content:center;padding:10px 12px;border-radius:14px;background:rgba(6,12,22,.88);border:1px solid rgba(255,255,255,.1);font-weight:700;font-size:14px}.dme .drew{font-weight:500;font-size:12.5px;color:#ffd98a}
+.dbox{width:min(520px,100%);margin:0 auto 10px;padding:10px 14px;border-radius:16px;background:rgba(6,12,22,.9);border:1px solid rgba(241,207,110,.35)}.dbox h3{margin:0 0 6px;text-align:center}
+.dcount{text-align:center;margin:4px 0 8px;color:#cfe0f0;font-weight:600}.dbrd{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;max-height:34vh;overflow:auto}
+.dbrd li{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.05)}.dbrd li.me{background:rgba(241,207,110,.18);border:1px solid rgba(241,207,110,.5)}
+.dbrd .rk{min-width:26px;text-align:center;font-weight:800}.dbrd b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dbrd em{font-style:normal;color:#ffb86b;font-weight:700}.dbrd i{font-style:normal;font-weight:800;color:#ffe08a}
+.dend{margin:4px 0;font-weight:700;color:#ffe08a;text-align:center}
+.dtop .wt{flex:.85;padding:4px}.dtop .wt img{width:100%;height:auto;max-height:120px;object-fit:cover;border-radius:10px}.dtop .wt span{font-size:12px}
+/* setup, online and other full pages: the moving map behind is dimmed far more, so every line reads clearly (the main menu keeps its view) */
+#help,#net,#setup,#pause{background:radial-gradient(ellipse at 50% 30%,rgba(5,11,19,.8),rgba(3,8,14,.93))}
+#help .opts h3,#net .opts h3,#setup .opts h3,#setup label,#net label,#net .keys,#net p{color:#e6eef7}
