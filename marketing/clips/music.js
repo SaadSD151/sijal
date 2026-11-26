@@ -135,6 +135,17 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
       if(kl){impact(kl,.8);chime(kl+.1);}
       if(endS)pad(endS,[155.56,233.08,311.13],end-endS+.4,.07);
       outroHits();
+    }else if(M.story==='six7'){
+      // a bouncy, cheeky beat: a "six-seven" two-note hook, drums for the fight, then the beat drops back in for the 67
+      const h=M.hook,at=m('attack'),kl=m('kill'),s7=m('67'),endS=m('end');
+      const bounce=(a,z,lvl)=>{for(let t=a;t<z;t+=.25){const i=Math.round((t-a)/.25);if(i%4===0)kick(t);if(i%8===4)clap(t,.9);if(lvl&&i%2===1)hat(t,.55);if(i%8===0)sub(t,i%16?49:55,1.6,.4);if(i%4===0)pluck(t,[392,440][(i/4)%2],.12);if(i%4===2)pluck(t,[293.66,329.63][((i-2)/4)%2],.09);}};
+      bounce(0,h-.62,1);tape(h-.62,.6);
+      bounce(h,(at||h+2),0);
+      if(at){riser(at,Math.max(.4,(kl||at+1.5)-at),.25);for(let t=at;t<(kl||at+1.5);t+=.25){const i=Math.round((t-at)/.25);if(i%2===0)taiko(t,.8);snare(t,.5);}}
+      if(kl){impact(kl,.9);silence(kl+.15,Math.max(.3,(s7||kl+.8)-kl-.15));}
+      if(s7){impact(s7+.3,.7);chime(s7+.3);bounce(s7+.3,end,1);}
+      if(endS)pad(endS,[293.66,392,440],end-endS+.4,.06);
+      outroHits();
     }else if(M.story==='mercy'){
       // hook: a held breath over the peace request, a tape rewind; a war march; a soft chime for the white flag, a hard NO, then no mercy
       const h=M.hook,ask=m('ask'),no=m('no'),cr=m('crush'),kl=m('kill'),endS=m('end');

@@ -15,6 +15,7 @@ if(STORY==='empire'){
   seg(TOT-46,TOT-1,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(TOT-1,0,-(TOT/18),'rew');const R=(frames.length-r0)/FPS;H+=R;
 }
 // payoff-first hooks: open on the key moment, then rewind to the start
+if(STORY==='six7'){const a=M.six7;seg(a+28,a+96,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(a,0,-Math.max(1,a/18),'rew');H+=(frames.length-r0)/FPS;}
 if(STORY==='mercy'||STORY==='survive'){const a=STORY==='mercy'?M.ask:M.alive;seg(a,a+66,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(a,0,-Math.max(1,a/18),'rew');H+=(frames.length-r0)/FPS;}
 // the tribes: a slow look over the crowded map first
 if(STORY==='tribes'){seg(0,38,.45,'hook');H=frames.length/FPS;}
@@ -44,6 +45,9 @@ const C={
     [T(m('nuke')),T(m('stop1')||m('doom')),'نووي؟ ☢️'],[T(m('stop1')),T(m('doom')),'<r>❌ صدّته بعد</r>','big'],[T(m('doom')),T(m('hit2'))-.15,'طيب… <y>قنبلة الفناء</y>؟ 💀'],[T(m('hit2'))+1.3,T(m('end')),'💀💀💀','big'],[T(m('end')),outro,'ما فيه شي يوقفها 😈']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
   comeback:[[0,T(m('silo')),'خسرت كل شي… 😰','hook'],[.8,T(m('silo')),'إلا <y>العاصمة</y>','hook2'],[T(m('silo')),T(m('launch')),'بقت لي ورقة وحدة 🃏'],[T(m('launch')),T(m('doom'))-.15,'على <r>عاصمته</r> مباشرة ☢️'],
     [T(m('fall')),T(m('retake')),'دولته كلها <r>انهارت</r> 💀'],[T(m('retake')),outro,'والأرض <y>رجعت لي</y> 👑']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  six7:[[0,H-.62,'لما تفوز في سِجال… 🏆','hook'],[.8,H-.62,'لازم ترسل <y>67</y> 😎','low'],[H-.62,H,'⏪','rew'],
+    [H,T(m('attack')),'جاري قاعد <r>يضحك علي</r> 😂'],[T(m('attack')),T(m('kill')),'طيب… خلنا نشوف ⚔️'],[T(m('kill')),T(m('67')),'انتهى 💀'],
+    [T(m('67'))+.3,T(m('67'))+2.1,'والرد؟ <y>67</y> 😎','low'],[T(m('67'))+2.1,outro,'الـ67 حصرية في <y>السيزون صفر</y> 🎖️','low']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
   mercy:[[0,H-.62,'طلب مني <y>السلام</y> 🏳️','hook'],[.8,H-.62,'تتوقع وش سويت؟ 👀','hook2'],[H-.62,H,'⏪','rew'],
     [H,H+2.4,'هجمت على جاري ⚔️'],[H+2.4,T(m('ask')),'وجيشه قاعد <r>ينهار</r> 📉'],[T(m('ask')),T(m('no')),'وفجأة… <y>طلب السلام</y> 🏳️'],[T(m('no')),T(m('crush'))+.5,'<r>لا</r> ❌','big'],
     [T(m('crush'))+.5,T(m('kill')||m('end')),'ما فيه رحمة 😈'],[T(m('kill')),T(m('end')),'خلّصت عليه 💀'],[T(m('end')),outro,'السلام؟ بعدين 😏']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
@@ -56,9 +60,9 @@ const C={
     [T(m('killB')),outro,'✅ خلّص','dB'],[T(m('killA')),outro,'✅ خلّص','dA']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0])
 }[STORY];
 const SER=M.extra.ser||null,LEFT=M.extra.left||null,T0hold=STORY==='swarm'?T(m('hold')):STORY==='comeback'?T(m('silo')):0;
-const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔',mercy:'لو كنت مكاني… تقبل؟ 🤔',survive:'كم شبر تحتاج عشان تخلّص عليه؟ 😏',tribes:'كم قبيلة تقدر تاكل أنت؟ 🏕️'}[STORY];
+const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔',mercy:'لو كنت مكاني… تقبل؟ 🤔',six7:'وأنت وش بترسل لخصمك؟ 👀',survive:'كم شبر تحتاج عشان تخلّص عليه؟ 😏',tribes:'كم قبيلة تقدر تاكل أنت؟ 🏕️'}[STORY];
 // big moments: white flash, punch-in and shake
-const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]],mercy:[[T(m('no'))+.33,.6,8],[T(m('kill')),.6,9]],survive:[[T(m('zero')),.5,6],[T(m('alive')),.3,3],[T(m('kill')),.7,10]],tribes:[...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]]}[STORY].filter(h=>isFinite(h[0]));
+const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]],six7:[[T(m('kill')),.6,9],[T(m('67'))+.3,.5,6]],mercy:[[T(m('no'))+.33,.6,8],[T(m('kill')),.6,9]],survive:[[T(m('zero')),.5,6],[T(m('alive')),.3,3],[T(m('kill')),.7,10]],tribes:[...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]]}[STORY].filter(h=>isFinite(h[0]));
 
 (async()=>{
   fs.rmSync(OUT,{recursive:true,force:true});fs.mkdirSync(path.join(OUT,'f'),{recursive:true});
@@ -82,7 +86,7 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
     #out .l{direction:ltr;padding:10px 20px;border-radius:999px;background:linear-gradient(180deg,#f1cf6e,#c9952d);color:#1a1205;font-weight:700;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
     #out .b{color:#ffd23f;font-weight:700;font-size:19px;-webkit-text-stroke:3px #000;paint-order:stroke fill}
     #hud2{position:absolute;left:50%;top:6%;transform:translateX(-50%);display:flex;gap:10px;opacity:0;direction:ltr}#hud2 span{padding:6px 14px;border-radius:14px;background:rgba(6,12,22,.78);border:1.5px solid rgba(241,207,110,.7);color:#ffe7a6;font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;box-shadow:0 6px 18px rgba(0,0,0,.5)}
-    .pop{top:42%;font-size:30px}
+    .pop{top:42%;font-size:30px}.low{top:76%;font-size:28px}
     .tA,.tB{font-size:19px;top:3.5%;left:4%;right:auto;padding:4px 12px;border-radius:12px;background:rgba(6,12,22,.72);-webkit-text-stroke:0;border:1px solid rgba(255,255,255,.2)}.tB{top:53.5%;border-color:#f1cf6e;color:#ffe7a6}
     .dA,.dB{font-size:28px;top:18%;color:#8be39a}.dB{top:68%}
     #split{position:absolute;left:0;right:0;top:50%;height:3px;margin-top:-1.5px;background:linear-gradient(90deg,rgba(241,207,110,0),#f1cf6e,rgba(241,207,110,0));opacity:0}

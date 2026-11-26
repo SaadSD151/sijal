@@ -4,8 +4,8 @@
 // Writes <outdir>/f/00000.jpg… (1080x1920) and <outdir>/marks.json (scene name -> frame index).
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path');
 const STORY=process.argv[2]||'empire',OUT=path.resolve(process.argv[3]||'clip-'+STORY),FPS=30;
-const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99,mercy:111,survive:122,tribes:133},SEED=+(process.argv[4]||SEEDS[STORY]);
-const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'},mercy:{type:'continents',fac:'hawks'},survive:{type:'continents',fac:'hawks'},tribes:{type:'continents',fac:'hawks'}}[STORY];
+const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99,mercy:111,six7:167,survive:122,tribes:133},SEED=+(process.argv[4]||SEEDS[STORY]);
+const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'},mercy:{type:'continents',fac:'hawks'},six7:{type:'continents',fac:'hawks'},survive:{type:'continents',fac:'hawks'},tribes:{type:'continents',fac:'hawks'}}[STORY];
 
 // helpers that live in the page
 function lib(){
@@ -217,6 +217,23 @@ const STORIES={
         me.troops=Math.max(me.troops,o.troops*4,150000);if(!KL.atkOn(o.id))__sijal.fn.launchAttack(g,me.id,o.id,.8,-1,-1);
         const oc=window.__oc;KL.cam(oc.x,oc.y,Math.max(2.6,KL.zFor(window.__t0*.9)));return false;}},
     {name:'end',max:42,tpf:2,start:()=>{},frame:k=>{const me=KL.me();KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.6));return false;}}
+  ],
+  // ── '67': a neighbour laughs at me, I wipe him out, and answer with the 67 emoji ──
+  six7:[
+    {name:'mock',max:80,tpf:1,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});KL.preroll(200,.3);const K=g.nations.length;
+        let o=null;for(const n of g.nations)if(KL.major(n)&&g.nb[me.id*K+n.id]>3&&n.tiles>1200&&(!o||n.tiles>o.tiles))o=n;o=o||KL.neighbor(1);window.__o=o.id;
+        for(const n of g.nations)if(n&&!n.human){n.ai.nextWar=1e9;n.ai.peaceAt=1e9;}me.pass=true;
+        o.emo=3;/* 😂 */o.emoT=g.tick+40;__sijal.UI.emoZ=2.2;o.troops=Math.max(o.troops,30000);
+        KL.cam(o.cx,o.cy-2,5);window.__CT.snap=1;},
+      frame:k=>{const g=__sijal.G,o=g.nations[window.__o];o.emoT=g.tick+40;KL.cam(o.lx!=null?o.lx:o.cx,(o.ly!=null?o.ly:o.cy)-2,5-k*.01);return false;}},
+    {name:'attack',max:240,tpf:1,start:()=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];window.__t0=o.tiles;me.troops=Math.max(me.troops,o.troops*1.8,40000);__sijal.fn.launchAttack(g,me.id,o.id,.3,-1,-1);window.__oc={x:o.cx,y:o.cy};},
+      frame:k=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];if(o.alive&&o.tiles>window.__t0*.5)o.emoT=g.tick+40;else o.emoT=0;
+        if(!o.alive){KL.mark('kill');window.__dead=window.__dead||k;return k>window.__dead+10;}
+        me.troops=Math.max(me.troops,o.troops*1.8);if(!KL.atkOn(o.id))__sijal.fn.launchAttack(g,me.id,o.id,.35,-1,-1);
+        const oc=window.__oc;KL.cam(oc.x,oc.y,Math.max(2.8,KL.zFor(window.__t0*1.1)));return false;}},
+    {name:'six7',max:100,tpf:0,start:()=>{const g=__sijal.G,me=KL.me();me.emo=37;/* 67 */me.emoT=g.tick+40;__sijal.UI.emoZ=2.1;me.emoAt=g.tick;window.__lb=null;KL.mark('67');},
+      frame:k=>{const me=KL.me(),x=me.lx!=null?me.lx:me.cx,y=me.ly!=null?me.ly:me.cy,z=k<12?4:5.4;KL.cam(x,y-62/z,z);return false;}},
+    {name:'end',max:30,tpf:0,start:()=>{},frame:k=>{const me=KL.me();KL.cam(me.lx!=null?me.lx:me.cx,(me.ly!=null?me.ly:me.cy)-2,5);return false;}}
   ],
   // ── 'I took every city… and he is still alive': cities fall one by one, then every last tile has to be taken ──
   survive:[

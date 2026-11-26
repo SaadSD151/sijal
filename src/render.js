@@ -391,7 +391,7 @@ function draw(g,dt,ts){
     c.font=`600 ${f*.72}px ${FONT}`;txt(c,fmt(n.troops),p.x,y+f*.98,rel);
     if(g.hegemon===n.id||n.mon){const q=f*1.1;c.drawImage(R.glyph.crown,p.x-q/2,y-f*1.5,q,q*.9);}
     if(H&&n.id!==me&&H.ally[n.id]){const q=Math.max(14,f*.95);c.font=`${q}px sans-serif`;c.fillText('🤝',p.x-hw-q*.75,y);c.font=`700 ${f}px ${FONT}`;}
-    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,q=Math.max(18,f*1.5)*(age<.08?.5+age*6.25:1);c.globalAlpha=age>.85?(1-age)/.15:1;drawEmo(c,EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5),q,ts);c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
+    if(n.emo&&g.tick<n.emoT){const age=1-(n.emoT-g.tick)/60,ez=UI.emoZ||1,q=Math.max(18,f*1.5)*ez*(age<.08?.5+age*6.25:1);c.globalAlpha=age>.85?(1-age)/.15:1;drawEmo(c,EMO[n.emo-1],p.x,y-f*(g.hegemon===n.id||n.mon?2.6:1.5)-q*.4*(ez-1),q,ts);c.globalAlpha=1;c.font=`700 ${f}px ${FONT}`;}
   }
   R.lb=LB;
   // missiles and pending strikes
