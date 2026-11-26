@@ -35,7 +35,7 @@ function setupNations(g){
   else if(!o.demo){const n=addNation(g,{human:true,fac:o.faction||'hawks',color:FAC[o.faction||'hawks'].c,nameIdx:-1}),k=o.skin||{};n.pat=PATS.includes(k.pat)?k.pat:'';n.bld=BLDS.includes(k.bld)?k.bld:'';n.badge=!!k.badge;n.pass=!!k.pass;}
   const pc=o.demo||o.players?null:FAC[o.faction||'hawks'].c,pal=shuffle(PAL.filter((c,i)=>o.players?i>=o.players.length||o.players.length>=PAL.length:!pc||Math.abs(c[0]-pc[0])+Math.abs(c[1]-pc[1])+Math.abs(c[2]-pc[2])>90),rng);
   for(let b=0;b<o.bots;b++){
-    const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);
+    const n=addNation(g,{fac:FKEYS[(rng()*FKEYS.length)|0],pers:PKEYS[(rng()*PKEYS.length)|0],color:b<pal.length?pal[b]:pal[b%pal.length].map(v=>clamp(v+((rng()*90)|0)-45,30,240)),nameIdx:idx[b%idx.length]}),i=pickSpawn(g);n.nsuf=(b/idx.length)|0;
     if(i<0){n.alive=false;continue;}spawn(g,n,i);
   }
   // minor tribes: weak villages scattered over the map, easy prey for whoever reaches them first

@@ -148,12 +148,12 @@ function tribesN(){const v=UI.prof.tribes|0;return v>=30&&v<=240?v:240;}
 function maxP(){const v=UI.prof.maxP|0;return v>=2&&v<=32?v:16;}
 function renderSetup(){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN||(!p.b2&&(p.botsN===10||p.botsN===14)))p.botsN=UI.mob?16:20;p.b2=1;
-  const chips=(key,arr,cur)=>arr.map((s,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${s}</button>`).join('');
+  const chips=(key,arr,cur)=>arr.map((s,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${s}${key==='size'||key==='diff'?xpTag(key,i):''}</button>`).join('');
   const host=UI.setupMode==='host'||(NET.on&&NET.host);
   $('#setup').innerHTML=`<h2>${t(host?'hostRoom':'custom')}</h2>
   <div class="opts">${host?`<label class="fld"><h3>${t('roomName')}</h3><input id="inRoom" maxlength="24" value="${esc(p.room||'')}" placeholder="${esc(t('roomOf',p.name||t('defName')))}" autocomplete="off"></label>`:''}<div><h3>${t('world')}</h3><div class="wts">${Object.keys(t('types')).map(k=>`<button class="wt${p.type===k?' on':''}" data-a="type:${k}"><img src="${worldThumb(k)}" alt=""><span>${t('types')[k]}</span></button>`).join('')}</div></div>
   <div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div>
-  <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="40" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
+  <div><h3>${t('foes')}</h3><div class="rng"><input type="range" id="inBots" min="6" max="80" step="1" value="${p.botsN}" aria-label="${t('foes')}"><b id="botsV">${p.botsN}</b></div></div>
   <div><h3>${t('tribes')}</h3><div class="rng"><input type="range" id="inTribes" min="30" max="240" step="5" value="${tribesN()}" aria-label="${t('tribes')}"><b id="tribesV">${tribesN()}</b></div></div>
   <div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div>${host?'':`<div class="cheats"><h3>🧪 ${t('cheats')}</h3><div class="chips">${CHEATS.map(k=>`<button class="chip${(p.cheat||{})[k]?' on':''}" data-a="cheat:${k}">${t('ch_'+k)}</button>`).join('')}</div><p class="keys">${t('cheatNote')}</p></div>`}</div>
   ${host?`<div class="opts" style="grid-template-columns:minmax(0,1fr)"><div><h3>${t('maxP')}</h3><div class="rng"><input type="range" id="inMaxP" min="2" max="32" step="1" value="${maxP()}" aria-label="${t('maxP')}"><b id="maxPV">${maxP()}</b></div></div></div>`:''}
@@ -171,11 +171,14 @@ function renderDaily(){
   <p class="best">${b?t('best',clock(b)):t('dNone')}</p>${UI.prof.dailyDone===key?`<p class="dlock">🔒 ${t('dDone')}</p>`:''}<div class="row"><button class="btn" data-a="menu">${t('back')}</button>${UI.prof.dailyDone===key?'':`<button class="btn big" data-a="dailyGo">${t('dGo')}</button>`}</div>`;
 }
 // quick battle: more rivals on bigger maps and harder difficulties
-const quickBots=p=>clamp([14,20,26,34][p.size<0?1:p.size]+[0,2,4,6][p.diff|0],6,40);
+const quickBots=p=>clamp([14,20,52,68][p.size<0?1:p.size]+[0,2,4,6][p.diff|0],6,80);
+// bonus XP for a bigger map and a harder game, added together
+const XP_SIZE=[0,.25,.5,1],XP_DIFF=[0,.25,.5,1],xpMul=p=>1+XP_SIZE[p.size<0?1:p.size]+XP_DIFF[p.diff|0],
+  xpTag=(key,i)=>{const v=(key==='size'?XP_SIZE:XP_DIFF)[i];return v?`<small class="xpt">⭐ +${Math.round(v*100)}%</small>`:'';};
 function renderQuick(){
   const p=UI.prof;if(p.size<0)p.size=UI.mob?0:1;
-  const chips=(key,arr,cur)=>arr.map((x,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${x}</button>`).join('');
-  $('#help').innerHTML=`<h2>${t('quick')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(520px,100%)"><div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div><div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div><p class="keys">${t('foes')}: <b>${quickBots(p)}</b></p></div>
+  const chips=(key,arr,cur)=>arr.map((x,i)=>`<button class="chip${i===cur?' on':''}" data-a="set:${key}:${i}">${x}${key==='size'||key==='diff'?xpTag(key,i):''}</button>`).join('');
+  $('#help').innerHTML=`<h2>${t('quick')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(520px,100%)"><div><h3>${t('size')}</h3><div class="chips">${chips('size',t('sizes'),p.size)}</div></div><div><h3>${t('diff')}</h3><div class="chips">${chips('diff',t('diffs'),p.diff)}</div></div><p class="keys">${t('foes')}: <b>${quickBots(p)}</b> · ⭐ ${t('xpBon')}: <b>×${xpMul(p)}</b></p></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="goQ">${t('start')}</button></div>`;
 }
 function gfxLv(){const v=UI.prof.gfx;return v==null?(UI.mob?1:2):v;}
@@ -518,7 +521,7 @@ function startMatch(o){
   UI.newSet=null;UI.newArmy=null;const p=UI.prof;UI.mType=o.quick?'q':'c';if(p.size<0)p.size=UI.mob?0:1;if(!p.botsN||(!p.b2&&(p.botsN===10||p.botsN===14)))p.botsN=UI.mob?16:20;p.b2=1;saveProf();
   // quick battle: a different world shape every time
   const TY=Object.keys(TX.ar.types);let qt=p.type;if(o.quick){do{qt=TY[(Math.random()*TY.length)|0];}while(TY.length>1&&qt===UI.lastQType);UI.lastQType=qt;}
-  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,40),minors:o.quick?'auto':tribesN(),diff:p.diff,faction:p.fac};
+  let opt={w:SIZES[p.size][0],h:SIZES[p.size][1],seed:(Math.random()*2**31)|0,type:qt,bots:o.quick?quickBots(p):clamp(p.botsN|0,6,80),xpm:xpMul(p),minors:o.quick?'auto':tribesN(),diff:p.diff,faction:p.fac};
   opt.skin=mySkin();const ch=p.cheat||{};if(!o.quick&&!o.daily&&!o.same&&!NET.on&&CHEATS.some(k=>ch[k]))opt.cheats=Object.assign({},ch);
   if(o.daily){const d=new Date(),key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();opt={skin:mySkin(),w:540,h:340,seed:key,type:Object.keys(TX.ar.types)[key%9],bots:14,diff:2,faction:p.fac,daily:key};}
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
@@ -528,12 +531,12 @@ function startMatch(o){
 }
 function quitXp(){
   const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone||g.o.cheats)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
-  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},3800);return xp;
+  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},3800);return xp;
 }
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
+  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
   let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];

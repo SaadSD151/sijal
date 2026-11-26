@@ -605,3 +605,4 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .socH{width:min(420px,100%);margin:0 auto 4px;padding:14px 18px;border-radius:16px;background:rgba(6,12,22,.86);border:1px solid rgba(241,207,110,.35);box-shadow:0 6px 18px rgba(0,0,0,.4);text-align:center}
 .socH h2{margin:0 0 6px}.socH p{margin:0;font-size:17px;line-height:1.5;color:#eaf2fb;font-weight:600}
 .soc.ig small{opacity:1;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45)}.soc.ig b{text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.chip .xpt{display:block;font-size:11px;color:#ffd86b;font-weight:700;margin-top:2px;line-height:1.15;white-space:nowrap}.chip.on .xpt{color:#5a3a00}
