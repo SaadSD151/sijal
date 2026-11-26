@@ -445,7 +445,7 @@ function renderSkins(){
 // ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
 const ADMIN_ROOT='saadsd';
 // supporting the developer: 10 riyals through PayPal (Apple Pay, cards or PayPal) unlocks the whole season once the owner confirms it
-const PAY_LINK='https://www.paypal.com/ncp/payment/C7USHQMD77V8J',TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/sijal_202';
+const PAY_LINK='https://www.paypal.com/ncp/payment/C7USHQMD77V8J',DONATE_LINK='https://www.paypal.com/ncp/payment/AT6PCFTSNDDR2',TIKTOK='https://www.tiktok.com/@sijal_2',INSTA='https://www.instagram.com/sijal_202';
 // the game's social accounts, as big cards
 function renderSocial(){
   const TT='<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>',
@@ -557,11 +557,17 @@ function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/admins/'+uid+'.json',{method:'PUT',body:JSON.stringify(u)});}).then(()=>{toast('🛠️ '+t('admGiven',u),'prop',2500);openAdmin();}).catch(e=>err(e===1?'admNoUser':'admFail'));}
 function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/grants/'+uid+'.json',{method:'PUT',body:JSON.stringify({by:'owner',ts:{'.sv':'timestamp'}})});}).then(()=>{toast('💜 '+t('supGranted',u),'prop',3000);$('#grUser').value='';}).catch(e=>err(e===1?'admNoUser':'admFail'));}
+// the main menu's support: any amount, no account needed and nothing to unlock; the Season Zero pass has its own page
+function renderDonate(){
+  $('#help').innerHTML=`<div class="socH"><h2>💛 ${t('dnT')}</h2><p>${t('dnD')}</p></div>
+  <div class="hp sups"><a class="btn big ok paybtn" href="${DONATE_LINK}" target="_blank" rel="noopener" data-a="donPay">💛 ${t('dnBtn')}</a><div class="payl"><span>Apple Pay</span><span>VISA</span><span>Mastercard</span><span>PayPal</span></div><p class="keys">${t('dnNote')}</p></div>
+  <div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
+}
 function renderSupport(){
   const p=UI.prof,f=p.fb||{};
   $('#help').innerHTML=`<h2>💜 ${t('supT',SUPPORT_SAR)}</h2><p class="keys">${t('supD')}</p>
   ${!f.user?`<div class="hp"><p>${t('supNeedAcc')}</p><div class="row"><button class="btn ok" data-a="account">${t('account')}</button></div></div>`:`<div class="hp trust"><h3>🛡️ ${t('trT')}</h3><ul>${t('trL').map(x=>`<li>${x.replace('{0}',SUPPORT_SAR)}</li>`).join('')}</ul></div><div class="hp sups">
-    <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><a class="btn big ok paybtn" href="${PAY_LINK}" target="_blank" rel="noopener" data-a="supPay">💳 ${t('supPay')}</a><div class="payl"><span> Pay</span><span>VISA</span><span>Mastercard</span><span>PayPal</span></div>
+    <p><b>1.</b> ${t('supStep1',SUPPORT_SAR)}</p><a class="btn big ok paybtn" href="${PAY_LINK}" target="_blank" rel="noopener" data-a="supPay">💳 ${t('supPay')}</a><div class="payl"><span>Apple Pay</span><span>VISA</span><span>Mastercard</span><span>PayPal</span></div>
     <p><b>2.</b> ${t('supStep2')}</p><input id="supMail" type="email" maxlength="80" dir="ltr" autocapitalize="none" spellcheck="false" placeholder="name@gmail.com">
     <p><b>3.</b> ${t('supStep3')}</p><input id="supUser" maxlength="16" dir="ltr" autocapitalize="none" autocomplete="off" spellcheck="false" placeholder="${t('ac_user')}" value="${esc(f.user||'')}">
     <p><b>4.</b> ${t('supStep4')}</p><button class="btn big" data-a="supSend">${t('supSend')}</button></div>`}
@@ -970,8 +976,8 @@ function act(a){
     case'moveGo':{saveProf();const raw=localStorage.getItem('sijal.v1')||'',rc=(location.hash||'').slice(1).toUpperCase(),h=[];if(raw.length>2)h.push('mv='+b64u(raw));if(/^[A-Z0-9]{5}$/.test(rc))h.push('r='+rc);stat('moved');statFlush(true);location.href=NEW_SITE+(h.length?'#'+h.join('&'):'');break;}
     case'moveX':{const d=$('#moved');if(d)d.remove();break;}
     case'hist':renderHist();show('help');break;
-    case'supMenu':UI.supFrom='menu';renderSupport();show('help');break;
-    case'supPay':stat('payclick');break;
+    case'supMenu':UI.supFrom='menu';renderDonate();show('help');break;
+    case'supPay':stat('payclick');break;case'donPay':stat('donclick');break;
     case'supSend':supSend();break;
     case'admGrant':admGrant();break;
     case'badge':p.hideBadge=v!=='1';saveProf();cloudSync();renderSkins();break;
