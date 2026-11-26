@@ -17,14 +17,16 @@ out('sijal-artifact.html',`${TITLE}\n<meta name="claude:viewport-fit-sides" cont
 const full=m=>`<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">\n<meta name="theme-color" content="#092440">\n<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n${TITLE}\n${FONTS}\n<style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>\n<style>\n${css}</style>\n</head>\n<body>\n${body}${script(m)}\n</body>\n</html>\n`;
 out('sijal.html',full());try{fs.mkdirSync(path.join(__dirname,'dist','site'));}catch(e){}const SITE='https://saadsd151.github.io/sijal/',DESC='سِجال حرب المدن: لعبة حرب استراتيجية مجانية على المتصفح، وسّع أرضك واحتلّ المدن والعب أونلاين مع أخوياك.';
 const META=`<meta name="description" content="${DESC}">\n<link rel="icon" type="image/png" href="icon.png">\n<link rel="apple-touch-icon" href="icon.png">\n<link rel="manifest" href="manifest.json">\n<meta property="og:type" content="website">\n<meta property="og:site_name" content="سِجال">\n<meta property="og:title" content="سِجال حرب المدن">\n<meta property="og:description" content="${DESC}">\n<meta property="og:url" content="${SITE}">\n<meta property="og:image" content="${SITE}preview.png">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:image" content="${SITE}preview.png">\n<meta name="theme-color"`;
-out('site/index.html',full().replace('<meta name="theme-color"',META));
+// the website serves its own copy of the fonts (also kept offline by the service worker)
+out('site/index.html',full().replace(FONTS,'<link rel="stylesheet" href="fonts/fonts.css">').replace('<meta name="theme-color"',META));
+const FD=path.join(__dirname,'src','assets','fonts'),FO=path.join(__dirname,'dist','site','fonts'),FF=fs.readdirSync(FD);try{fs.mkdirSync(FO);}catch(e){}for(const f of FF)fs.copyFileSync(path.join(FD,f),path.join(FO,f));
 fs.writeFileSync(path.join(__dirname,'dist','site','version.json'),JSON.stringify({build:js.match(/BUILD_ID='([0-9a-f]+)'/)[1]}));
 fs.copyFileSync(path.join(__dirname,'vendor','peerjs-1.5.4-compat.js'),path.join(__dirname,'dist','site','peer.js'));
 for(const f of['icon.png','preview.png'])fs.copyFileSync(path.join(__dirname,'src','assets',f),path.join(__dirname,'dist','site',f));
 // offline play: a service worker keeps the game and its fonts on the device; the page always tries the network first, so updates still arrive
 {const bid=js.match(/BUILD_ID='([0-9a-f]+)'/)[1];
 fs.writeFileSync(path.join(__dirname,'dist','site','sw.js'),`// built by build.js
-const C='sijal-${bid}',CORE=['./','index.html','icon.png','peer.js','manifest.json'];
+const C='sijal-${bid}',CORE=['./','index.html','icon.png','peer.js','manifest.json',${JSON.stringify(FF.map(f=>'fonts/'+f)).slice(1,-1)}];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(K=>Promise.all(K.filter(k=>k!==C&&k.startsWith('sijal-')).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET')return;
