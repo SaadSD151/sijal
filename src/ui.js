@@ -190,8 +190,9 @@ function renderDaily(){
   $('#help').innerHTML=`<h2>📅 ${t('daily')}</h2>
   <div class="dmod"><small>${t('dRule')}</small><b>${t('dm_'+mod)}</b></div>
   <div class="dtop"><div class="wt on"><img src="${worldThumb(ty)}" alt=""><span>${t('dWorld')}: ${t('types')[ty]}</span></div>
-    <div class="dme"><div>${st?t('dStreak',st):t('dStreak0')}</div><div>${b?'⏱️ '+t('best',clock(b)):t('dNone')}</div><div class="drew">${t('dRew')}</div></div></div>
+    <div class="dme"><div>${st?t('dStreak',st):t('dStreak0')}</div><div>${b?'⏱️ '+t('best',clock(b)):t('dNone')}</div></div></div>
   <div class="dbox"><h3>${t('dBoardT')}</h3><div id="dBoard"><p class="keys">⏳</p></div></div>
+  <div class="dbox dhow"><h3>${t('dHowT')}</h3><ul>${t('dHow').map(x=>`<li>${x}</li>`).join('')}</ul></div>
   ${done?`<p class="dlock">🔒 ${t('dDone')}</p>`:`<p class="dxp">${t('dOne')}</p>`}<div class="row"><button class="btn" data-a="menu">${t('back')}</button>${done?'':`<button class="btn big ok" data-a="dailyGo">${t('dGo')}</button>`}</div>`;
   dailyBoard(key).then(B=>{const e=$('#dBoard');if(e)e.innerHTML=boardHTML(B,key);});
 }
