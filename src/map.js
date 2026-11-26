@@ -1,5 +1,7 @@
 // ── SIJAL · procedural world generation (pure data, no DOM) ──
-function genMap(o){
+// a generator, so the loading screen can show real progress between steps; genMap runs it straight through
+function genMap(o){const it=genMapSteps(o);let r=it.next();while(!r.done)r=it.next();return r.value;}
+function* genMapSteps(o){
   const W=o.w,H=o.h,N=W*H,rng=mulberry32(o.seed),fbm=makeNoise(o.seed*7+13),fb2=makeNoise(o.seed*31+7);
   const elev=new Float32Array(N),ter=new Uint8Array(N),val=new Float32Array(N),moist=new Float32Array(N),T=o.type||'continents',asp=W/H;
   const F={continents:2.4,pangaea:2.2,islands:4,inner:2.7,twin:2.5,shores:3.4,crescent:2.6,straits:2.5,lakes:3.6,flat:2.2,highlands:3}[T]||2.5;
@@ -12,16 +14,19 @@ function genMap(o){
     else if(T==='straits')e=e*.8-bump(ny-.34,.0032)*.8-bump(ny-.67,.0032)*.8;else if(T==='lakes')e=e*.9+(.6-rc)*.3;
     if(T==='highlands')e=Math.abs(e)*1.25+fbm(u*6+3,v*6+9,4)*.25;else if(T==='flat')e*=.3;
     elev[i]=T==='flat'||T==='highlands'?e:e-(1-smooth(0,.09,ed))*1.5;moist[i]=fb2(u*3+40,v*3+17,4);
+    if(x===W-1&&y%Math.max(1,(H/10)|0)===0)yield .62*y/H;
   }
   const ratio={continents:.54,pangaea:.6,islands:.42,inner:.53,twin:.53,shores:.53,crescent:.47,straits:.56,lakes:.75,flat:1,highlands:1}[T]||.45;
   const srt=Float32Array.from(elev).sort(),L0=Math.min(N-1,Math.floor(N*(1-ratio))),sea=srt[L0]-(ratio>=1?1e-6:0),LN=N-L0;
   // no-sea worlds: flat ground has no hills at all; highlands are half hills, a fifth peaks
   const HQ=T==='flat'?[2,2]:T==='highlands'?[.55,.88]:[.74,.9],hHill=srt[Math.min(N-1,L0+Math.floor(LN*HQ[0]))]-sea+(T==='flat'?1e9:0),hMnt=srt[Math.min(N-1,L0+Math.floor(LN*HQ[1]))]-sea+(T==='flat'?1e9:0),hmax=srt[N-1]-sea;
   for(let i=0;i<N;i++)elev[i]-=sea;
+  yield .64;
   // remove specks & ponds, mark open water
   const land=new Uint8Array(N),lab=new Uint8Array(N),q=new Int32Array(N),big=new Uint8Array(N);
   for(let i=0;i<N;i++)land[i]=elev[i]>=0?1:0;
-  for(let s=0;s<N;s++){if(lab[s])continue;const k=land[s];let qh=0,qt=0;q[qt++]=s;lab[s]=1;
+  const sN=Math.max(1,(N/6)|0);
+  for(let s=0;s<N;s++){if(s%sN===0&&s)yield .62+.08*s/N;if(lab[s])continue;const k=land[s];let qh=0,qt=0;q[qt++]=s;lab[s]=1;
     while(qh<qt){const c=q[qh++],x=c%W;
       if(x>0&&!lab[c-1]&&land[c-1]===k){lab[c-1]=1;q[qt++]=c-1;}if(x<W-1&&!lab[c+1]&&land[c+1]===k){lab[c+1]=1;q[qt++]=c+1;}
       if(c>=W&&!lab[c-W]&&land[c-W]===k){lab[c-W]=1;q[qt++]=c-W;}if(c<N-W&&!lab[c+W]&&land[c+W]===k){lab[c+W]=1;q[qt++]=c+W;}}
@@ -30,10 +35,12 @@ function genMap(o){
     else if(!k)for(let j=0;j<qt;j++)big[q[j]]=1;}
   let landN=0;
   for(let y=0,i=0;y<H;y++)for(let x=0;x<W;x++,i++){
+    if(x===0&&y%Math.max(1,(H/4)|0)===0&&y)yield .7+.04*y/H;
     const e=elev[i];if(!land[i]){ter[i]=e>-.05?1:0;continue;}landN++;
     const u=x/H,v=y/H,temp=(y/H)*.9+.05+fb2(u*2+80,v*2+33,3)*.35-(e/hmax)*.2,m=moist[i];
     ter[i]=e>=hMnt?6:e>=hHill?5:temp<.26?7:(temp>.6&&m<.03)?4:m>.07?3:2;
   }
+  yield .74;
   // distance from land tiles to water
   const cd=new Uint8Array(N).fill(255);let qh=0,qt=0;
   for(let i=0;i<N;i++)if(!land[i]){cd[i]=0;q[qt++]=i;}
@@ -43,9 +50,11 @@ function genMap(o){
   for(let i=0;i<N;i++)if(land[i]){wd[i]=0;q[qt++]=i;}
   while(qh<qt){const c=q[qh++],d=wd[c]+1,x=c%W;if(d>6)continue;
     if(x>0&&wd[c-1]>d){wd[c-1]=d;q[qt++]=c-1;}if(x<W-1&&wd[c+1]>d){wd[c+1]=d;q[qt++]=c+1;}if(c>=W&&wd[c-W]>d){wd[c-W]=d;q[qt++]=c-W;}if(c<N-W&&wd[c+W]>d){wd[c+W]=d;q[qt++]=c+W;}}
+  yield .8;
   const lid=new Int32Array(N);let nl=0;
   for(let s=0;s<N;s++){if(!land[s]||lid[s])continue;nl++;let qh=0,qt=0;q[qt++]=s;lid[s]=nl;
     while(qh<qt){const c=q[qh++],x=c%W;for(const n of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(n>=0&&land[n]&&!lid[n]){lid[n]=nl;q[qt++]=n;}}}
+  yield .84;
   // rivers: steepest descent from the highlands to the sea
   const riv=new Uint8Array(N),rivers=[],want=T==='flat'?0:T==='highlands'?Math.min(40,Math.round(landN/2500)+6):Math.round(landN/2000)+2,noSea=T==='flat'||T==='highlands';
   for(let t=0;t<want*10&&rivers.length<want;t++){
@@ -58,6 +67,7 @@ function genMap(o){
   }
   for(let i=0;i<N;i++)if(riv[i]&&land[i]){const x=i%W;for(const n of[i,x>0?i-1:i,x<W-1?i+1:i,i>=W?i-W:i,i<N-W?i+W:i]){if(!land[n])continue;if(ter[n]===4)ter[n]=2;if(riv[n]<2)riv[n]=riv[n]||2;}}
   for(let i=0;i<N;i++)if(land[i])val[i]=T_VAL[ter[i]]+(riv[i]?.35:0);
+  yield .92;
   // neutral cities
   const cities=[],used=new Set(),nc=clamp(Math.round(landN/1700),5,60);
   for(let t=0;t<nc*120&&cities.length<nc;t++){

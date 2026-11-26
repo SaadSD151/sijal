@@ -201,7 +201,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .rbar{height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden}
 .rbar u{display:block;height:100%;background:var(--gold);width:0}
 .best{color:var(--gold2)}
-#load{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;background:rgba(5,11,19,.84);font-family:var(--disp);font-size:30px;color:var(--gold2);z-index:9}
+#load{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;background:rgba(5,11,19,.96);font-family:var(--disp);font-size:30px;color:var(--gold2);z-index:9}
 
 @keyframes fdin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes ban{0%{opacity:0;transform:scale(.92)}12%{opacity:1;transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
@@ -664,6 +664,11 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #help .opts h3,#net .opts h3,#setup .opts h3,#setup label,#net label,#net .keys,#net p{color:#e6eef7}
 .pwb{position:relative;display:block;width:100%}.pwb input{width:100%;padding-right:46px!important;box-sizing:border-box}.pwb .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:10px;background:rgba(255,255,255,.08);font-size:18px;line-height:1;cursor:pointer}
 .ppsk{height:44px;border-radius:22px;margin:0 0 10px;animation:ppl 1.2s ease-in-out infinite}.ppsk.y{background:#ffc439}.ppsk.d{background:#2c2e2f}
+/* loading: a title, a progress bar and a percentage */
+#load .lbx{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(340px,80vw)}
+#load .lbar{width:100%;height:12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(241,207,110,.4);overflow:hidden}
+#load .lbar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#c9952d,#f1cf6e);transition:width .15s ease-out}
+#load b{font-family:'IBM Plex Sans Arabic',sans-serif;font-size:18px;color:#ffe7a6;direction:ltr;font-variant-numeric:tabular-nums}
 
 @supports not (inset-inline-start:0){#lb{left:var(--g)}
 #mini{left:var(--g)}
@@ -699,7 +704,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='395a0acfb9';
+const BUILD_ID='2efd1127c4';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -788,7 +793,9 @@ const tribeName=(i,lang)=>{const T=TRIBE[lang]||TRIBE.ar,a=T[0][(i/100)|0],b=T[1
 const cityName=(idx,lang)=>{const c=CITY[lang]||CITY.ar;return c[0][(idx/18)|0]+' '+c[1][idx%18];};
 
 // ── SIJAL · procedural world generation (pure data, no DOM) ──
-function genMap(o){
+// a generator, so the loading screen can show real progress between steps; genMap runs it straight through
+function genMap(o){const it=genMapSteps(o);let r=it.next();while(!r.done)r=it.next();return r.value;}
+function* genMapSteps(o){
   const W=o.w,H=o.h,N=W*H,rng=mulberry32(o.seed),fbm=makeNoise(o.seed*7+13),fb2=makeNoise(o.seed*31+7);
   const elev=new Float32Array(N),ter=new Uint8Array(N),val=new Float32Array(N),moist=new Float32Array(N),T=o.type||'continents',asp=W/H;
   const F={continents:2.4,pangaea:2.2,islands:4,inner:2.7,twin:2.5,shores:3.4,crescent:2.6,straits:2.5,lakes:3.6,flat:2.2,highlands:3}[T]||2.5;
@@ -801,16 +808,19 @@ function genMap(o){
     else if(T==='straits')e=e*.8-bump(ny-.34,.0032)*.8-bump(ny-.67,.0032)*.8;else if(T==='lakes')e=e*.9+(.6-rc)*.3;
     if(T==='highlands')e=Math.abs(e)*1.25+fbm(u*6+3,v*6+9,4)*.25;else if(T==='flat')e*=.3;
     elev[i]=T==='flat'||T==='highlands'?e:e-(1-smooth(0,.09,ed))*1.5;moist[i]=fb2(u*3+40,v*3+17,4);
+    if(x===W-1&&y%Math.max(1,(H/10)|0)===0)yield .62*y/H;
   }
   const ratio={continents:.54,pangaea:.6,islands:.42,inner:.53,twin:.53,shores:.53,crescent:.47,straits:.56,lakes:.75,flat:1,highlands:1}[T]||.45;
   const srt=Float32Array.from(elev).sort(),L0=Math.min(N-1,Math.floor(N*(1-ratio))),sea=srt[L0]-(ratio>=1?1e-6:0),LN=N-L0;
   // no-sea worlds: flat ground has no hills at all; highlands are half hills, a fifth peaks
   const HQ=T==='flat'?[2,2]:T==='highlands'?[.55,.88]:[.74,.9],hHill=srt[Math.min(N-1,L0+Math.floor(LN*HQ[0]))]-sea+(T==='flat'?1e9:0),hMnt=srt[Math.min(N-1,L0+Math.floor(LN*HQ[1]))]-sea+(T==='flat'?1e9:0),hmax=srt[N-1]-sea;
   for(let i=0;i<N;i++)elev[i]-=sea;
+  yield .64;
   // remove specks & ponds, mark open water
   const land=new Uint8Array(N),lab=new Uint8Array(N),q=new Int32Array(N),big=new Uint8Array(N);
   for(let i=0;i<N;i++)land[i]=elev[i]>=0?1:0;
-  for(let s=0;s<N;s++){if(lab[s])continue;const k=land[s];let qh=0,qt=0;q[qt++]=s;lab[s]=1;
+  const sN=Math.max(1,(N/6)|0);
+  for(let s=0;s<N;s++){if(s%sN===0&&s)yield .62+.08*s/N;if(lab[s])continue;const k=land[s];let qh=0,qt=0;q[qt++]=s;lab[s]=1;
     while(qh<qt){const c=q[qh++],x=c%W;
       if(x>0&&!lab[c-1]&&land[c-1]===k){lab[c-1]=1;q[qt++]=c-1;}if(x<W-1&&!lab[c+1]&&land[c+1]===k){lab[c+1]=1;q[qt++]=c+1;}
       if(c>=W&&!lab[c-W]&&land[c-W]===k){lab[c-W]=1;q[qt++]=c-W;}if(c<N-W&&!lab[c+W]&&land[c+W]===k){lab[c+W]=1;q[qt++]=c+W;}}
@@ -819,10 +829,12 @@ function genMap(o){
     else if(!k)for(let j=0;j<qt;j++)big[q[j]]=1;}
   let landN=0;
   for(let y=0,i=0;y<H;y++)for(let x=0;x<W;x++,i++){
+    if(x===0&&y%Math.max(1,(H/4)|0)===0&&y)yield .7+.04*y/H;
     const e=elev[i];if(!land[i]){ter[i]=e>-.05?1:0;continue;}landN++;
     const u=x/H,v=y/H,temp=(y/H)*.9+.05+fb2(u*2+80,v*2+33,3)*.35-(e/hmax)*.2,m=moist[i];
     ter[i]=e>=hMnt?6:e>=hHill?5:temp<.26?7:(temp>.6&&m<.03)?4:m>.07?3:2;
   }
+  yield .74;
   // distance from land tiles to water
   const cd=new Uint8Array(N).fill(255);let qh=0,qt=0;
   for(let i=0;i<N;i++)if(!land[i]){cd[i]=0;q[qt++]=i;}
@@ -832,9 +844,11 @@ function genMap(o){
   for(let i=0;i<N;i++)if(land[i]){wd[i]=0;q[qt++]=i;}
   while(qh<qt){const c=q[qh++],d=wd[c]+1,x=c%W;if(d>6)continue;
     if(x>0&&wd[c-1]>d){wd[c-1]=d;q[qt++]=c-1;}if(x<W-1&&wd[c+1]>d){wd[c+1]=d;q[qt++]=c+1;}if(c>=W&&wd[c-W]>d){wd[c-W]=d;q[qt++]=c-W;}if(c<N-W&&wd[c+W]>d){wd[c+W]=d;q[qt++]=c+W;}}
+  yield .8;
   const lid=new Int32Array(N);let nl=0;
   for(let s=0;s<N;s++){if(!land[s]||lid[s])continue;nl++;let qh=0,qt=0;q[qt++]=s;lid[s]=nl;
     while(qh<qt){const c=q[qh++],x=c%W;for(const n of[x>0?c-1:-1,x<W-1?c+1:-1,c>=W?c-W:-1,c<N-W?c+W:-1])if(n>=0&&land[n]&&!lid[n]){lid[n]=nl;q[qt++]=n;}}}
+  yield .84;
   // rivers: steepest descent from the highlands to the sea
   const riv=new Uint8Array(N),rivers=[],want=T==='flat'?0:T==='highlands'?Math.min(40,Math.round(landN/2500)+6):Math.round(landN/2000)+2,noSea=T==='flat'||T==='highlands';
   for(let t=0;t<want*10&&rivers.length<want;t++){
@@ -847,6 +861,7 @@ function genMap(o){
   }
   for(let i=0;i<N;i++)if(riv[i]&&land[i]){const x=i%W;for(const n of[i,x>0?i-1:i,x<W-1?i+1:i,i>=W?i-W:i,i<N-W?i+W:i]){if(!land[n])continue;if(ter[n]===4)ter[n]=2;if(riv[n]<2)riv[n]=riv[n]||2;}}
   for(let i=0;i<N;i++)if(land[i])val[i]=T_VAL[ter[i]]+(riv[i]?.35:0);
+  yield .92;
   // neutral cities
   const cities=[],used=new Set(),nc=clamp(Math.round(landN/1700),5,60);
   for(let t=0;t<nc*120&&cities.length<nc;t++){
@@ -863,7 +878,8 @@ function genMap(o){
 const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SHIELD_R=19,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
-  const M=genMap(o),N=M.N;
+  // a map made ahead of time (step by step, behind the loading bar) is used as is
+  const M=o.M||genMap(o),N=M.N;if(o.M)delete o.M;
   // how hard each tile is to push through: flat green is fast but rises and falls with the small bumps of the land,
   // forest a little slower, hills slower, high mountains slowest of all (and the higher, the slower)
   {const mv=new Float32Array(N),hh=M.hHill<1e8?M.hHill:Math.max(1e-6,M.hmax),hm=M.hMnt<1e8?M.hMnt:hh*1.5,top=Math.max(hm+1e-6,M.hmax);
@@ -2544,7 +2560,7 @@ ar_trust:['it does not trust you enough yet','"Show me your intentions first"','
 TX.en.dInfo[2]=['Goal: the fastest win','Hold 99% of the land as fast as you can. Your time is saved; the faster the better.'];
 // update log: newest first, the game shows at most ten entries
 const LOG=[
- {v:"5.5",d:"2026-11-26",ar:["👁️ زر عين جنب كلمة المرور تشوف فيه اللي كتبته","🏷️ أسماء دول جديدة كثير، وما عاد فيه أرقام على أسماء البوتات","📅 تحدّي اليوم صار أقوى: قانون جديد كل يوم، و«أبطال اليوم» للأسرع، وسلسلة 🔥 تزيد خبرتك، و+500 كل 7 أيام","📖 «كيف تلعب» صار محدّث بكل الجديد","👁️ صفحات الأونلاين والمعركة المخصصة صارت أوضح","⚡ اللعبة صارت أخف وأنعم لما تبعّد وتقرّب الزوم في الخرايط الكبيرة، والأيقونات داخل المباني تختفي لما تبعّد","🔷 كل مبنى صار له شكل: الحصن درع، الميناء سداسي، الدفاع البحري معيّن، المصنع مربع، منصة الصواريخ رأس صاروخ، القبة قبة، والمعلم نجمة، عشان تعرف وش يبني عدوك من بعيد","👁️ الكتابة في القائمة والسيزون والتخصيص صار وراها خلفية داكنة عشان تنقرا بسهولة","💜 ادعم اللعبة بأي مبلغ من القائمة، أو افتح السيزون صفر بـ3$، بـ Apple Pay أو بطاقتك أو PayPal","🔐 الدخول بحساب قوقل، وتقدر تربطه بحسابك الحالي","🎖️ قائمة تطوير الجيش تستجيب من أول ضغطة","🗺️ خيار جديد في الإعدادات: الخريطة حادّة أو ناعمة (الحادّة هي الأساس)","🤖 الدول الكبيرة تبلع القبيلة اللي تحاوطها بضغطة وحدة مثل اللاعبين","📧 اربط إيميلك بحسابك، وادخل بالإيميل، ولو نسيت كلمة المرور يوصلك رابط تغيّرها","🌐 سِجال صار له موقع رسمي: sijalwar.com، والرابط القديم ينقلك له مع كل تقدّمك","📴 اللعبة تفتح بدون نت بعد أول مرة تفتحها وبنفس الخطوط، وتقدر تضيفها للشاشة الرئيسية مثل التطبيق","📜 «سجل المعارك»: آخر 40 معركة لك، فزت أو خسرت، وكم جبت خبرة، ويتحفظ في حسابك على كل أجهزتك","🤖 ضاعفنا عدد البوتات في الخرايط الكبيرة والعملاقة","⭐ خبرة أكثر كل ما كبّرت الخريطة وصعّبت اللعبة، والنسبة مكتوبة تحت كل خيار","📱 زر «تابعنا» في القائمة فيه حساباتنا في تيك توك وإنستقرام","⚔️ لما الهجوم ينقسم لأكثر من جبهة، كل جبهة يطلع عليها رقم جنودها وما يتلخبط","🏕️ القبائل مثل الدول الكبيرة: أخذ مدينتها ما يعطيك أرضها كلها، لازم تاخذها بنفسك"],en:["👁️ An eye button next to the password shows what you typed","🏷️ Many new realm names, no more numbers on bot names","📅 A bigger daily challenge: a new rule each day, “Today's champions” for the fastest, and a 🔥 streak that grows your XP, +500 every 7 days","📖 “How to play” is up to date","👁️ Online and custom battle pages are easier to read","⚡ Smoother when zoomed out on big maps","🔷 Every building has its own shape (fort shield, port hexagon, coastal gun diamond, factory square, missile silo arrowhead, dome, wonder star) so you can read an enemy's base from afar","👁️ Text on the menu, season and customise pages now sits on a dark plate, easy to read","💜 Support the game with any amount from the menu, or unlock Season Zero for $3, with Apple Pay, your card or PayPal","🔐 Sign in with Google, or link it to your current account","🎖️ The army upgrade panel responds to the first tap","🗺️ New setting: sharp or smooth map (sharp by default)","🤖 Big realms swallow a tribe they surround in one go, like players","📧 Link an email to your account, sign in with it, and reset a forgotten password by email","🌐 Sijal has an official site: sijalwar.com, and the old link moves you there with all your progress","📴 The game opens offline after your first visit, and can be added to your home screen like an app","📜 Battle log: your last 40 battles, win or loss, and the XP you earned, saved to your account on every device","🤖 Twice the bots on large and huge maps","⭐ More XP for bigger maps and harder games; the bonus is shown on each option","📱 A \"Follow us\" button in the menu with our TikTok and Instagram","⚔️ When an attack splits into several fronts, each front shows its own troop number","🏕️ Tribes now work like big realms: taking their village no longer hands you all their land"]},
+ {v:"5.5",d:"2026-11-26",ar:["⏳ شاشة التحميل فيها بار ونسبة اكتمال","🔔 إشعار التحديث الجديد يجيك أسرع","👁️ زر عين جنب كلمة المرور تشوف فيه اللي كتبته","🏷️ أسماء دول جديدة كثير، وما عاد فيه أرقام على أسماء البوتات","📅 تحدّي اليوم صار أقوى: قانون جديد كل يوم، و«أبطال اليوم» للأسرع، وسلسلة 🔥 تزيد خبرتك، و+500 كل 7 أيام","📖 «كيف تلعب» صار محدّث بكل الجديد","👁️ صفحات الأونلاين والمعركة المخصصة صارت أوضح","⚡ اللعبة صارت أخف وأنعم لما تبعّد وتقرّب الزوم في الخرايط الكبيرة، والأيقونات داخل المباني تختفي لما تبعّد","🔷 كل مبنى صار له شكل: الحصن درع، الميناء سداسي، الدفاع البحري معيّن، المصنع مربع، منصة الصواريخ رأس صاروخ، القبة قبة، والمعلم نجمة، عشان تعرف وش يبني عدوك من بعيد","👁️ الكتابة في القائمة والسيزون والتخصيص صار وراها خلفية داكنة عشان تنقرا بسهولة","💜 ادعم اللعبة بأي مبلغ من القائمة، أو افتح السيزون صفر بـ3$، بـ Apple Pay أو بطاقتك أو PayPal","🔐 الدخول بحساب قوقل، وتقدر تربطه بحسابك الحالي","🎖️ قائمة تطوير الجيش تستجيب من أول ضغطة","🗺️ خيار جديد في الإعدادات: الخريطة حادّة أو ناعمة (الحادّة هي الأساس)","🤖 الدول الكبيرة تبلع القبيلة اللي تحاوطها بضغطة وحدة مثل اللاعبين","📧 اربط إيميلك بحسابك، وادخل بالإيميل، ولو نسيت كلمة المرور يوصلك رابط تغيّرها","🌐 سِجال صار له موقع رسمي: sijalwar.com، والرابط القديم ينقلك له مع كل تقدّمك","📴 اللعبة تفتح بدون نت بعد أول مرة تفتحها وبنفس الخطوط، وتقدر تضيفها للشاشة الرئيسية مثل التطبيق","📜 «سجل المعارك»: آخر 40 معركة لك، فزت أو خسرت، وكم جبت خبرة، ويتحفظ في حسابك على كل أجهزتك","🤖 ضاعفنا عدد البوتات في الخرايط الكبيرة والعملاقة","⭐ خبرة أكثر كل ما كبّرت الخريطة وصعّبت اللعبة، والنسبة مكتوبة تحت كل خيار","📱 زر «تابعنا» في القائمة فيه حساباتنا في تيك توك وإنستقرام","⚔️ لما الهجوم ينقسم لأكثر من جبهة، كل جبهة يطلع عليها رقم جنودها وما يتلخبط","🏕️ القبائل مثل الدول الكبيرة: أخذ مدينتها ما يعطيك أرضها كلها، لازم تاخذها بنفسك"],en:["⏳ The loading screen shows a progress bar and percentage","🔔 The new-update notice arrives sooner","👁️ An eye button next to the password shows what you typed","🏷️ Many new realm names, no more numbers on bot names","📅 A bigger daily challenge: a new rule each day, “Today's champions” for the fastest, and a 🔥 streak that grows your XP, +500 every 7 days","📖 “How to play” is up to date","👁️ Online and custom battle pages are easier to read","⚡ Smoother when zoomed out on big maps","🔷 Every building has its own shape (fort shield, port hexagon, coastal gun diamond, factory square, missile silo arrowhead, dome, wonder star) so you can read an enemy's base from afar","👁️ Text on the menu, season and customise pages now sits on a dark plate, easy to read","💜 Support the game with any amount from the menu, or unlock Season Zero for $3, with Apple Pay, your card or PayPal","🔐 Sign in with Google, or link it to your current account","🎖️ The army upgrade panel responds to the first tap","🗺️ New setting: sharp or smooth map (sharp by default)","🤖 Big realms swallow a tribe they surround in one go, like players","📧 Link an email to your account, sign in with it, and reset a forgotten password by email","🌐 Sijal has an official site: sijalwar.com, and the old link moves you there with all your progress","📴 The game opens offline after your first visit, and can be added to your home screen like an app","📜 Battle log: your last 40 battles, win or loss, and the XP you earned, saved to your account on every device","🤖 Twice the bots on large and huge maps","⭐ More XP for bigger maps and harder games; the bonus is shown on each option","📱 A \"Follow us\" button in the menu with our TikTok and Instagram","⚔️ When an attack splits into several fronts, each front shows its own troop number","🏕️ Tribes now work like big realms: taking their village no longer hands you all their land"]},
  {v:"5.4",d:"2026-11-25",ar:["🤖 دول كبيرة أكثر في كل الخرايط","🕊️ البوت ما يطلب السلام إلا بعد 12 ثانية من الحرب، وما يجيك طلبين ورا بعض","🗺️ أخذ مدن الدولة ما يعطيك كل أرضها: لازم تسيطر على أرضها كاملة بنفسك","🛡️ القبة الدفاعية تطلق صاروخها بدري وتصيد الصاروخ في الجو قبل ما يوصل","🏕️ ضاعفنا عدد القبائل الصغيرة عشان المنافسة على الأرض تصير أقوى","✨ علامة «جديد» تختفي أول ما تفتح القائمة وتطلع منها","⚖️ توازن الصعوبة المتوسطة: جيوش الدول الكبيرة صارت تكبر أسرع","🎖️ قائمة جديدة «تطوير الجيش»: طوّر الجنود والدبابات والطيارات والبحرية والدفاع، لكل وحدة 5 مستويات، وشلنا معسكر الدبابات","🏕️ القبائل صارت كثيرة ومنتشرة في كل الخريطة، تهجم من ألف جندي وتحتل أسرع","📱 شاشة المعركة في الجوال صارت أسهل: 4 أزرار كبيرة تحت (بناء، أسلحة، هجوم، جيش)، وشريط قوة الهجوم فوقها، وأزرار سريعة 25% إلى 100%","🏛️ زر العصر يوريك وش يعطيك العصر الجاي ووش يفتح لك قبل ما تدفع","🔴 علامة «جديد» على كل مبنى أو سلاح أو تطوير انفتح لك، لين تضغطه","🧭 بداية المعركة صارت أبسط: اختر حضارتك وحط عاصمتك بس","🔔 إشعارات السلام والتحالف في الجوال صارت بأزرار كبيرة","🗺️ المربعات تطلع أكبر واللعبة صارت أخف على الجوال","🗡️ سيفين يتحركون في بطاقة المعركة السريعة"],en:["🤖 More big nations on every map","🕊️ Bots ask for peace only after 12 s of war, and never two requests back to back","🗺️ Taking a realm's cities no longer hands you all its land: you have to conquer every tile","🛡️ The dome fires early and downs the missile mid-air, well before it lands","🏕️ Twice as many small tribes, for a fiercer race for land","✨ \"New\" badges clear once you open a panel and close it","⚖️ Medium balance: big nations' armies now grow faster","🎖️ New Army upgrades menu: upgrade Soldiers, Tanks, Planes, Navy and Defence, five levels each; the tank camp is gone","🏕️ Many more tribes spread across the whole map; they raid from 1,000 troops and take land faster","📱 An easier phone battle screen: four big buttons at the bottom (Build, Weapons, Attack, Army), the attack-strength bar above them, and quick 25% to 100% buttons","🏛️ The age button shows what the next age gives and unlocks before you pay","🔴 A New badge on every building, weapon or upgrade that unlocks, until you tap it","🧭 A simpler battle start: pick your realm and place your capital","🔔 Peace and alliance notifications on phones have big buttons","🗺️ Tiles look bigger and the game runs lighter on phones","🗡️ Animated swords on the quick battle card"]},
  {v:'5.3',d:'2026-11-24',ar:['🏠 شكل جديد للقائمة الرئيسية: أريح للعين وأسهل، وشريط تنقل تحت بين القائمة والسيزون صفر والتخصيص','🚀 الصواريخ صارت واقعية: كل صاروخ وراه نار ودخان طويل ينتشر ويختفي شوي شوي، والنووي أخضر بشريط إشعاع، وقنبلة الفناء سوداء وذهبية بقلب أحمر يتوهج ودخانها أسود كثيف','🛡️ القبة الدفاعية صار شكلها منصة إطلاق حقيقية، وصاروخها الاعتراضي يطلع بنار ودخان أبيض','🏭 المصنع صار يجي مع الميناء والدفاع البحري، وسعره نزل من 1200 إلى 650','⚡ الجيش الكبير صار يكتسح بسرعة: إذا جيشك أكبر بأربع مرات يمسح المنطقة خلال ثواني. الغابة تبطّئه شوي بس، والجبال تبطّئه أكثر','🔢 عدد الجنود على الجبهة صار يطلع فوق المدن بدل ما ينغطى تحتها','💥 لكل سلاح انفجاره: الصاروخ انفجار صغير بشرار، والنووي سحابة فطر صغيرة، والفناء سحابة فطر كبيرة بموجة صدمة','🌫️ دخان الصواريخ والانفجارات يبقى في الجو ويختفي شوي شوي، وأخف في الجرافيكس المتوسط، وما يطلع في المنخفض عشان الجوالات الضعيفة','⏳ دائرة البناء صارت تبدأ من الصفر','🚀 الصاروخ يطلع من المنصة بوميض ودخان ويكبر شوي شوي بدل ما يطلع فجأة','⚔️ الجيش ما عاد يذوب بسرعة على أرض العدو: الخسائر صارت أغلبها من قتال جنوده، فـ120 ألف ضد 50 ألف يمسح الدولة كاملة ويبقى معك جيش','🔢 رقم الجنود صار يطلع على الجبهة الرئيسية إذا هجمت من أكثر من جهة، بدل ما يطلع بالنص بينهم','⚡ تحسّن الهجوم: الجبهة تمشي كخط واحد، والجيش الأقوى بكثير ياخذ دولة صغيرة في حوالي 6 ثواني، وسرعته تتغير حسب ارتفاع الأرض: الأخضر الفاتح سريع ويهدأ شوي عند المرتفعات الصغيرة، والغابات أبطأ شوي، والمرتفعات أبطأ، والجبال العالية أبطأ شي'],en:['🏠 A new main menu: calmer and simpler, with a tab bar at the bottom for the menu, Season Zero and Customize','🚀 Realistic missiles: every missile has fire and a long smoke trail that spreads and fades, the nuke is olive with a radiation band, and the doomsday bomb is black and gold with a glowing red core and thick black smoke','🛡️ The shield dome now looks like a real launcher, and its interceptor flies out with fire and white smoke','🏭 The factory now comes with the port and coastal gun, and costs 650 instead of 1200','⚡ Big armies sweep fast: four times the enemy army clears the area in seconds. Forest slows it only a little, mountains more','🔢 The troop count on a front now shows above cities instead of hiding under them','💥 Each weapon has its own blast: a small burst with sparks for the rocket, a small mushroom cloud for the nuke, a big one with a shockwave for doom','🌫️ Missile and blast smoke stays in the air and fades slowly; lighter on Medium graphics and off on Low for weaker phones','⏳ The building progress ring now starts from zero','🚀 Missiles leave the silo with a flash and smoke and grow into view instead of popping in','⚔️ Armies no longer melt on enemy land: losses now come mostly from fighting their soldiers, so 120K against 50K wipes the realm out with an army to spare','🔢 When you attack on several sides the troop count sits on the main front, not between them','⚡ Better attacks: the front advances as one line, a much stronger army takes a small realm in about 6 seconds, and its pace follows the height of the land: fast on open green, easing over small rises, a little slower in forest, slower on hills, slowest on high mountains']},
  {v:'5.2',d:'2026-11-23',ar:['🔥 النار بعد الصواريخ والنووي صارت واقعية: تهدأ أسرع، وتنتشر بشويش في الأرض الخضراء، وبسرعة في الغابات بدون ما تاكلها كلها، وما تنتشر في الصحراء، وفي الشتاء تطفى بسرعة','✨ شكل النار أحلى في الجرافيكس المتوسط والعالي: لهب بأطوال مختلفة وجمر وشرار ودخان','🛠️ المدينة اللي ينضربها صاروخ أو نووي تقدر تصلحها على طول بالذهب: اضغط عليها وتلقى «أصلحها الحين»','🌊 مدى الدفاع البحري صار يطلع على البحر، لأنه يحمي البحر من السفن','⚔️ الهجوم صار أسرع إذا جيشك أقوى بكثير من جيش العدو','🛡️ الهجوم المضاد على نقطة ما يوقف هجومك من كل الحدود، يرجّع الأرض في مكانه بس. اللي يوقفه كامل هجوم مضاد من كل الحدود','😠 البوتات ما تصير معادية لك إلا إذا هجمت عليهم أو هجموا عليك','🚢 لما توقف التجارة مع دولة، السفن والقطارات اللي رايحة لها ترجع لميناءك بدل ما تختفي'],en:['🔥 Fire after missiles and nukes is realistic now: it dies down faster, creeps slowly over grass, races through forest without taking all of it, never spreads on sand, and in winter it goes out quickly','✨ Nicer fire on Medium and High graphics: flames of different heights, embers, sparks and smoke','🛠️ A city hit by a missile or nuke can be repaired at once for gold: tap it and press Repair now','🌊 The coastal gun range now shows over the sea, since it guards the water from ships','⚔️ Attacks move faster when your army far outnumbers the enemy','🛡️ A counter-attack at one point no longer stops your all-borders attack, it only takes ground back where it lands; only an all-borders counter-attack stops it whole','😠 Bots only turn hostile when you attack them or they attack you','🚢 When you stop trade with a realm, ships and trains heading there sail back to your port instead of vanishing']},
@@ -2786,11 +2802,11 @@ function renderLobby(){
 setInterval(regTick,4000);
 // ── newer version on the site? tell open games so players refresh ──
 function checkUpdate(){
-  if(UI.updShown||!/^https?:/.test(location.protocol)||document.hidden)return;
-  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.build||j.build===BUILD_ID||UI.updShown)return;UI.updShown=true;UI.updBuild=j.build;
+  if($('#upd')||!/^https?:/.test(location.protocol)||document.hidden)return;
+  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!j.build||j.build===BUILD_ID||j.build===UI.updSkip||$('#upd'))return;UI.updBuild=j.build;
     const d=document.createElement('div');d.id='upd';d.className='pn';d.innerHTML=`<span>${t(G&&!G.o.demo&&G.started&&!G.over?'updMp':'updNew')}</span><button class="btn sm ok" data-a="reload">${t('updGo')}</button><button class="btn sm" data-a="updX">${t('updLater')}</button>`;$('#app').appendChild(d);sfx('coin');}).catch(()=>{});
 }
-setInterval(checkUpdate,120000);setTimeout(checkUpdate,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
+setInterval(checkUpdate,60000);setTimeout(checkUpdate,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
 
 // ── SIJAL · interface, input, audio, game loop ──
 let G=null,acc=0,lastTs=0;
@@ -2886,7 +2902,9 @@ function show(name){if(name)radClose();
   UI.screen=name;for(const s of document.querySelectorAll('.screen'))s.hidden=s.id!==name;
   $('#hud').hidden=!(G&&!G.o.demo&&(!name||name==='pause'));
 }
-function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
+// the loading screen: a title, a bar and a percentage (the bar shows only when there is real progress to report)
+function loading(on){const l=$('#load');l.hidden=!on;if(!l.querySelector('.lbar'))l.innerHTML='<div class="lbx"><span></span><div class="lbar"><i></i></div><b></b></div>';l.querySelector('span').textContent=t('loading');if(on)loadPct(null);}
+function loadPct(p){const l=$('#load');if(!l||!l.querySelector('.lbar'))return;const has=p!=null;l.querySelector('.lbar').style.visibility=has?'visible':'hidden';l.querySelector('i').style.width=(has?Math.round(p*100):0)+'%';l.querySelector('b').textContent=has?Math.round(p*100)+'%':'';}
 const mtabs=cur=>`<nav class="bnav">${[['menu','tMenu','🏠'],['pass','bp','🎖️'],['skins','tSkins','🎨']].map(([k,l,ic])=>`<button class="${cur===k?'on':''}" data-a="${k}"><i>${ic}</i><span>${t(l)}</span></button>`).join('')}</nav>`;
 function renderMenu(){
   if(!document.getElementById('swdefs')){const d=document.createElement('div');d.id='swdefs';d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
@@ -3439,7 +3457,12 @@ function startMatch(o){
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
   if(o.same&&UI.lastOpt)opt=Object.assign({},UI.lastOpt,{seed:UI.lastOpt.daily?UI.lastOpt.seed:(Math.random()*2**31)|0});
   UI.lastOpt=opt;loading(true);
-  setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},40);
+  // build the world step by step so the bar moves: the map (most of the wait), then the realms, then the drawing
+  {const it=genMapSteps(opt);loadPct(0);
+    const step=()=>{const t0=performance.now();let r;do{r=it.next();}while(!r.done&&performance.now()-t0<45);
+      if(!r.done){loadPct(r.value*.8);return setTimeout(step,0);}
+      loadPct(.85);setTimeout(()=>{G=newGame(Object.assign({},opt,{M:r.value}));loadPct(.93);setTimeout(()=>{prep(G);loadPct(1);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},0);},0);};
+    setTimeout(step,40);}
 }
 // battle history: the last 40 games, newest first; kept in the account (users/<uid>/hist), so every device shows the same log
 function histMerge(p,cloud,sent,uid,tok){
@@ -3857,7 +3880,7 @@ function act(a){
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
     case'army':sheetClose();openArmy();break;case'sh':if(v==='x')sheetClose();else sheetOpen(v);break;case'rq':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();break;case'spc':if(NET.on&&!NET.host)return err('hostOnly');UI.speed=UI.speed>=3?1:UI.speed+1;UI.paused=false;hudUpdate();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;UI.newArmy=null;newMarks();}break;case'armyUp':send({k:'army',t:v});break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
-    case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
+    case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();UI.updSkip=UI.updBuild;break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
     case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
     case'am':p.amode=v;saveProf();renderAmode();hudUpdate();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;

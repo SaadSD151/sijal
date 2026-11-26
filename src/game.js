@@ -2,7 +2,8 @@
 const R_CITY=7,R_CAP=8,R_FORT=8,CITY_MIN=9,COAST_R=17,ALLY_T=1200,PEACE_T=300,SHIELD_R=19,MAX_ATK=6,WIN_SHARE=.99,MON_TIME=1500;
 
 function newGame(o){
-  const M=genMap(o),N=M.N;
+  // a map made ahead of time (step by step, behind the loading bar) is used as is
+  const M=o.M||genMap(o),N=M.N;if(o.M)delete o.M;
   // how hard each tile is to push through: flat green is fast but rises and falls with the small bumps of the land,
   // forest a little slower, hills slower, high mountains slowest of all (and the higher, the slower)
   {const mv=new Float32Array(N),hh=M.hHill<1e8?M.hHill:Math.max(1e-6,M.hmax),hm=M.hMnt<1e8?M.hMnt:hh*1.5,top=Math.max(hm+1e-6,M.hmax);

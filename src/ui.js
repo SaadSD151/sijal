@@ -92,7 +92,9 @@ function show(name){if(name)radClose();
   UI.screen=name;for(const s of document.querySelectorAll('.screen'))s.hidden=s.id!==name;
   $('#hud').hidden=!(G&&!G.o.demo&&(!name||name==='pause'));
 }
-function loading(on){const l=$('#load');l.hidden=!on;l.firstChild.textContent=t('loading');}
+// the loading screen: a title, a bar and a percentage (the bar shows only when there is real progress to report)
+function loading(on){const l=$('#load');l.hidden=!on;if(!l.querySelector('.lbar'))l.innerHTML='<div class="lbx"><span></span><div class="lbar"><i></i></div><b></b></div>';l.querySelector('span').textContent=t('loading');if(on)loadPct(null);}
+function loadPct(p){const l=$('#load');if(!l||!l.querySelector('.lbar'))return;const has=p!=null;l.querySelector('.lbar').style.visibility=has?'visible':'hidden';l.querySelector('i').style.width=(has?Math.round(p*100):0)+'%';l.querySelector('b').textContent=has?Math.round(p*100)+'%':'';}
 const mtabs=cur=>`<nav class="bnav">${[['menu','tMenu','🏠'],['pass','bp','🎖️'],['skins','tSkins','🎨']].map(([k,l,ic])=>`<button class="${cur===k?'on':''}" data-a="${k}"><i>${ic}</i><span>${t(l)}</span></button>`).join('')}</nav>`;
 function renderMenu(){
   if(!document.getElementById('swdefs')){const d=document.createElement('div');d.id='swdefs';d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
@@ -645,7 +647,12 @@ function startMatch(o){
   if(o.same&&UI.lastOpt&&UI.lastOpt.daily){renderDaily();show('help');return;}
   if(o.same&&UI.lastOpt)opt=Object.assign({},UI.lastOpt,{seed:UI.lastOpt.daily?UI.lastOpt.seed:(Math.random()*2**31)|0});
   UI.lastOpt=opt;loading(true);
-  setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},40);
+  // build the world step by step so the bar moves: the map (most of the wait), then the realms, then the drawing
+  {const it=genMapSteps(opt);loadPct(0);
+    const step=()=>{const t0=performance.now();let r;do{r=it.next();}while(!r.done&&performance.now()-t0<45);
+      if(!r.done){loadPct(r.value*.8);return setTimeout(step,0);}
+      loadPct(.85);setTimeout(()=>{G=newGame(Object.assign({},opt,{M:r.value}));loadPct(.93);setTimeout(()=>{prep(G);loadPct(1);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},0);},0);};
+    setTimeout(step,40);}
 }
 // battle history: the last 40 games, newest first; kept in the account (users/<uid>/hist), so every device shows the same log
 function histMerge(p,cloud,sent,uid,tok){
@@ -1063,7 +1070,7 @@ function act(a){
     case'fixB':if(UI.bs){send({k:'fix',i:UI.bs.i});UI.bKey='';}break;
     case'army':sheetClose();openArmy();break;case'sh':if(v==='x')sheetClose();else sheetOpen(v);break;case'rq':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();break;case'spc':if(NET.on&&!NET.host)return err('hostOnly');UI.speed=UI.speed>=3?1:UI.speed+1;UI.paused=false;hudUpdate();break;case'armyX':{const p=$('#armyP');if(p)p.hidden=true;UI.newArmy=null;newMarks();}break;case'armyUp':send({k:'army',t:v});break;
     case'upB':if(UI.bs){send({k:'up',i:UI.bs.i});UI.bKey='';}break;
-    case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();break;}
+    case'reload':location.replace(location.pathname+'?v='+(UI.updBuild||Date.now())+location.hash);break;case'updX':{const d=$('#upd');if(d)d.remove();UI.updSkip=UI.updBuild;break;}
     case'giftOpen':amtOpen('gift',+v);break;case'aidOpen':amtOpen('aid',+v);break;case'amtP':if(UI.cardAmt)amtSet(UI.cardAmt.max*(+v)/100);break;case'amtX':UI.cardAmt=null;$('#cAmt').innerHTML='';break;
     case'amtSend':{const A=UI.cardAmt;if(!A)break;send(A.kind==='gift'?{k:'gift',d:A.id,amt:A.v}:{k:'aid',d:A.id,amt:A.v});UI.cardAmt=null;$('#cAmt').innerHTML='';break;}
     case'am':p.amode=v;saveProf();renderAmode();hudUpdate();break;case'amT':if(UI.amDrag){UI.amDrag=false;break;}p.amHide=!p.amHide;renderAmode();break;

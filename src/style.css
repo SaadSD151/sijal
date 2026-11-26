@@ -197,7 +197,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .rbar{height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden}
 .rbar u{display:block;height:100%;background:var(--gold);width:0}
 .best{color:var(--gold2)}
-#load{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,11,19,.84);font-family:var(--disp);font-size:30px;color:var(--gold2);z-index:9}
+#load{position:absolute;inset:0;display:grid;place-items:center;background:rgba(5,11,19,.96);font-family:var(--disp);font-size:30px;color:var(--gold2);z-index:9}
 
 @keyframes fdin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes ban{0%{opacity:0;transform:scale(.92)}12%{opacity:1;transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
@@ -660,3 +660,8 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #help .opts h3,#net .opts h3,#setup .opts h3,#setup label,#net label,#net .keys,#net p{color:#e6eef7}
 .pwb{position:relative;display:block;width:100%}.pwb input{width:100%;padding-right:46px!important;box-sizing:border-box}.pwb .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:10px;background:rgba(255,255,255,.08);font-size:18px;line-height:1;cursor:pointer}
 .ppsk{height:44px;border-radius:22px;margin:0 0 10px;animation:ppl 1.2s ease-in-out infinite}.ppsk.y{background:#ffc439}.ppsk.d{background:#2c2e2f}
+/* loading: a title, a progress bar and a percentage */
+#load .lbx{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(340px,80vw)}
+#load .lbar{width:100%;height:12px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(241,207,110,.4);overflow:hidden}
+#load .lbar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#c9952d,#f1cf6e);transition:width .15s ease-out}
+#load b{font-family:'IBM Plex Sans Arabic',sans-serif;font-size:18px;color:#ffe7a6;direction:ltr;font-variant-numeric:tabular-nums}
