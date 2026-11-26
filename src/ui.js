@@ -541,7 +541,7 @@ function histMerge(p,cloud,sent,uid,tok){
 }
 function histAdd(g,res,xp){
   const p=UI.prof,me=g.nations[g.human];if(!me)return;const si=SIZES.findIndex(s=>s[0]===g.W&&s[1]===g.H);
-  const e={d:Date.now(),r:res,xp:xp|0,m:g.o.daily?'d':NET.on?'o':UI.mType||'c',s:si,f:g.o.diff|0,t:Math.round(g.tick/TPS),c:me.st.cities|0,k:me.st.kills|0,ch:g.o.cheats?1:0};
+  const e={d:Date.now(),r:res,xp:xp|0,m:g.o.daily?'d':NET.on?'o':UI.mType||'c',s:si,f:g.o.diff|0,t:Math.round(g.tick/TPS),c:me.st.cities|0,k:me.st.kills|0,ch:g.o.cheats?1:0,dv:UI.mob?'m':'p'};
   p.hist=[e].concat(Array.isArray(p.hist)?p.hist:[]).slice(0,40);p.histPend=(Array.isArray(p.histPend)?p.histPend:[]).concat([e]).slice(-40);saveProf();
 }
 function renderHist(){
@@ -550,7 +550,7 @@ function renderHist(){
   const mm=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
   const row=e=>{const R={w:['🏆',t('hiW'),'w'],l:['💀',t('hiL'),'l'],q:['🏳️',t('hiQ'),'q']}[e.r]||['•','',''];
     const mode={q:t('hiMq'),c:t('hiMc'),d:t('hiMd'),o:t('hiMo')}[e.m]||'',sz=e.s>=0?(t('sizes')[e.s]||''):'',df=t('diffs')[e.f]||'';
-    return `<div class="hrow ${R[2]}"><div class="hres"><span>${R[0]}</span><b>${R[1]}</b></div><div class="hmid"><b>${mode}${e.ch?' 🧪':''}</b><small>${[sz,df].filter(Boolean).join(' · ')}</small><small>⏱️ ${mm(e.t)} · 🏙️ ${e.c} · 💀 ${e.k} · ${ago(e.d)}</small></div><div class="hxp">+${fmt(e.xp)}<small>⭐ ${t('xpBon')}</small></div></div>`;};
+    return `<div class="hrow ${R[2]}"><div class="hres"><span>${R[0]}</span><b>${R[1]}</b></div><div class="hmid"><b>${mode}${e.ch?' 🧪':''}${e.dv?`<span class="hdv">${e.dv==='m'?'📱 '+t('hiMob'):'💻 '+t('hiPc')}</span>`:''}</b><small>${[sz,df].filter(Boolean).join(' · ')}</small><small>⏱️ ${mm(e.t)} · 🏙️ ${e.c} · 💀 ${e.k} · ${ago(e.d)}</small></div><div class="hxp">+${fmt(e.xp)}<small>⭐ ${t('xpBon')}</small></div></div>`;};
   $('#help').innerHTML=`<div class="socH"><h2>📜 ${t('hiT')}</h2>${H.length?`<div class="hsum"><div><b>${H.length}</b><small>${t('hiG')}</small></div><div><b>${w}</b><small>${t('hiWs')}</small></div><div><b>${Math.round(w/H.length*100)}%</b><small>${t('hiRate')}</small></div><div><b>${fmt(xs)}</b><small>⭐ ${t('xpBon')}</small></div></div>`:''}</div>
   <div class="hlist">${H.length?H.map(row).join(''):`<p class="hempty">${t('hiNone')}</p>`}</div><div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
 }
