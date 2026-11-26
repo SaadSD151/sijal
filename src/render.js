@@ -281,6 +281,20 @@ function tankSprite(n,od){
   return C[key]=k;
 }
 function bShape(c,sh,x,y,r){c.beginPath();if(sh==='c'){c.arc(x,y,r,0,7);return;}const k=sh==='hex'?6:8,o=sh==='hex'?Math.PI/6:Math.PI/8;for(let j=0;j<k;j++){const a=o+j*2*Math.PI/k,px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
+// every building type has its own outline, so a rival's missile silo or port is readable from far away
+const TSH={fort:'shield',port:'hexp',coast:'dia',factory:'sq',silo:'arrow',shield:'dome',mon:'star'};
+function tShape(c,type,x,y,r){
+  const sh=TSH[type];if(!sh){c.beginPath();c.arc(x,y,r,0,7);return;}c.beginPath();
+  if(sh==='shield'){const w=r*1.05;c.moveTo(x-w,y-r*.95);c.lineTo(x+w,y-r*.95);c.lineTo(x+w,y+r*.05);c.quadraticCurveTo(x+w*.85,y+r*.8,x,y+r*1.15);c.quadraticCurveTo(x-w*.85,y+r*.8,x-w,y+r*.05);c.closePath();}
+  else if(sh==='hexp'){for(let j=0;j<6;j++){const a=-Math.PI/2+j*Math.PI/3,px=x+Math.cos(a)*r*1.12,py=y+Math.sin(a)*r*1.12;j?c.lineTo(px,py):c.moveTo(px,py);}c.closePath();}
+  else if(sh==='dia'){const k=r*1.3;c.moveTo(x,y-k);c.lineTo(x+k,y);c.lineTo(x,y+k);c.lineTo(x-k,y);c.closePath();}
+  else if(sh==='sq'){const k=r*.98,q=r*.3;c.moveTo(x-k+q,y-k);c.arcTo(x+k,y-k,x+k,y+k,q);c.arcTo(x+k,y+k,x-k,y+k,q);c.arcTo(x-k,y+k,x-k,y-k,q);c.arcTo(x-k,y-k,x+k,y-k,q);c.closePath();}
+  else if(sh==='arrow'){c.moveTo(x,y-r*1.4);c.lineTo(x+r*1.05,y+r*.15);c.lineTo(x+r*.95,y+r*1.05);c.lineTo(x,y+r*.6);c.lineTo(x-r*.95,y+r*1.05);c.lineTo(x-r*1.05,y+r*.15);c.closePath();}
+  else if(sh==='dome'){c.moveTo(x-r*1.2,y+r*.75);c.lineTo(x-r*1.2,y+r*.2);c.arc(x,y+r*.2,r*1.2,Math.PI,0);c.lineTo(x+r*1.2,y+r*.75);c.closePath();}
+  else if(sh==='star'){for(let j=0;j<10;j++){const a=-Math.PI/2+j*Math.PI/5,rr=j%2?r*.62:r*1.3;j?c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):c.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}c.closePath();}
+}
+// where the icon sits inside each outline
+const TGY={silo:.12,shield:.12,fort:-.05};
 function txt(c,s,x,y,fill){c.strokeText(s,x,y);c.fillStyle=fill;c.fillText(s,x,y);}
 
 function draw(g,dt,ts){
@@ -349,9 +363,11 @@ function draw(g,dt,ts){
     const p=w2s(s.x+.5,s.y+.5);if(p.x<-40||p.y<-40||p.x>cw+40||p.y>ch+40)continue;
     const n=g.nations[s.owner],r=Math.max(2.5,z*(city?2.5+(s.capital?.7:0)+s.level*.15:2.6));if(s.build>g.tick)c.globalAlpha=.55;
     const rn=city&&s.ruin>g.tick,BS=!rn&&n&&n.bld?BSTY[n.bld]:null;SP.push(p.x,p.y,r);
-    if(BS){bShape(c,BS.sh,p.x,p.y,r);if(BS.gl&&R.q){c.save();c.shadowColor=BS.gl;c.shadowBlur=r*.9;c.fillStyle=BS.f;c.fill();c.restore();}else{c.fillStyle=BS.f;c.fill();}c.lineWidth=Math.max(1.6,r*.16);c.strokeStyle=BS.s;c.stroke();c.lineWidth=Math.max(1.2,r*.1);c.strokeStyle=n.css;bShape(c,BS.sh,p.x,p.y,r+c.lineWidth*1.4);c.stroke();}
-    else{c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=rn?'#5f5650':n?n.css:'#8a8d92';c.fill();c.lineWidth=s.capital?2.2:1.4;c.strokeStyle=s.capital?'#ffe9a8':'rgba(6,12,20,.9)';c.stroke();}
-    if(r>5.5){const q=r*1.5;c.drawImage(R.glyph[rn?'ruin':s.capital?'cap':s.type],p.x-q/2,p.y-q/2,q,q);}
+    // cities keep the skin's outline; every other building wears the outline of its type, in the skin's colours
+    const shp=(rr)=>city?bShape(c,BS?BS.sh:'c',p.x,p.y,rr):tShape(c,s.type,p.x,p.y,rr);
+    if(BS){shp(r);if(BS.gl&&R.q){c.save();c.shadowColor=BS.gl;c.shadowBlur=r*.9;c.fillStyle=BS.f;c.fill();c.restore();}else{c.fillStyle=BS.f;c.fill();}c.lineWidth=Math.max(1.6,r*.16);c.strokeStyle=BS.s;c.stroke();c.lineWidth=Math.max(1.2,r*.1);c.strokeStyle=n.css;shp(r+c.lineWidth*1.4);c.stroke();}
+    else{shp(r);c.fillStyle=rn?'#5f5650':n?n.css:'#8a8d92';c.fill();c.lineWidth=s.capital?2.2:1.4;c.strokeStyle=s.capital?'#ffe9a8':'rgba(6,12,20,.9)';c.lineJoin='round';c.stroke();}
+    if(r>5.5){const q=r*(city?1.5:1.35);c.drawImage(R.glyph[rn?'ruin':s.capital?'cap':s.type],p.x-q/2,p.y-q/2+(TGY[s.type]||0)*r,q,q);}
     if(rn){c.strokeStyle=n?n.css:'#888';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r+2,0,7);c.stroke();for(let k=0;k<3;k++){const ph=(ts/1400+k/3)%1;c.fillStyle=`rgba(70,66,62,${.55*(1-ph)})`;c.beginPath();c.arc(p.x+Math.sin(k*2.1+ph*3)*r*.4,p.y-r-ph*r*2.4,r*(.35+ph*.55),0,7);c.fill();}}
     if(!city&&s.level>1&&z>=2.6){c.beginPath();c.arc(p.x+r*.8,p.y-r*.8,6,0,7);c.fillStyle='#0b1826';c.fill();c.font=`700 10px ${FONT}`;c.fillStyle='#f6dc9a';c.fillText(s.level,p.x+r*.8,p.y-r*.75);}
     if(s.upAt>g.tick){c.strokeStyle='#f6dc9a';c.lineWidth=2.5;c.beginPath();c.arc(p.x,p.y,r+4,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-(s.upAt-g.tick)/60));c.stroke();}
@@ -512,7 +528,7 @@ function draw(g,dt,ts){
         c.lineWidth=2.5;c.setLineDash([3,6]);dr(UI.railPrev.trade,'rgba(120,230,160,.9)');c.setLineDash([7,6]);dr(UI.railPrev.paths,'rgba(255,233,168,.95)');c.setLineDash([]);}ok=!canBuild(g,H,k,i);}else if(m[0]==='m')rad=MSL[k].r;else if(m[0]==='s'){const sh=shoreNear(g,i,+k,10);ok=sh>=0;if(sh>=0)i=sh;rad=2.5;}else rad={bribe:9,tsunami:10,beam:5}[FAC[H.fac].ult]||0;
     const p=w2s(i%g.W+.5,((i/g.W)|0)+.5);
     c.strokeStyle=ok?'rgba(120,240,160,.95)':'rgba(255,100,90,.95)';c.fillStyle=ok?'rgba(120,240,160,.14)':'rgba(255,100,90,.14)';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,rad*z,0,7);c.fill();c.stroke();
-    if(m[0]==='b'){const r=Math.max(2.5,z*(k==='city'?2.65:2.6)),q=r*1.5;c.globalAlpha=.6+.3*Math.sin(ts/160);c.beginPath();c.arc(p.x,p.y,r,0,7);c.fillStyle=ok?H.css:'#a33';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.drawImage(R.glyph[k],p.x-q/2,p.y-q/2,q,q);c.globalAlpha=1;}
+    if(m[0]==='b'){const r=Math.max(2.5,z*(k==='city'?2.65:2.6)),q=r*1.5;c.globalAlpha=.6+.3*Math.sin(ts/160);tShape(c,k,p.x,p.y,r);c.fillStyle=ok?H.css:'#a33';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.drawImage(R.glyph[k],p.x-q/2,p.y-q/2,q,q);c.globalAlpha=1;}
     else{c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.moveTo(p.x-9,p.y);c.lineTo(p.x+9,p.y);c.moveTo(p.x,p.y-9);c.lineTo(p.x,p.y+9);c.stroke();}
   }
   // who is attacking you: a ring on their capital, or an arrow at the screen edge pointing to it
