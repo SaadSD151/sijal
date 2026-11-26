@@ -4,6 +4,8 @@
   "name": "sijal",
   "main": "worker/index.js",
   "compatibility_date": "2025-11-01",
+  // keep the variables set in the Cloudflare dashboard on every deploy
+  "keep_vars": true,
   "assets": {
     "directory": "./dist/site",
     "binding": "ASSETS",
