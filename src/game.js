@@ -129,7 +129,7 @@ function captured(g,s,old,o){
     s.capital=false;let best=null;
     for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===old&&(!best||c.level>best.level))best=c;
     if(best){best.capital=true;O.cap=best;O.defDirty=true;O.troops*=.75;O.collapse=g.tick+250;emit(g,'capMoved',{d:old,s:best});}
-    else{O.cap=null;if(O.minor)collapseNation(g,O,o,s);else lostCities(g,O,o);}
+    else{O.cap=null;lostCities(g,O,o);}
   }
 }
 // a fallen city drags its province with it
@@ -473,7 +473,7 @@ function destroyCity(g,s,by){
   if(s.dead)return;const O=s.owner?g.nations[s.owner]:null,cap=s.capital;s.capital=false;killStruct(g,s);g.ruins.push({x:s.x,y:s.y,until:g.tick+1500});
   emit(g,'cityGone',{s,a:by,d:O?O.id:0});
   if(O&&O.alive&&cap){let best=null;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===O.id&&(!best||c.level>best.level))best=c;
-    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;if(O.minor)collapseNation(g,O,0,s);else lostCities(g,O,by||0);}}
+    if(best){best.capital=true;O.cap=best;O.defDirty=true;O.collapse=g.tick+250;emit(g,'capMoved',{d:O.id,s:best});}else{O.cap=null;lostCities(g,O,by||0);}}
 }
 function blast(g,cx,cy,R,by,o){
   const W=g.W,H=g.H,now=g.tick,hits=new Map();
