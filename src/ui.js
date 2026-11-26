@@ -455,7 +455,7 @@ function renderSocial(){
     <a class="soc ig" href="${INSTA}" target="_blank" rel="noopener">${IG}<span><b>${t('d_ig')}</b><small dir="ltr">@sijal_202</small></span></a></div>
   <div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
 }
-const SUPPORT_SAR=10;
+const SUPPORT_SAR=3;// the Season Zero pass price, in US dollars (PayPal link)
 // ── game statistics for the owner: anonymous counters per Saudi day and all-time, and who has the game open right now ──
 const sDay=o=>new Date(Date.now()+3*36e5-(o||0)*864e5).toISOString().slice(0,10),sHour=()=>new Date(Date.now()+3*36e5).getUTCHours();
 const SQ={q:{},ms:0};
@@ -571,7 +571,7 @@ function supSend(){
   const p=UI.prof,f=p.fb||{},em=(($('#supMail')||{}).value||'').trim().toLowerCase(),us=(($('#supUser')||{}).value||'').trim();if(!f.user)return;
   if(!isMail(em))return err('supMail');if(!/^[A-Za-z0-9_]{3,16}$/.test(us))return err('admUser');if(us.toLowerCase()!==f.user.toLowerCase())return err('supUserBad');if(!/^https?:/.test(location.protocol))return err('sgSite');
   if(Date.now()-(p.supAt||0)<6e4)return err('supWait');loading(true);
-  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' SAR (PayPal)',paypal_email:em,message:'Support claim · username: '+f.user+' · paid with PayPal/card, payer email: '+em+' · amount: '+SUPPORT_SAR+' SAR'})})
+  fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:SUGGEST_KEY,subject:'Sijal support: '+f.user,from_name:p.name||f.user,username:f.user,amount:SUPPORT_SAR+' USD (PayPal)',paypal_email:em,message:'Support claim · username: '+f.user+' · paid with PayPal/card, payer email: '+em+' · amount: $'+SUPPORT_SAR})})
   .then(r=>r.json()).then(j=>{loading(false);if(!j||!j.success)throw 0;stat('sup');statFlush();p.supAt=Date.now();saveProf();$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supThanks')}</p><div class="row"><button class="btn big" data-a="${UI.supFrom==='menu'?'menu':'pass'}">${t('ok')}</button></div>`;}).catch(()=>{loading(false);err('sgFail');});
 }
 function admDel(uid){admReq('/admins/'+uid+'.json',{method:'DELETE'}).then(()=>openAdmin()).catch(()=>err('admFail'));}
