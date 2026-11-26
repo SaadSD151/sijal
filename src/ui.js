@@ -381,6 +381,8 @@ function renderAmode(){
   e.innerHTML=`<button class="amh" data-a="amT" aria-expanded="${!p.amHide}">${t('amode')} ${p.amHide?'▸':'▾'}</button>`+(p.amHide?'':`<button class="chip${m==='pt'?' on':''}" data-a="am:pt">${t('am_pt')}</button><button class="chip${m==='all'?' on':''}" data-a="am:all">${t('am_all')}</button>`);
   placeAmode();
 }
+// a password box with an eye button that shows or hides what was typed
+const pwIn=(id,ph,ac)=>`<span class="pwb"><input id="${id}" dir="ltr" type="password" maxlength="64" placeholder="${ph}" autocomplete="${ac}"><button type="button" class="eye" data-a="eye:${id}" aria-label="show password">👁️</button></span>`;
 function accPanel(){
   const p=UI.prof,f=p.fb||{},m=UI.accMsg?`<p class="${/^(made|in|out|mlSent|fgSent|ggLinked)$/.test(UI.accMsg)?'good':'bad'}">${t('acm_'+UI.accMsg,`<b dir="ltr">${esc(UI.mailTo||'')}</b>`)}</p>`:'';
   if(!cloudOn())return`<p class="keys">${t('accNote')}</p>`;
@@ -389,12 +391,12 @@ function accPanel(){
   if(UI.gNew)return`<div class="accb"><h3>${t('gg_pick')}</h3><p class="keys">${t('gg_pickD')}</p><div class="accf">${userIn(t('ac_user'),'username')}</div>${m}<div class="row"><button class="btn ok" data-a="gName">${t('gg_pickGo')}</button><button class="btn" data-a="gCancel">${t('back')}</button></div></div>`;
   if(f.user&&!UI.relog){
     const I=UI.accInfo;if(!I)setTimeout(accInfoLoad,0);
-    const mail=!I?'':realMail(I.email)?`<p class="mlok">📧 ${t('ml_on',`<b dir="ltr">${esc(I.email)}</b>`)}</p>`:I.pw?`<div class="mlb"><h3>📧 ${t('ml_t')}</h3><p class="keys">${t('ml_d')}</p><div class="accf"><input id="inMail" type="email" dir="ltr" maxlength="80" placeholder="name@gmail.com" autocomplete="email" autocapitalize="none" spellcheck="false"><input id="inPass2" type="password" dir="ltr" maxlength="64" placeholder="${t('ml_pw')}" autocomplete="current-password"></div><button class="btn sm ok" data-a="mailLink">${t('ml_go')}</button></div>`:'';
+    const mail=!I?'':realMail(I.email)?`<p class="mlok">📧 ${t('ml_on',`<b dir="ltr">${esc(I.email)}</b>`)}</p>`:I.pw?`<div class="mlb"><h3>📧 ${t('ml_t')}</h3><p class="keys">${t('ml_d')}</p><div class="accf"><input id="inMail" type="email" dir="ltr" maxlength="80" placeholder="name@gmail.com" autocomplete="email" autocapitalize="none" spellcheck="false">${pwIn('inPass2',t('ml_pw'),'current-password')}</div><button class="btn sm ok" data-a="mailLink">${t('ml_go')}</button></div>`:'';
     const gg=GOOGLE_CID&&I?(I.google?`<p class="mlok">✅ ${t('gg_on')}</p>`:`<div class="mlb"><h3>${t('gg_link')}</h3><div id="gBtn"></div></div>`):'';if(GOOGLE_CID&&I&&!I.google)setTimeout(()=>gMount('link'),0);
     return`<div class="accb"><p>${t('ac_signed',`<b dir="ltr">${esc(f.user)}</b>`)}</p><p class="keys">${t('ac_signedNote')}</p>${m}${mail}${gg}<button class="btn sm" data-a="accOut">${t('ac_out')}</button></div>`;
   }
   if(GOOGLE_CID)setTimeout(()=>gMount('in'),0);
-  return`<div class="accb"><h3>${t('ac_title')}</h3>${UI.relog?`<p class="bad">${t('ac_relog')}</p>`:''}<p class="keys">${t('ac_note')}</p><div class="accf">${userIn(t('ac_userIn'),'email')}<input id="inPass" dir="ltr" type="password" maxlength="64" placeholder="${t('ac_pass')}" autocomplete="current-password"></div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div><button class="lnkb" data-a="accForgot">🔑 ${t('fg_btn')}</button>${GOOGLE_CID?`<div class="gor"><span>${t('gg_or')}</span></div><div id="gBtn"></div>`:''}</div>`;
+  return`<div class="accb"><h3>${t('ac_title')}</h3>${UI.relog?`<p class="bad">${t('ac_relog')}</p>`:''}<p class="keys">${t('ac_note')}</p><div class="accf">${userIn(t('ac_userIn'),'email')}${pwIn('inPass',t('ac_pass'),'current-password')}</div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div><button class="lnkb" data-a="accForgot">🔑 ${t('fg_btn')}</button>${GOOGLE_CID?`<div class="gor"><span>${t('gg_or')}</span></div><div id="gBtn"></div>`:''}</div>`;
 }
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
@@ -1020,6 +1022,7 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');ppMount();break;
     case'social':renderSocial();show('help');break;
+    case'eye':{const i=$('#'+v),b=document.querySelector(`[data-a="eye:${v}"]`);if(i){const sh=i.type==='password';i.type=sh?'text':'password';if(b)b.textContent=sh?'🙈':'👁️';i.focus();}break;}
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
     case'copyLink':{const l=location.origin+location.pathname;try{navigator.clipboard.writeText(l).then(()=>toast(t('gg_copied'),'prop',2500)).catch(()=>toast(l,'prop',5000));}catch(e){toast(l,'prop',5000);}break;}
     case'moveGo':{saveProf();const raw=localStorage.getItem('sijal.v1')||'',rc=(location.hash||'').slice(1).toUpperCase(),h=[];if(raw.length>2)h.push('mv='+b64u(raw));if(/^[A-Z0-9]{5}$/.test(rc))h.push('r='+rc);stat('moved');statFlush(true);location.href=NEW_SITE+(h.length?'#'+h.join('&'):'');break;}
