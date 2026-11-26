@@ -118,7 +118,7 @@ function renderMenu(){
   <div class="home">
     <button class="hero" data-a="quick"><span class="sx" aria-hidden="true"><svg class="a" viewBox="0 0 40 160"><use href="#swd"/></svg><svg class="b" viewBox="0 0 40 160"><use href="#swd"/></svg><em></em></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),done?'✓ '+t('h_done'):t('h_left',left),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
-    <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><button data-a="social">📱 ${t('d_follow')}</button></div>
+    <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><button data-a="social">📱 ${t('d_follow')}</button><button data-a="hist">📜 ${t('hiT')}</button></div>
   </div>
   <div class="mf"><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>${mtabs('menu')}`;
 }
@@ -249,7 +249,7 @@ function accLogin(){
   const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('bad');if(!cloudOn())return accDone('net');loading(true);
   accReq('signInWithPassword',F).then(j=>j.idToken?accEnter(j,F,'in'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
-function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
+function accLogout(){const p=UI.prof;cloudSync().then(()=>{p.fb={};p.pend={};p.cloudInit=1;p.wins=p.games=p.xp=p.ms=0;p.hist=[];p.passT=-1;p.name='';saveProf();UI.accMsg='out';renderAccount();renderMenu();});}
 function renderLB(){
   const s=UI.lbSort||'w',p=UI.prof,me=(p.fb||{}).uid;
   const head=`<h2 class="lbh">${t('lb')}</h2><div class="row chips"><button class="chip${s==='w'?' on':''}" data-a="lbS:w">${t('lbByW')}</button><button class="chip${s==='h'?' on':''}" data-a="lbS:h">${t('lbByH')}</button></div>`,back=`<div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
@@ -529,14 +529,30 @@ function startMatch(o){
   UI.lastOpt=opt;loading(true);
   setTimeout(()=>{G=newGame(opt);prep(G);UI.phase='spawn';UI.paused=false;UI.speed=1;buildHud();show(null);hint(t('spawn'),true);loading(false);if(opt.cheats)toast(t('cheatOn'),'prop',5000);},40);
 }
+// battle history: the last 40 games on this device, newest first
+function histAdd(g,res,xp){
+  const p=UI.prof,me=g.nations[g.human];if(!me)return;const si=SIZES.findIndex(s=>s[0]===g.W&&s[1]===g.H);
+  const e={d:Date.now(),r:res,xp:xp|0,m:g.o.daily?'d':NET.on?'o':UI.mType||'c',s:si,f:g.o.diff|0,t:Math.round(g.tick/TPS),c:me.st.cities|0,k:me.st.kills|0,ch:g.o.cheats?1:0};
+  p.hist=[e].concat(Array.isArray(p.hist)?p.hist:[]).slice(0,40);saveProf();
+}
+function renderHist(){
+  const H=Array.isArray(UI.prof.hist)?UI.prof.hist:[],w=H.filter(e=>e.r==='w').length,xs=H.reduce((a,e)=>a+(e.xp|0),0),L=UI.lang==='ar';
+  const ago=d=>{const m=Math.max(0,Math.round((Date.now()-d)/6e4));return m<1?t('hiNow'):m<60?t('hiMin',m):m<1440?t('hiHr',Math.round(m/60)):t('hiDay',Math.round(m/1440));};
+  const mm=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  const row=e=>{const R={w:['🏆',t('hiW'),'w'],l:['💀',t('hiL'),'l'],q:['🏳️',t('hiQ'),'q']}[e.r]||['•','',''];
+    const mode={q:t('hiMq'),c:t('hiMc'),d:t('hiMd'),o:t('hiMo')}[e.m]||'',sz=e.s>=0?(t('sizes')[e.s]||''):'',df=t('diffs')[e.f]||'';
+    return `<div class="hrow ${R[2]}"><div class="hres"><span>${R[0]}</span><b>${R[1]}</b></div><div class="hmid"><b>${mode}${e.ch?' 🧪':''}</b><small>${[sz,df].filter(Boolean).join(' · ')}</small><small>⏱️ ${mm(e.t)} · 🏙️ ${e.c} · 💀 ${e.k} · ${ago(e.d)}</small></div><div class="hxp">+${fmt(e.xp)}<small>⭐ ${t('xpBon')}</small></div></div>`;};
+  $('#help').innerHTML=`<div class="socH"><h2>📜 ${t('hiT')}</h2>${H.length?`<div class="hsum"><div><b>${H.length}</b><small>${t('hiG')}</small></div><div><b>${w}</b><small>${t('hiWs')}</small></div><div><b>${Math.round(w/H.length*100)}%</b><small>${t('hiRate')}</small></div><div><b>${fmt(xs)}</b><small>⭐ ${t('xpBon')}</small></div></div>`:''}</div>
+  <div class="hlist">${H.length?H.map(row).join(''):`<p class="hempty">${t('hiNone')}</p>`}</div><div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
+}
 function quitXp(){
   const g=G;if(!g||g.o.demo||!g.started||g.over||g.xpDone||g.o.cheats)return;const me=g.nations[g.human];if(!me)return;g.xpDone=true;
-  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1));if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},3800);return xp;
+  const xp=Math.round((me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1));histAdd(g,'q',g.o.cheats?0:xp);if(xp<=0)return;addStat('xp',xp);addStat('games',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},3800);return xp;
 }
 function toMenu(){const xp=quitXp();saveProf();lbPush();UI.war=false;UI.threats=[];if(NET.on)netClose();UI.phase='';startDemo();renderMenu();show('menu');if(xp)toast(t('quitXp',xp),'prop',3500);}
 function showEnd(){
   const g=G,o=g.over,p=UI.prof;if(!o||g.o.demo||UI.screen==='end')return;const me=g.nations[g.human],w=g.nations[o.w];
-  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1))+(g.o.daily&&o.win?50:0);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
+  g.xpDone=true;stat(g.o.cheats?'cheat':o.win?'wins':'loss');const cheat=!!g.o.cheats,xp=cheat?0:Math.round((10+(o.win?60:0)+me.st.cities*4+me.st.kills*15)*(g.o.daily?1.5:g.o.xpm||1))+(g.o.daily&&o.win?50:0);histAdd(g,o.win?'w':'l',xp);if(!cheat){addStat('xp',xp);addStat('games',1);if(o.win)addStat('wins',1);saveProf();setTimeout(()=>{if(canBuy(UI.prof))toast(t('bpHint'),'prop',4000);},1500);lbPush();}
   let best=cheat?`<p class="keys">🧪 ${t('cheatEnd')}</p>`:'';if(g.o.daily&&o.win){const b=p.daily[g.o.daily];if(!b||g.tick<b)p.daily={[g.o.daily]:g.tick};best=`<p class="best">${t('best',clock(p.daily[g.o.daily]))}</p>`;}
   saveProf();
   const why=o.why==='dead'?t('w_dead'):t('w_'+o.why,esc(natName(w))),st=[[t('x_time'),clock(g.tick)],[t('x_peak'),(me.st.peak/g.M.land*100).toFixed(0)+'%'],[t('x_cities'),me.st.cities],[t('x_kills'),me.st.kills],[t('x_xp'),'+'+xp]];
@@ -871,6 +887,7 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');break;
     case'social':renderSocial();show('help');break;
+    case'hist':renderHist();show('help');break;
     case'supMenu':UI.supFrom='menu';renderSupport();show('help');break;
     case'supCopy':try{navigator.clipboard.writeText(STC_PAY);toast(t('supCopied'),'prop',1500);}catch(e){}break;
     case'supSend':supSend();break;
