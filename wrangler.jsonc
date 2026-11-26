@@ -1,0 +1,9 @@
+// Cloudflare Workers: serves the ready-built game (dist/site) on sijalwar.com
+{
+  "name": "sijal",
+  "compatibility_date": "2025-11-01",
+  "assets": {
+    "directory": "./dist/site",
+    "not_found_handling": "single-page-application"
+  }
+}
