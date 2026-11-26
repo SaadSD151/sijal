@@ -659,3 +659,4 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #help,#net,#setup,#pause{background:radial-gradient(ellipse at 50% 30%,rgba(5,11,19,.8),rgba(3,8,14,.93))}
 #help .opts h3,#net .opts h3,#setup .opts h3,#setup label,#net label,#net .keys,#net p{color:#e6eef7}
 .pwb{position:relative;display:block;width:100%}.pwb input{width:100%;padding-right:46px!important;box-sizing:border-box}.pwb .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:10px;background:rgba(255,255,255,.08);font-size:18px;line-height:1;cursor:pointer}
+.ppsk{height:44px;border-radius:22px;margin:0 0 10px;animation:ppl 1.2s ease-in-out infinite}.ppsk.y{background:#ffc439}.ppsk.d{background:#2c2e2f}

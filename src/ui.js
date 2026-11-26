@@ -592,7 +592,7 @@ function ppPrep(){
 function ppMount(){
   const w=$('#ppWrap'),box=$('#ppBox'),f=UI.prof.fb||{};if(!w||!box||!f.user||!cloudOn())return;
   // shown at once with a loading line; hidden only if payments turn out to be off
-  w.hidden=false;if(!window.paypal)box.innerHTML=`<div class="ppload">⏳ ${t('ppLoad')}</div>`;
+  w.hidden=false;if(!window.paypal)box.innerHTML='<div class="ppsk y"></div><div class="ppsk d"></div>';
   const msg=(k,bad,code)=>{const m=$('#ppMsg');if(m){m.textContent=t(k)+(code?' ('+code+')':'');m.className='ppm'+(bad?' bad':' good');}if(code)stat('pperr_'+String(code).slice(0,5));};
   ppPrep().then(c=>{if(!c||!window.paypal){w.hidden=true;return;}
     const go=()=>{if(!window.paypal||!$('#ppBox'))return;$('#ppBox').innerHTML='';w.hidden=false;const alt=$('.ppalt');if(alt)alt.hidden=false;
