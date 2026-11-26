@@ -35,7 +35,8 @@ export async function claimPass(env, body) {
   // the order must be completed, captured, for the full price in dollars, and made for this very account
   if (!o || o.status !== 'COMPLETED' || !cap || cap.status !== 'COMPLETED') return json({ ok: false, why: 'unpaid' }, 402);
   if (cap.amount.currency_code !== 'USD' || +cap.amount.value < PRICE - 0.001) return json({ ok: false, why: 'amount' }, 402);
-  if (pu.custom_id !== uid) return json({ ok: false, why: 'owner' }, 403);
+  // after a capture PayPal puts the account id on the capture itself, otherwise on the purchase unit
+  if ((pu.custom_id || cap.custom_id) !== uid) return json({ ok: false, why: 'owner' }, 403);
   await db(env, '/paid/' + order, { method: 'PUT', body: JSON.stringify(uid) });
   await db(env, '/grants/' + uid, { method: 'PUT', body: JSON.stringify({ by: 'paypal', order, ts: { '.sv': 'timestamp' } }) });
   return json({ ok: true });

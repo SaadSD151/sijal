@@ -708,7 +708,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 </div>
 <script>
 (function(){"use strict";
-const BUILD_ID='0db6c5cf18';
+const BUILD_ID='173a74a231';
 // ── SIJAL · core: constants, utilities, shared data ──
 const TPS=10,SEASON_LEN=450;
 // terrain ids: 0 deep, 1 shallow, 2 plains, 3 forest, 4 desert, 5 hills, 6 mountain, 7 snow
@@ -3358,15 +3358,15 @@ function admGrant(){const u=(($('#grUser')||{}).value||'').trim().toLowerCase();
 // the instant pass: PayPal's own buttons inside the game; our server (worker/index.js) makes the order for this account and, once paid, unlocks the season
 function ppMount(){
   const w=$('#ppWrap'),box=$('#ppBox'),f=UI.prof.fb||{};if(!w||!box||!f.user||!cloudOn())return;
-  const msg=(k,bad)=>{const m=$('#ppMsg');if(m){m.textContent=t(k);m.className='ppm'+(bad?' bad':' good');}};
+  const msg=(k,bad,code)=>{const m=$('#ppMsg');if(m){m.textContent=t(k)+(code?' ('+code+')':'');m.className='ppm'+(bad?' bad':' good');}if(code)stat('pperr_'+String(code).slice(0,5));};
   fetch('/api/pay-config').then(r=>r.ok?r.json():null).then(c=>{if(!c||!c.clientId)return;
     const go=()=>{if(!window.paypal||!$('#ppBox'))return;w.hidden=false;const alt=$('.ppalt');if(alt)alt.hidden=false;
       paypal.Buttons({style:{layout:'vertical',shape:'pill',label:'pay',height:44},
         createOrder:()=>lbAuth().then(f=>fetch('/api/order',{method:'POST',body:JSON.stringify({tok:f.tok})})).then(r=>r.json()).then(j=>{if(!j||!j.id)throw 0;stat('ppstart');return j.id;}),
         onApprove:d=>{msg('ppWait');return lbAuth().then(f=>fetch('/api/pass',{method:'POST',body:JSON.stringify({order:d.orderID,tok:f.tok})})).then(r=>r.json()).then(j=>{
           if(j&&j.ok){stat('ppdone');statFlush();msg('ppOk');cloudSync().then(()=>{if(UI.screen==='help'&&$('#ppWrap'))$('#help').innerHTML=`<h2>💜</h2><p class="best">${t('supOn')}</p><div class="row"><button class="btn big ok" data-a="pass">${t('ok')}</button></div>`;});}
-          else msg(j&&j.why==='unpaid'?'ppUnpaid':'ppFail',1);}).catch(()=>msg('ppFail',1));},
-        onCancel:()=>msg('ppCancel',1),onError:()=>msg('ppFail',1)}).render('#ppBox').catch(()=>{});};
+          else msg(j&&j.why==='unpaid'?'ppUnpaid':'ppFail',1,j&&j.why||'x');}).catch(()=>msg('ppFail',1,'net'));},
+        onCancel:()=>msg('ppCancel',1),onError:e=>msg('ppFail',1,UI.relog?'login':'sdk')}).render('#ppBox').catch(()=>{});};
     if(window.paypal)return go();
     const sc=document.createElement('script');sc.src='https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(c.clientId)+'&currency=USD&intent=capture&components=buttons&enable-funding=card';sc.onload=go;document.head.appendChild(sc);}).catch(()=>{});
 }
