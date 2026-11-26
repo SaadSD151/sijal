@@ -14,10 +14,14 @@ if(STORY==='empire'){
   // the payoff first: the finished empire, then a fast rewind to the first city
   seg(TOT-46,TOT-1,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(TOT-1,0,-(TOT/18),'rew');const R=(frames.length-r0)/FPS;H+=R;
 }
+// payoff-first hooks: open on the key moment, then rewind to the start
+if(STORY==='mercy'||STORY==='survive'){const a=STORY==='mercy'?M.ask:M.alive;seg(a,a+66,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(a,0,-Math.max(1,a/18),'rew');H+=(frames.length-r0)/FPS;}
+// the tribes: a slow look over the crowded map first
+if(STORY==='tribes'){seg(0,38,.45,'hook');H=frames.length/FPS;}
 if(STORY==='upgrades'){for(let i=0;i<Math.round(2.6*FPS);i++)frames.push({s:0,fx:'hook'});}
-const STEP=STORY==='upgrades'?.4:1,main0=frames.length;seg(0,TOT-1,STEP,'main');
+const STEP=STORY==='upgrades'?.4:1,START=STORY==='tribes'?39:0,main0=frames.length;seg(START,TOT-1,STEP,'main');
 const outro=frames.length/FPS;for(let i=0;i<Math.round(2.9*FPS);i++)frames.push({s:TOT-1,fx:'out'});
-const LEN=frames.length/FPS,T=raw=>(main0+raw/STEP)/FPS;
+const LEN=frames.length/FPS,T=raw=>(main0+(raw-START)/STEP)/FPS;
 
 // ── words on screen: [from s, to s, text, style] ──
 const C={
@@ -40,13 +44,21 @@ const C={
     [T(m('nuke')),T(m('stop1')||m('doom')),'نووي؟ ☢️'],[T(m('stop1')),T(m('doom')),'<r>❌ صدّته بعد</r>','big'],[T(m('doom')),T(m('hit2'))-.15,'طيب… <y>قنبلة الفناء</y>؟ 💀'],[T(m('hit2'))+1.3,T(m('end')),'💀💀💀','big'],[T(m('end')),outro,'ما فيه شي يوقفها 😈']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
   comeback:[[0,T(m('silo')),'خسرت كل شي… 😰','hook'],[.8,T(m('silo')),'إلا <y>العاصمة</y>','hook2'],[T(m('silo')),T(m('launch')),'بقت لي ورقة وحدة 🃏'],[T(m('launch')),T(m('doom'))-.15,'على <r>عاصمته</r> مباشرة ☢️'],
     [T(m('fall')),T(m('retake')),'دولته كلها <r>انهارت</r> 💀'],[T(m('retake')),outro,'والأرض <y>رجعت لي</y> 👑']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  mercy:[[0,H-.62,'طلب مني <y>السلام</y> 🏳️','hook'],[.8,H-.62,'تتوقع وش سويت؟ 👀','hook2'],[H-.62,H,'⏪','rew'],
+    [H,H+2.4,'هجمت على جاري ⚔️'],[H+2.4,T(m('ask')),'وجيشه قاعد <r>ينهار</r> 📉'],[T(m('ask')),T(m('no')),'وفجأة… <y>طلب السلام</y> 🏳️'],[T(m('no')),T(m('crush'))+.5,'<r>لا</r> ❌','big'],
+    [T(m('crush'))+.5,T(m('kill')||m('end')),'ما فيه رحمة 😈'],[T(m('kill')),T(m('end')),'خلّصت عليه 💀'],[T(m('end')),outro,'السلام؟ بعدين 😏']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  survive:[[0,H-.62,'أخذت <y>كل مدنه</y> 🏙️','hook'],[.8,H-.62,'وما مات! 😳','hook2'],[H-.62,H,'⏪','rew'],
+    [H,T(m('cities'))+.6,'جاري عنده <y>'+(M.extra.left&&M.extra.left.find(v=>v!=null)||3)+' مدن</y> 🏙️'],[T(m('cities'))+.6,T(m('zero')),'آخذها وحدة وحدة… ⚔️'],[T(m('zero')),T(m('alive')),'كل مدنه صارت لي ✅'],
+    [T(m('alive')),T(m('hunt')),'بس <r>ما مات</r>!? 😳'],[T(m('hunt')),T(m('last')||m('kill')),'لازم آخذ <y>كل شبر</y> من أرضه'],[T(m('last')),T(m('kill')),'آخر شبر… 🔥'],[T(m('kill')),T(m('end')),'الحين <r>انتهى</r> 💀'],[T(m('end')),outro,'ما تنتهي الحرب إلا بآخر شبر 😏']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  tribes:[[0,H,'<y>'+M.extra.nt+' قبيلة</y> في الخريطة 🏕️','hook'],[.9,H,'كم أقدر آكل منها؟ ⏱️','hook2'],[H,H+1.8,'يلا نشوف… 🔥'],
+    ...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),T(X[k])+1.1,'🏕️ +'+k.slice(1),'pop']),[T(m('done')),outro,'أكلت <y>'+M.extra.eat+' قبيلة</y> 😋']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
   upgrades:[[0,2.6,'نفس الجيش… ⚔️','hook'],[.8,2.6,'بس واحد <y>طوّر</y> 🎖️','hook2'],[2.6,outro,'بدون تطوير','tA'],[2.6,outro,'🎖️ دبابات 5 + طيارات 5','tB'],
     [T(m('killB')),outro,'✅ خلّص','dB'],[T(m('killA')),outro,'✅ خلّص','dA']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0])
 }[STORY];
-const SER=M.extra.ser||null,T0hold=STORY==='swarm'?T(m('hold')):STORY==='comeback'?T(m('silo')):0;
-const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔'}[STORY];
+const SER=M.extra.ser||null,LEFT=M.extra.left||null,T0hold=STORY==='swarm'?T(m('hold')):STORY==='comeback'?T(m('silo')):0;
+const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔',mercy:'لو كنت مكاني… تقبل؟ 🤔',survive:'كم شبر تحتاج عشان تخلّص عليه؟ 😏',tribes:'كم قبيلة تقدر تاكل أنت؟ 🏕️'}[STORY];
 // big moments: white flash, punch-in and shake
-const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]]}[STORY].filter(h=>isFinite(h[0]));
+const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]],mercy:[[T(m('no'))+.33,.6,8],[T(m('kill')),.6,9]],survive:[[T(m('zero')),.5,6],[T(m('alive')),.3,3],[T(m('kill')),.7,10]],tribes:[...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]]}[STORY].filter(h=>isFinite(h[0]));
 
 (async()=>{
   fs.rmSync(OUT,{recursive:true,force:true});fs.mkdirSync(path.join(OUT,'f'),{recursive:true});
@@ -82,9 +94,11 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
   await pg.waitForTimeout(1500);await pg.evaluate(()=>document.fonts.ready);
   for(let i=0;i<frames.length;i++){
     const F=frames[i],t=i/FPS,src='file://'+path.join(RAW,'f',String(F.s).padStart(5,'0')+'.jpg');
-    await pg.evaluate(async([src,t,F,C,HITS,outro,STORY,H,ser,T0hold,UPK])=>{
+    await pg.evaluate(async([src,t,F,C,HITS,outro,STORY,H,ser,T0hold,UPK,left])=>{
       if(STORY==='upgrades'){const on=t>=2.6&&t<outro;document.getElementById('split').style.opacity=t<outro?1:0;for(const [id,k] of [['ua','killA'],['ub','killB']]){const e=document.getElementById(id),kt=UPK[k];e.style.opacity=on?1:0;const v=Math.max(0,Math.min(kt!=null&&isFinite(kt)?kt:t,t)-2.6);e.textContent='⏱️ '+v.toFixed(1)+'s';}}
       if(STORY==='speed'){const h=document.getElementById('hud2');h.style.opacity=t>=.2&&t<outro?1:0;if(ser){document.getElementById('tmr').textContent='⏱️ '+Math.floor(ser[0]/60)+':'+String(Math.floor(ser[0]%60)).padStart(2,'0');document.getElementById('pct').textContent='🗺️ '+Math.round(ser[1]*100)+'%';}}
+      if(STORY==='tribes'){const h=document.getElementById('hud2');h.style.opacity=t>=H&&t<outro?1:0;if(ser){if(ser[0]!=null)document.getElementById('tmr').textContent='⏱️ '+Math.floor(ser[0]/60)+':'+String(Math.floor(ser[0]%60)).padStart(2,'0');document.getElementById('pct').textContent='🏕️ '+ser[1];}}
+      if(STORY==='survive'){const h=document.getElementById('hud2');document.getElementById('tmr').style.display='none';const lv=left&&left[F.s];h.style.opacity=F.fx==='main'&&lv!=null&&t<outro?1:0;if(lv!=null)document.getElementById('pct').textContent='🏙️ '+lv+' مدن';}
       const bg=document.getElementById('bg');if(bg.dataset.s!==src){bg.src=src;bg.dataset.s=src;await bg.decode().catch(()=>{});}
       // flashes, punch-in and shake on the big moments
       let fl=0,sc=1,sx=0,sy=0;for(const[h,amt,shk]of HITS){const d=t-h;if(d>=0&&d<.45)fl=Math.max(fl,amt*(1-d/.45));if(d>=0&&d<.7){const k=1-d/.7;sc=Math.max(sc,1+.07*k*amt);sx+=Math.sin(t*93)*shk*k;sy+=Math.cos(t*71)*shk*k;}}
@@ -97,7 +111,7 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
       const ou=Math.max(0,Math.min(1,(t-outro)/.35));const o=document.getElementById('out');o.style.opacity=ou;
       o.querySelectorAll('.q,.s,.l,.b').forEach((e,k)=>{const v=Math.max(0,Math.min(1,(t-outro-.25-k*.22)/.25));e.style.opacity=v;e.style.transform=`translateY(${(1-v)*10}px)`;});
       document.getElementById('brand').style.opacity=t<outro?.85:0;
-    },[src,t,F,C,HITS,outro,STORY,H,SER?(SER[F.s]||SER.slice(0,F.s+1).filter(Boolean).pop()||null):null,T0hold,{killA:T(m('killA')),killB:T(m('killB'))}]);
+    },[src,t,F,C,HITS,outro,STORY,H,SER?(SER[F.s]||SER.slice(0,F.s+1).filter(Boolean).pop()||null):null,T0hold,{killA:T(m('killA')),killB:T(m('killB'))},LEFT]);
     await pg.screenshot({path:path.join(OUT,'f',String(i).padStart(5,'0')+'.jpg'),type:'jpeg',quality:92});
     if(i%90===0)process.stdout.write((i/FPS).toFixed(0)+'s ');
   }

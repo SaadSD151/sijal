@@ -135,6 +135,39 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
       if(kl){impact(kl,.8);chime(kl+.1);}
       if(endS)pad(endS,[155.56,233.08,311.13],end-endS+.4,.07);
       outroHits();
+    }else if(M.story==='mercy'){
+      // hook: a held breath over the peace request, a tape rewind; a war march; a soft chime for the white flag, a hard NO, then no mercy
+      const h=M.hook,ask=m('ask'),no=m('no'),cr=m('crush'),kl=m('kill'),endS=m('end');
+      pad(0,[146.83,174.61,220],h,.06);for(let t=.2;t<h-.6;t+=.6)heart(t,.8);chime(.3);tape(h-.62,.6);
+      for(let t=h;t<(ask||h+5);t+=.3){const i=Math.round((t-h)/.3);if(i%4===0)taiko(t,.75);if(i%4===2)snare(t,.6);hat(t+.15,.5);if(i%8===0)sub(t,55,2.4,.3);}
+      ost(h,(ask||h+5),[73.42,87.31,98,110,98,87.31],.15,.04);
+      if(ask){silence(ask,Math.max(.6,(no||ask+2)-ask));chime(ask+.05);chime(ask+.4);pad(ask,[293.66,369.99,440],(no||ask+2)-ask,.05);}
+      if(no){impact(no+.33,1);braam(no+.33,1);}
+      if(cr)for(let t=cr+.4;t<end;t+=.25){const i=Math.round((t-cr)/.25);if(i%4===0)taiko(t);if(i%4===2)snare(t);hat(t,.6);if(i%8===0)sub(t,46.25,2,.45);if(i%8===0)brass(t,[155.56,233.08],.9,.12);}
+      if(kl){impact(kl,.8);chime(kl+.1);}
+      if(endS)pad(endS,[146.83,220,293.66],end-endS+.4,.07);
+      outroHits();
+    }else if(M.story==='survive'){
+      // hook: a big question; a steady march as the cities fall; dead air when he is still alive; then a racing hunt to the last tile
+      const h=M.hook,ci=m('cities'),z=m('zero'),al=m('alive'),hu=m('hunt'),la=m('last'),kl=m('kill'),endS=m('end');
+      braam(0,1);choir(0,h-.6,[146.83,220],.05);taiko(.6,.8);tape(h-.62,.6);
+      for(let t=h;t<(al||h+6);t+=.3){const i=Math.round((t-h)/.3);if(i%4===0)taiko(t,.75);if(i%4===2)snare(t,.6);hat(t+.15,.5);if(i%8===0)sub(t,55,2.4,.3);}
+      for(const k of['c0','c1','c2','c3','c4'])if(m(k))chime(m(k));
+      if(z){impact(z,.6);brass(z,[146.83,185,220],1,.14);}
+      if(al){silence(al,Math.max(.6,(hu||al+2)-al));choir(al,(hu||al+2)-al,[138.59,207.65],.06);heart(al+.2,1);heart(al+.8,1);}
+      if(hu){riser(hu-.5,.5,.2);for(let t=hu;t<end;t+=.25){const i=Math.round((t-hu)/.25);if(i%4===0)taiko(t);if(i%4===2)snare(t);hat(t,.6);if(i%8===0)sub(t,i%16?55:73.42,2,.4);}ost(hu,(kl||end),[73.42,110,98,110,87.31,110],.12,.045);}
+      if(la)riser(la,Math.max(.4,(kl||la+1)-la),.3);
+      if(kl){impact(kl,1);braam(kl,.8);chime(kl+.1);}
+      if(endS)pad(endS,[146.83,185,220,293.66],end-endS+.4,.07);
+      outroHits();
+    }else if(M.story==='tribes'){
+      // a slow, wide opening over the crowded map; then a ticking clock and a driving beat, a chime every 20 tribes
+      const h=M.hook;pad(0,[73.42,110,146.83],h,.07);choir(0,h,[220,293.66],.04);taiko(.2,.7);[7,8,9,10].forEach((d,i)=>pluck(.4+i*.5,H[d]));riser(h-.8,.8,.2);
+      for(let t=h;t<end;t+=.5)osc(t,1800,.03,'square',.05,{lp:4000,dst:fx});taiko(h);
+      for(let t=h;t<end;t+=.25){const i=Math.round((t-h)/.25);if(i%4===0)kick(t);if(i%4===2)clap(t,.8);hat(t,.6);if(i%8===0)sub(t,[55,61.74,65.41,73.42][(i/8)%4],2,.35);if(i%2===0)pluck(t,H[[7,9,10,9,8,7,6,7][(i/2)%8]],.1);}
+      for(const k of Object.keys(M))if(/^t\d+$/.test(k)&&+k.slice(1)%20===0)chime(M[k]);
+      if(m('done'))impact(m('done'),.8);
+      outroHits();
     }else if(M.story==='speed'){
       // a ticking clock over a driving beat from the first frame to the last
       for(let t=0;t<end;t+=.5)osc(t,1800,.03,'square',.05,{lp:4000,dst:fx});taiko(0);taiko(.4,.8);

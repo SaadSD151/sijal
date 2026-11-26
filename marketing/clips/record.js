@@ -4,8 +4,8 @@
 // Writes <outdir>/f/00000.jpg… (1080x1920) and <outdir>/marks.json (scene name -> frame index).
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path');
 const STORY=process.argv[2]||'empire',OUT=path.resolve(process.argv[3]||'clip-'+STORY),FPS=30;
-const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99},SEED=+(process.argv[4]||SEEDS[STORY]);
-const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'}}[STORY];
+const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99,mercy:111,survive:122,tribes:133},SEED=+(process.argv[4]||SEEDS[STORY]);
+const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'},mercy:{type:'continents',fac:'hawks'},survive:{type:'continents',fac:'hawks'},tribes:{type:'continents',fac:'hawks'}}[STORY];
 
 // helpers that live in the page
 function lib(){
@@ -193,6 +193,72 @@ const STORIES={
     {name:'retake',max:150,tpf:3,start:()=>{const me=KL.me();me.troops=Math.max(me.troops,60000);KL.mark('retake');},
       frame:k=>{const me=KL.me();if(k%2===0)KL.expand(.5);KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.6));return false;}}
   ]
+  ,
+  // ── 'he begged for peace': a war going his way… until he sends a peace request; I say no ──
+  mercy:[
+    {name:'war',max:240,tpf:2,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});KL.preroll(160,.3);const K=g.nations.length;for(let s2=0;s2<3000&&me.tiles<3500;s2++){__sijal.run(1);if(s2%5===0)KL.expand(.35);me.troops=Math.max(me.troops,me.maxT*.5);}
+        // a real realm next door, smaller than us (a losing side only asks a bigger one for peace); grow until there is one
+        let o=null;for(let tr=0;tr<12&&!o;tr++){if(tr)for(let s2=0;s2<200;s2++){__sijal.run(1);if(s2%5===0){KL.expand(.35);
+            // boxed in: swallow the weakest neighbour off camera to get room
+            if(!g.attacks.some(q=>q.a===me.id&&q.d)){let w=null;for(const n of g.nations)if(n&&n.alive&&n.id!==me.id&&g.nb[me.id*K+n.id]>0&&(!w||n.troops<w.troops))w=n;if(w){me.troops=Math.max(me.troops,w.troops*3+20000);__sijal.fn.launchAttack(g,me.id,w.id,.5,-1,-1);}}}}
+          for(const n of g.nations)if(KL.major(n)&&g.nb[me.id*K+n.id]>0&&n.tiles<me.tiles*.8&&n.tiles>500&&(!o||n.tiles>o.tiles))o=n;
+          window.__dbg=(window.__dbg||[]).concat([[me.tiles,g.nations.filter(n=>KL.major(n)&&g.nb[me.id*K+n.id]>0).map(n=>n.tiles).join('/')]]);}
+        o=o||KL.neighbor(1);window.__o=o.id;window.__al=[];window.__oc={x:o.cx,y:o.cy};
+        for(const n of g.nations)if(n&&!n.human&&n!==o){n.ai.nextWar=1e9;n.ai.peaceAt=1e9;}g.peaceCd=0;o.ai.peaceAt=-1e9;
+        o.troops=Math.max(o.troops,30000);me.troops=Math.max(me.troops,o.troops*2.2);__sijal.fn.launchAttack(g,me.id,o.id,.15,-1,-1);
+        const c=KL.contact(o.id);window.__c=c;KL.cam(c.x*.6+o.cx*.4,c.y*.6+o.cy*.4,Math.max(3.6,KL.zFor(o.tiles*.7)));window.__CT.snap=1;},
+      frame:k=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];if(g.proposals.some(p=>p.from===o.id&&p.to===me.id)){KL.mark('ask');window.__keepTs=1;return true;}
+        window.__al.push(o.alive?o.tiles:-1);if(k%8===0&&!KL.atkOn(o.id))__sijal.fn.launchAttack(g,me.id,o.id,.12,-1,-1);me.troops=Math.max(me.troops,o.troops*2.2);
+        const c=KL.contact(o.id)||window.__c;KL.cam(c.x*.6+o.cx*.4,c.y*.6+o.cy*.4,Math.max(3.6,KL.zFor(o.tiles*.7)));return false;}},
+    {name:'ask',max:80,tpf:0,start:()=>{window.__keepTs=1;},frame:k=>{const o=__sijal.G.nations[window.__o],c=KL.contact(o.id)||window.__c;KL.cam(c.x*.6+o.cx*.4,c.y*.6+o.cy*.4,Math.max(3.6,KL.zFor(o.tiles*.7)));return false;}},
+    {name:'no',max:20,tpf:0,start:()=>{window.__keepTs=1;const b=document.querySelector('.ts [data-a^="rej:"]');if(b)b.classList.add('pressed');},frame:k=>{if(k===10){__sijal.act('rej:'+window.__o);window.__keepTs=0;}return false;}},
+    {name:'crush',max:130,tpf:7,start:()=>{window.__keepTs=0;},
+      frame:k=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];if(k===0)window.__t0=o.tiles;if(!o.alive||o.tiles<window.__t0*.25){KL.mark('kill');window.__dead=window.__dead||k;return k>window.__dead+16;}
+        me.troops=Math.max(me.troops,o.troops*4,150000);if(!KL.atkOn(o.id))__sijal.fn.launchAttack(g,me.id,o.id,.8,-1,-1);
+        const oc=window.__oc;KL.cam(oc.x,oc.y,Math.max(2.6,KL.zFor(window.__t0*.9)));return false;}},
+    {name:'end',max:42,tpf:2,start:()=>{},frame:k=>{const me=KL.me();KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.6));return false;}}
+  ],
+  // ── 'I took every city… and he is still alive': cities fall one by one, then every last tile has to be taken ──
+  survive:[
+    {name:'look',max:60,tpf:1,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});KL.preroll(200,.3);const K=g.nations.length;
+        let o=null;for(const n of g.nations)if(KL.major(n)&&g.nb[me.id*K+n.id]>3&&n.tiles>1500&&(!o||n.tiles>o.tiles))o=n;o=o||KL.neighbor(1);window.__o=o.id;
+        for(const n of g.nations)if(n&&!n.human){n.ai.nextWar=1e9;}o.ai.nextBuild=1e9;o.gold=0;
+        // three cities to take, spread over his land
+        for(let t=0;t<6&&KL.cities(o.id).length<3;t++){const cs=KL.cities(o.id);KL.placeNear(o,'city',o.cx+(t%2?6:-6),o.cy+(t>2?5:-5),5);}
+        while(KL.cities(o.id).length>3){const cs=KL.cities(o.id).filter(s=>!s.capital);const s=cs[cs.length-1];s.dead=true;__sijal.G.structAt[s.i]=0;}
+        o.troops=Math.max(o.troops,60000);me.troops=Math.max(me.troops,140000);window.__n0=KL.cities(o.id).length;
+        KL.cam(o.cx,o.cy,Math.max(2.6,KL.zFor(o.tiles*1.5)));window.__CT.snap=1;},
+      frame:k=>{const o=__sijal.G.nations[window.__o];KL.cam(o.cx,o.cy,Math.max(2.6,KL.zFor(o.tiles*1.5)));return false;}},
+    {name:'cities',max:420,tpf:1,start:()=>{window.__left=[];},
+      frame:k=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o],cs=KL.cities(o.id);window.__left[window.__F]=cs.length;
+        if(window.__last!=null&&cs.length<window.__last)KL.mark('c'+(window.__n0-cs.length));window.__last=cs.length;
+        if(!cs.length){KL.mark('zero');window.__z=window.__z||k;return k>window.__z+10;}
+        const t=cs.sort((a,b)=>KL.d2(a,{x:me.cx,y:me.cy})-KL.d2(b,{x:me.cx,y:me.cy}))[0];
+        if(!KL.atkOn(o.id)){me.troops=Math.max(me.troops,o.troops*1.6);__sijal.fn.launchAttack(g,me.id,o.id,.3,t.x,t.y,true);}
+        KL.cam(t.x,t.y,4.4);return false;}},
+    {name:'alive',max:70,tpf:1,start:()=>{const g=__sijal.G;for(const q of g.attacks)if(q.a===KL.me().id)q.cancel=true;},
+      frame:k=>{const o=__sijal.G.nations[window.__o];window.__left[window.__F]=0;KL.cam(o.cx,o.cy,Math.max(2.4,KL.zFor(o.tiles*1.8)));return false;}},
+    {name:'hunt',max:360,tpf:1,start:()=>{},
+      frame:k=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];window.__left[window.__F]=0;if(!o.alive){KL.mark('kill');window.__dead=window.__dead||k;return k>window.__dead+16;}
+        if(o.tiles<60)KL.mark('last');
+        if(!KL.atkOn(o.id)){me.troops=Math.max(me.troops,o.troops*2.5);__sijal.fn.launchAttack(g,me.id,o.id,.35,-1,-1);}
+        KL.cam(o.cx,o.cy,Math.max(2.6,KL.zFor(o.tiles*1.5)));return false;}},
+    {name:'end',max:40,tpf:2,start:()=>{},frame:k=>{const me=KL.me();KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.6));return false;}}
+  ],
+  // ── 'a map full of tribes': how many can I eat before the big realms do? A clock and a counter ──
+  tribes:[
+    {name:'map',max:80,tpf:0,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});window.__nt=g.nations.filter(n=>n&&n.alive&&n.minor).length;KL.cam(g.W/2,g.H/2,.1);window.__CT.snap=1;window.__ser=[];window.__eat=0;window.__mine=new Set();},
+      frame:k=>{const g=__sijal.G,me=KL.me();window.__ser[window.__F]=[0,0];if(k>40)KL.cam(me.cap.x,me.cap.y,3.2);else KL.cam(g.W/2,g.H/2,.1);return false;}},
+    {name:'race',max:330,tpf:5,start:()=>{const g=__sijal.G;for(const n of g.nations)if(n&&!n.human&&!n.minor)n.ai.nextWar=1e9;KL.mark('go');},
+      frame:k=>{const g=__sijal.G,me=KL.me(),K=g.nations.length;
+        for(const id of [...window.__mine]){const n=g.nations[id];if(!n.alive){window.__mine.delete(id);window.__eat++;window.__lastEat=k;KL.mark('t'+window.__eat);}else if(!KL.atkOn(id))window.__mine.delete(id);}
+        if(k>150&&k-(window.__lastEat||0)>40)return true;
+        // always pressing two or three tribes at once, and the free land around
+        let busy=window.__mine.size;const T=g.nations.filter(n=>n&&n.alive&&n.minor&&g.nb[me.id*K+n.id]>0&&!window.__mine.has(n.id)).sort((a,b)=>a.troops-b.troops);
+        for(const n of T){if(busy>=3)break;if(me.troops>n.troops*1.6+3000){const r=__sijal.fn.launchAttack(g,me.id,n.id,Math.min(.5,(n.troops*1.8+2000)/me.troops),-1,-1);if(r&&typeof r==='object'){window.__mine.add(n.id);busy++;}}}
+        me.troops=Math.max(me.troops,12000+me.tiles*6);if(k%3===0)KL.expand(.2);window.__ser[window.__F]=[g.tick/10,window.__eat];KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.5));return false;}},
+    {name:'end',max:60,tpf:2,start:()=>{KL.mark('done');},frame:k=>{const g=__sijal.G,me=KL.me();window.__ser[window.__F]=[null,window.__eat];KL.cam(me.cx,me.cy,KL.zFor(me.tiles*2.6));return false;}}
+  ]
 };
 
 (async()=>{
@@ -208,7 +274,7 @@ const STORIES={
   await pg.evaluate(lib);
   await pg.evaluate(()=>{KL.coastOf=n=>{const g=__sijal.G,W=g.W,r=[];for(let i=W;i<g.N-W;i++){if(g.owner[i]!==n.id)continue;const t=g.M.ter;if(t[i+1]<2||t[i-1]<2||t[i+W]<2||t[i-W]<2)r.push(i);}r.sort((a,b)=>((a%W-n.cap.x)**2+(((a/W)|0)-n.cap.y)**2)-((b%W-n.cap.x)**2+(((b/W)|0)-n.cap.y)**2));
       const out=[];for(const i of r){if(out.every(j=>(i%W-j%W)**2+(((i/W)|0)-((j/W)|0))**2>36))out.push(i);if(out.length>=6)break;}return out;};});
-  await pg.evaluate(()=>{const st=document.createElement('style');st.textContent='#hud,#amode,#feed,#hint,#fpick,.anx,#threat,#mini,#lb,#menu,#help,#net,#end,.ts,#radial{display:none!important}';document.head.appendChild(st);window.__CT={};window.__ZM=1;});
+  await pg.evaluate(()=>{const st=document.createElement('style');st.textContent='#hud,#amode,#feed,#hint,#fpick,.anx,#threat,#mini,#lb,#menu,#help,#net,#end,#radial,body:not(.keepts) .ts{display:none!important}.ts .pressed{transform:scale(.9);filter:brightness(1.3)}body.keepts #hud{display:block!important;pointer-events:none}body.keepts #hud>*:not(#toasts){display:none!important}body.keepts #toasts{top:58%!important;bottom:auto!important;transform:translateX(-50%) scale(1.08)!important;transform-origin:50% 0;width:80vw!important;max-width:80vw!important}';document.head.appendChild(st);window.__CT={};window.__ZM=1;});
   await pg.evaluate(t=>{const S=__sijal;Object.assign(S.UI.prof,{size:1,botsN:10,diff:1,type:t});S.act('go');},SETUP.type);
   await pg.clock.runFor(400);await pg.evaluate(()=>{__sijal.R.q=2;});
   const marks={};let f=0;
@@ -222,7 +288,7 @@ const STORIES={
           V.vx+=(w*w*(C.x-V.x)-2*w*V.vx)*dt;V.vy+=(w*w*(C.y-V.y)-2*w*V.vy)*dt;V.vz+=(w*w*(lz-V.lz)-2*w*V.vz)*dt;V.x+=V.vx*dt;V.y+=V.vy*dt;V.lz+=V.vz*dt;
           const vw=innerWidth,vh=innerHeight,z=Math.max(Math.exp(V.lz),Math.max(vw/g.W,vh/g.H)*1.04),hx=vw/2/z,hy=vh/2/z,cl=(v,a,b)=>a>b?(a+b)/2:Math.max(a,Math.min(b,v));
           cam.tz=cam.z=z;cam.tx=cam.x=cl(V.x,hx,g.W-hx);cam.ty=cam.y=cl(V.y,hy,g.H-hy);}
-        for(const d of document.querySelectorAll('.ts'))d.remove();return !!done;},[sc.frame?sc.frame.toString():null,k,sc.tpf,f]);
+        if(!window.__keepTs)for(const d of document.querySelectorAll('.ts'))d.remove();else for(const d of document.querySelectorAll('.ts:not(.prop)'))d.remove();document.body.classList.toggle('keepts',!!window.__keepTs);return !!done;},[sc.frame?sc.frame.toString():null,k,sc.tpf,f]);
       const slow=sc.slow?await pg.evaluate(([fn,k])=>eval('('+fn+')')(k),[sc.slow.toString(),k]):1;
       await pg.clock.runFor(1000/FPS*slow);
       await pg.screenshot({path:path.join(OUT,'f',String(f).padStart(5,'0')+'.jpg'),type:'jpeg',quality:92});f++;
@@ -232,7 +298,7 @@ const STORIES={
   }
   marks.total=f;
   // extra moments the editor and the music need
-  const extra=await pg.evaluate(()=>({dbg:window.__dbg,ser:window.__ser||null,M:window.__M||{},boomAt:window.__boomAt,fall:window.__fall,dead:window.__dead,landK:window.__landK,took:window.__took,state:(()=>{const g=__sijal.G,me=g.nations[g.human];return{alive:me.alive,tiles:me.tiles};})()}));
+  const extra=await pg.evaluate(()=>({dbg:window.__dbg,ser:window.__ser||null,left:window.__left||null,al:window.__al?window.__al.filter((v,i)=>i%20===0):null,nt:window.__nt,eat:window.__eat,M:window.__M||{},boomAt:window.__boomAt,fall:window.__fall,dead:window.__dead,landK:window.__landK,took:window.__took,state:(()=>{const g=__sijal.G,me=g.nations[g.human];return{alive:me.alive,tiles:me.tiles};})()}));
   marks.extra=extra;
   fs.writeFileSync(path.join(OUT,'marks.json'),JSON.stringify(marks));
   console.log('\n'+STORY,JSON.stringify(marks),errs.length?'ERR '+errs.join('|'):'no errors');
