@@ -1133,7 +1133,13 @@ function handleEvents(){
       case'rebel':feed(t('m_rebel',nmh(D)),e.d===me?'bad':'');addFx('ring',e.x,e.y,{r:9,col:'#ff7a4a',dur:1500});break;
       case'plague':feed(t('m_plague',nmh(D)),e.d===me?'bad':'');break;
       case'caravan':feed(t('m_caravan'),'good');sfx('coin');break;
-      case'launch':{const nm=t('s_'+e.type);if(e.a===me)sfx('launch');else if(e.d===me){feed(t('m_incoming',nm),'bad');banner(t('m_incoming',nm),'bad');sfx('alert');}else if(e.type!=='rocket')feed(t('m_launch',nmh(A),nm),'warn');break;}
+      case'launch':{const nm=t('s_'+e.type);if(e.a===me)sfx('launch');else if(e.d===me){
+        // say where it lands (the nearest city of mine) and how long is left, and sound the siren
+        let city=null,cd=1e9;for(const c of g.structs)if(!c.dead&&c.type==='city'&&c.owner===me){const d=(c.x-e.x)**2+(c.y-e.y)**2;if(d<cd){cd=d;city=c;}}
+        const M=g.missiles.find(q=>q.tx===e.x&&q.ty===e.y&&q.a===e.a),secs=M?Math.ceil(M.dur*(1-M.t)/TPS):0,where=city&&cd<=225?t('incCity',cityName(city.name,UI.lang)):t('incLand');
+        const ic=e.type==='rocket'?'🚀':e.type==='nuke'?'☢️':'💀',msg=t('m_inc2',ic,nm,where,secs);feed(msg,'bad');banner(msg,'bad');sfx('siren');setTimeout(()=>sfx('siren'),1400);
+        if(UI.mob&&navigator.vibrate)try{navigator.vibrate([200,100,200,100,400]);}catch(_){}
+        if(city&&cd<=225)(UI.threats||(UI.threats=[]));}else if(e.type!=='rocket')feed(t('m_launch',nmh(A),nm),'warn');break;}
       case'monBuilt':if(e.a===me){banner(t('m_monYou'));feed(t('m_monYou'),'warn');}else{banner(t('m_mon',natName(A)),'bad');feed(t('m_mon',nmh(A)),'bad');sfx('alert');}break;
       case'monLost':feed(t('m_monLost',nmh(A)));break;
       case'coalition':if(e.d===me){banner(t('m_coalYou'),'bad');feed(t('m_coalYou'),'bad');sfx('alert');}else feed(t('m_coal',nmh(D)),'warn');break;

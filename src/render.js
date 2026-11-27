@@ -443,7 +443,18 @@ function draw(g,dt,ts){
       {const ng=c.createRadialGradient(-L*.6,0,0,-L*.6,0,L*.85);ng.addColorStop(0,'rgba(255,235,170,.95)');ng.addColorStop(.35,'rgba(255,150,40,.6)');ng.addColorStop(1,'rgba(255,70,10,0)');c.globalCompositeOperation='lighter';c.fillStyle=ng;c.beginPath();c.arc(-L*.6,0,L*.85,0,7);c.fill();c.globalCompositeOperation='source-over';}
       mslFlame(c,L*(m.type==='doom'?1.5:1.35),Hh*(m.type==='doom'?.42:.5),ts,m.type==='doom'?'rgba(255,90,30,.95)':'rgba(255,170,50,.95)');
       c.translate(-L*.08,0);c.drawImage(sp,-L*.5,-Hh/2,L,Hh);c.restore();}
-    c.strokeStyle='rgba(255,84,64,.85)';c.setLineDash([6,5]);c.lineWidth=1.6;c.beginPath();c.arc(tp.x,tp.y,MSL[m.type].r*z,0,7);c.stroke();c.setLineDash([]);
+    // a missile coming for my land: a pulsing red target with a countdown, and an arrow at the screen edge when the spot is off screen
+    const inc=me&&g.owner[m.ty*g.W+m.tx]===me&&m.a!==me;
+    if(inc){const now=performance.now(),pu=.5+.5*Math.sin(now/140),R0=Math.max(14,MSL[m.type].r*z),secs=Math.max(0,Math.ceil((1-m.t)*m.dur/TPS)),ic=m.type==='rocket'?'🚀':m.type==='nuke'?'☢️':'💀';
+      const on=tp.x>-R0&&tp.y>-R0&&tp.x<cw+R0&&tp.y<ch+R0;
+      if(on){c.fillStyle=`rgba(255,40,30,${.12+.12*pu})`;c.beginPath();c.arc(tp.x,tp.y,R0,0,7);c.fill();c.strokeStyle=`rgba(255,70,50,${.7+.3*pu})`;c.lineWidth=3;c.beginPath();c.arc(tp.x,tp.y,R0,0,7);c.stroke();
+        c.lineWidth=2;c.beginPath();c.arc(tp.x,tp.y,R0*(.55+.15*pu),0,7);c.stroke();
+        c.beginPath();c.moveTo(tp.x-R0-8,tp.y);c.lineTo(tp.x-R0*.35,tp.y);c.moveTo(tp.x+R0*.35,tp.y);c.lineTo(tp.x+R0+8,tp.y);c.moveTo(tp.x,tp.y-R0-8);c.lineTo(tp.x,tp.y-R0*.35);c.moveTo(tp.x,tp.y+R0*.35);c.lineTo(tp.x,tp.y+R0+8);c.stroke();
+        c.font=`800 ${Math.round(clamp(R0*.45,16,30))}px ${FONT}`;c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';c.direction='ltr';txt(c,ic+' '+secs,tp.x,tp.y-R0-18,'#ff8a7a');c.direction='inherit';}
+      else{const m2=56,cx=cw/2,cy=ch/2,an=Math.atan2(tp.y-cy,tp.x-cx),kk=Math.min((cx-m2)/Math.abs(Math.cos(an)||1e-6),(cy-m2-70)/Math.abs(Math.sin(an)||1e-6)),ax=cx+Math.cos(an)*kk,ay=cy+Math.sin(an)*kk;
+        c.fillStyle=`rgba(255,${50+40*pu|0},40,${.8+.2*pu})`;c.save();c.translate(ax,ay);c.rotate(an);c.beginPath();c.moveTo(40,0);c.lineTo(-20,-26);c.lineTo(-7,0);c.lineTo(-20,26);c.closePath();c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';c.lineJoin='round';c.stroke();c.fill();c.restore();
+        c.font=`800 18px ${FONT}`;c.lineWidth=4;c.strokeStyle='rgba(6,12,20,.9)';c.direction='ltr';txt(c,ic+' '+secs,ax-Math.cos(an)*44,ay-Math.sin(an)*44,'#ffb0a0');c.direction='inherit';}}
+    else{c.strokeStyle='rgba(255,84,64,.85)';c.setLineDash([6,5]);c.lineWidth=1.6;c.beginPath();c.arc(tp.x,tp.y,MSL[m.type].r*z,0,7);c.stroke();c.setLineDash([]);}
   }
   for(const p of g.pending){
     const q=w2s(p.x+.5,p.y+.5),k=clamp(1-(p.at-g.tick)/50,0,1),rr=(p.type==='tsunami'?10:6)*z;
