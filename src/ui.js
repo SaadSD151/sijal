@@ -122,7 +122,7 @@ function renderMenu(){
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),(done?'✓ '+t('h_done'):t('h_left',left))+(dStreakNow(p)?' · 🔥'+dStreakNow(p):''),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><button data-a="social">📱 ${t('d_follow')}</button><button data-a="hist">📜 ${t('hiT')}</button></div>
   </div>
-  <div class="mf"><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span></div>${mtabs('menu')}`;
+  <div class="mf"><span class="made">${t('made')}</span><span class="made beta">${t('beta')}</span><span class="legal"><button data-a="legal:terms">${t('lgTerms')}</button>·<button data-a="legal:privacy">${t('lgPriv')}</button>·<span>© 2026 سِجال</span></span></div>${mtabs('menu')}`;
 }
 // small preview of each world shape, generated once from a fixed seed
 const THUMB={};
@@ -162,6 +162,9 @@ function renderSetup(){
   ${host?`<div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>`:''}
   ${NET.on&&NET.host?`<div class="row"><button class="btn" data-a="lobbyBack">${t('lobby')} (${NET.players.length})</button><button class="btn big" data-a="netStart">${t('startNet')}</button></div>`:`${host?`<div class="row"><button class="btn" data-a="online">${t('back')}</button><button class="btn big" data-a="hostRoom">${t('hostRoom')}</button></div>`:`<div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`}`}`;
 }
+// terms of service and privacy policy
+function renderLegal(k){const L=t(k==='terms'?'lgT':'lgP');
+  $('#help').innerHTML=`<h2>${t(k==='terms'?'lgTerms':'lgPriv')}</h2><div class="lgl"><p class="lgd">${t('lgDate')}</p>${L.map(x=>`<h3>${x[0]}</h3><p>${x[1]}</p>`).join('')}</div><div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;}
 // how to play: the short version first, then every topic in detail with a picture from the game (pictures live next to the page on the website)
 function renderHelp(){
   const web=/^https?:/.test(location.protocol);
@@ -1057,6 +1060,7 @@ function act(a){
     case'rkPick':p.rankPick=+v;saveProf();lbPush();renderRanks();break;
     case'lvShow':p.hideLv=v==='0'?1:0;saveProf();lbPush();renderAccount();break;
     case'gGo':gGo(v);break;
+    case'legal':renderLegal(v);show('help');break;
     case'eye':{const i=$('#'+v),b=document.querySelector(`[data-a="eye:${v}"]`);if(i){const sh=i.type==='password';i.type=sh?'text':'password';if(b)b.textContent=sh?'🙈':'👁️';i.focus();}break;}
     case'acHintGo':case'acHintX':{UI.prof.accHint=1;saveProf();const d=$('#acchint');if(d)d.remove();if(a==='acHintGo'){stat('acchgo');act('account');}break;}
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
