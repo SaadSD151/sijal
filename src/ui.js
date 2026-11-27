@@ -441,7 +441,7 @@ function renderAccount(){
   const tabs=`<div class="actabs">${[['prog','📈',t('acT_prog')],['look','🎨',t('acT_look')],['login',I?'✅':'🔐',t('acT_login')]].map(([k,ic,lb])=>`<button class="${tab===k?'on':''}" data-a="accTab:${k}">${ic} ${lb}</button>`).join('')}</div>`;
   let body='';
   if(tab==='prog'){
-    body=`<div class="acst">${[['🏆',t('wins'),fmt(p.wins)],['🎮',t('accGames'),fmt(p.games)],['⭐',t('x_xp'),fmt(lifeXp(p))],['⏱️',t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><i>${x[0]}</i><b>${x[2]}</b><small>${x[1]}</small></div>`).join('')}</div>
+    body=`<div class="acst">${[['🏆',t('wins'),fmt(p.wins)],['🎮',t('accGames'),fmt(p.games)],['🪙',t('x_xp'),fmt(p.xp|0)],['⏱️',t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><i>${x[0]}</i><b>${x[2]}</b><small>${x[1]}</small></div>`).join('')}</div>
     <div class="acbox acrk"><div><small>${t('rank')}</small><span class="rkt ${rankCls(rs)}">${t('ranks')[rs]}</span>${rk<40?`<small>${t('accNext',rk*25+1-p.wins,t('ranks')[rk+1])}</small>`:''}</div><button class="btn sm" data-a="ranks">${t('allRanks')}</button></div>
     ${nx?`<p class="acnote">🎁 ${t('lvNext',nx[0],t('sk_'+nx[2]))}</p>`:''}${lvRoad(p,L)}${lvHow()}`;lvRoadScroll();
   }else if(tab==='look'){
