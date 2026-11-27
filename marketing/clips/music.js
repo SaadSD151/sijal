@@ -178,6 +178,35 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
       if(kl){impact(kl,.8);chime(kl+.1);}
       if(endS)pad(endS,[146.83,220,293.66],end-endS+.4,.07);
       outroHits();
+    }else if(M.story==='levels'){
+      // a shimmering question; a tape rewind; then a beat that climbs with the levels, a chime on every new frame, and a crown hit at 1000
+      const h=M.hook,m0=M.main,pk=M.peak,l1=M.l100;
+      pad(0,[73.42,110,146.83],h,.06);choir(0,h,[293.66,369.99],.04);for(const t of[.3,.9,1.5])chime(t);tape(h,M.main-h);
+      for(let t=m0+1.3,i=0;t<pk;t+=.25,i++){if(i%4===0)kick(t);if(i%4===2)clap(t,.7);hat(t,.5);if(i%8===0)sub(t,[55,61.74,65.41,73.42][(i/8)%4],2,.3);if(i%2===0)pluck(t,H[[7,9,10,9,8,7,6,7][(i/2)%8]],.08);}
+      for(const t of M.tiers||[])chime(t);
+      if(l1){impact(l1,.6);brass(l1,[146.83,185,220],.9,.12);}
+      riser(pk-1.4,1.4,.3);impact(pk,1);braam(pk,.9);brass(pk+.05,[146.83,220,293.66],2,.16);choir(pk,end-pk,[293.66,369.99,440],.05);
+      outroHits();
+    }else if(M.story==='royale'){
+      // a wide, slow choir over the map; then a war drum that speeds up as the realms fall; one big hit when I am the last
+      const h=M.hook,n20=m('n20'),n10=m('n10'),n3=m('n3'),n0=m('n0');
+      braam(0,.9);choir(0,h,[146.83,220,293.66],.05);pad(0,[73.42,110],h,.06);taiko(.5,.7);riser(h-.8,.8,.2);
+      const fast=t=>t<(n10||1e9)?.3:t<(n3||1e9)?.25:.2;
+      for(let t=h,i=0;t<(n0||end);t+=fast(t),i++){if(i%4===0)taiko(t,.8);if(i%4===2)snare(t,.55);hat(t+.05,.45);if(i%8===0)sub(t,[55,61.74,65.41,73.42][(i/8)%4],1.8,.32);if(i%2===0)pluck(t,H[[7,9,10,9,8,7,6,7][(i/2)%8]],.08);}
+      for(const k of['n20','n15','n10','n5'])if(m(k))chime(m(k));
+      if(n3){riser(n3,Math.max(.5,(n0||n3+1)-n3),.3);brass(n3,[146.83,185,220],1,.12);}
+      if(n0){impact(n0,1);braam(n0,.8);brass(n0+.05,[146.83,220,293.66],2,.16);choir(n0,end-n0,[293.66,369.99,440],.05);}
+      outroHits();
+    }else if(M.story==='rain'){
+      // the blasts up front; then quiet tension: heartbeats and a siren; a count-in, and four impacts
+      const h=M.hook,si=m('silos'),la=m('launch'),af=m('after');
+      impact(.2,1);boom(.25);tape(h-.62,.6);
+      pad(h,[73.42,110,138.59],(la||h+6)-h,.06);for(let t=h+.3;t<(la||h+6);t+=.9)heart(t,.9);
+      if(si){braam(si,.8);siren(si+.3,Math.max(.8,(la||si+3)-si-.3));}
+      if(la){whoosh(la,.9);taiko(la);riser(la,Math.max(.4,(m('b1')||la+1)-la),.25);}
+      for(const k of['b1','b2','b3','b4'])if(m(k)){impact(m(k),.9);}if(m('b1'))boom(m('b1'));
+      if(af){choir(af,end-af,[138.59,207.65],.05);heart(af+.4,.8);}
+      outroHits();
     }else if(M.story==='survive'){
       // hook: a big question; a steady march as the cities fall; dead air when he is still alive; then a racing hunt to the last tile
       const h=M.hook,ci=m('cities'),z=m('zero'),al=m('alive'),hu=m('hunt'),la=m('last'),kl=m('kill'),endS=m('end');

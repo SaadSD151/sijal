@@ -20,7 +20,11 @@ if(STORY==='mercy'||STORY==='survive'){const a=STORY==='mercy'?M.ask:M.alive;seg
 // the tribes: a slow look over the crowded map first
 if(STORY==='tribes'){seg(0,38,.45,'hook');H=frames.length/FPS;}
 if(STORY==='upgrades'){for(let i=0;i<Math.round(2.6*FPS);i++)frames.push({s:0,fx:'hook'});}
-const STEP=STORY==='upgrades'?.4:1,START=STORY==='tribes'?39:0,main0=frames.length;seg(START,TOT-1,STEP,'main');
+// royale: the full map, slowly, before the war starts
+if(STORY==='royale'){seg(0,44,.6,'hook');H=frames.length/FPS;}
+// rain: the four blasts first, then rewind to the quiet before
+if(STORY==='rain'){const a=M.extra.M.b1;seg(a-6,a+42,1,'hook');H=frames.length/FPS;const r0=frames.length;seg(a-6,0,-Math.max(1,a/18),'rew');H+=(frames.length-r0)/FPS;}
+const STEP=STORY==='upgrades'?.4:1,START=STORY==='tribes'?39:STORY==='royale'?45:0,main0=frames.length;seg(START,TOT-1,STEP,'main');
 const outro=frames.length/FPS;for(let i=0;i<Math.round(2.9*FPS);i++)frames.push({s:TOT-1,fx:'out'});
 const LEN=frames.length/FPS,T=raw=>(main0+(raw-START)/STEP)/FPS;
 
@@ -56,13 +60,19 @@ const C={
     [T(m('alive')),T(m('hunt')),'بس <r>ما مات</r>!? 😳'],[T(m('hunt')),T(m('last')||m('kill')),'لازم آخذ <y>كل شبر</y> من أرضه'],[T(m('last')),T(m('kill')),'آخر شبر… 🔥'],[T(m('kill')),T(m('end')),'الحين <r>انتهى</r> 💀'],[T(m('end')),outro,'ما تنتهي الحرب إلا بآخر شبر 😏']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
   tribes:[[0,H,'<y>'+M.extra.nt+' قبيلة</y> في الخريطة 🏕️','hook'],[.9,H,'كم أقدر آكل منها؟ ⏱️','hook2'],[H,H+1.8,'يلا نشوف… 🔥'],
     ...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),T(X[k])+1.1,'🏕️ +'+k.slice(1),'pop']),[T(m('done')),outro,'أكلت <y>'+M.extra.eat+' قبيلة</y> 😋']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  royale:[[0,H,'<y>'+((M.extra.ser||[])[0]||[30])[0]+' دولة</y> على خريطة وحدة 🗺️','hook'],[.9,H,'وحدة بس <y>بتبقى</y> 👑','hook2'],[H,T(m('n20')),'بدأت الحرب ⚔️'],
+    [T(m('n20')),T(m('n10')),'كل وحدة تطيّح الثانية 💥'],[T(m('n10')),T(m('n3')),'<y>10</y> بس 😳'],[T(m('n3')),T(m('n0')),'آخر <r>3</r> 🔥'],[T(m('n0')),outro,'وبقيت <y>لحالي</y> 👑','big2']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
+  rain:[[0,H-.62,'<y>'+M.extra.eat+' صواريخ</y> ☢️','hook'],[.8,H-.62,'على '+M.extra.nt+' مدن… بنفس اللحظة','hook2'],[H-.62,H,'⏪','rew'],
+    [H,T(m('silos')),'هذا جاري… وعنده <y>'+M.extra.nt+' مدن</y> 🏙️'],[T(m('silos')),T(m('launch')),'وأنا جهّزت <r>'+M.extra.eat+' صواريخ نووية</r> ☢️'],
+    [T(m('launch')),T(m('b1')),'إطلاق! 🚀','big2'],[T(m('b1'))+.2,T(m('after')),'💥💥💥💥','big'],
+    [T(m('after')),outro,(M.extra.left?'باقي '+M.extra.left+'…':'ولا مدينة <y>بقت</y> 💀')]].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0]),
   upgrades:[[0,2.6,'نفس الجيش… ⚔️','hook'],[.8,2.6,'بس واحد <y>طوّر</y> 🎖️','hook2'],[2.6,outro,'بدون تطوير','tA'],[2.6,outro,'🎖️ دبابات 5 + طيارات 5','tB'],
     [T(m('killB')),outro,'✅ خلّص','dB'],[T(m('killA')),outro,'✅ خلّص','dA']].filter(c=>isFinite(c[0])&&isFinite(c[1])&&c[1]>c[0])
 }[STORY];
 const SER=M.extra.ser||null,LEFT=M.extra.left||null,T0hold=STORY==='swarm'?T(m('hold')):STORY==='comeback'?T(m('silo')):0;
-const CTA={empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔',mercy:'لو كنت مكاني… تقبل؟ 🤔',six7:'وأنت وش بترسل لخصمك؟ 👀',survive:'كم شبر تحتاج عشان تخلّص عليه؟ 😏',tribes:'كم قبيلة تقدر تاكل أنت؟ 🏕️'}[STORY];
+const CTA={royale:'كم دولة تقدر تطيّح أنت؟ 👀',rain:'لو كنت مكانه… وش بتسوي؟ 👀',empire:'تقدر تسوي أحسن مني؟ 🤔',revenge:'وش كنت بتسوي مكاني؟ 👀',naval:'جرّب تسويها أنت 😏',swarm:'لو كنت مكاني وش بتسوي؟ 🤔',betray:'تثق بحلفائك؟ 👀',speed:'تقدر تكسر رقمي؟ ⏱️',dome:'تتوقع لو طوّرتها تصدها؟ 👀',comeback:'ما تنتهي اللعبة لين تنتهي 😏',upgrades:'وأنت… تطوّر ولا تهجم على طول؟ 🤔',mercy:'لو كنت مكاني… تقبل؟ 🤔',six7:'وأنت وش بترسل لخصمك؟ 👀',survive:'كم شبر تحتاج عشان تخلّص عليه؟ 😏',tribes:'كم قبيلة تقدر تاكل أنت؟ 🏕️'}[STORY];
 // big moments: white flash, punch-in and shake
-const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]],six7:[[T(m('kill')),.6,9],[T(m('67'))+.3,.5,6]],mercy:[[T(m('no'))+.33,.6,8],[T(m('kill')),.6,9]],survive:[[T(m('zero')),.5,6],[T(m('alive')),.3,3],[T(m('kill')),.7,10]],tribes:[...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]]}[STORY].filter(h=>isFinite(h[0]));
+const HITS={royale:[[T(m('n10')),.35,4],[T(m('n3')),.45,6],[T(m('n0')),1,14]],rain:[...['b1','b2','b3','b4'].filter(k=>X[k]!=null).map(k=>[T(X[k]),.7,12])],empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m('intercept')),.35,4],[T(m('doom')),1,22]],naval:[[T(m('land')),.3,4],[T(m('capital')),.6,9]],swarm:[[T(m('turn')),.45,6],[T(m('k1')),.5,8],[T(m('k2')),.5,8],[T(m('k3')),.8,12]],betray:[[T(m('stab')),.7,10],[T(m('kill')),.6,9]],speed:[...Object.keys(X).filter(k=>/^kill\d+$/.test(k)).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]],dome:[[T(m('stop0')),.35,4],[T(m('stop1')),.4,5],[T(m('hit2')),1,22]],comeback:[[T(m('doom')),1,22],[T(m('fall')),.6,8]],upgrades:[[T(m('killB')),.45,6],[T(m('killA')),.3,4]],six7:[[T(m('kill')),.6,9],[T(m('67'))+.3,.5,6]],mercy:[[T(m('no'))+.33,.6,8],[T(m('kill')),.6,9]],survive:[[T(m('zero')),.5,6],[T(m('alive')),.3,3],[T(m('kill')),.7,10]],tribes:[...Object.keys(X).filter(k=>/^t\d+$/.test(k)&&+k.slice(1)%20===0).map(k=>[T(X[k]),.25,3]),[T(m('done')),.5,6]]}[STORY].filter(h=>isFinite(h[0]));
 
 (async()=>{
   fs.rmSync(OUT,{recursive:true,force:true});fs.mkdirSync(path.join(OUT,'f'),{recursive:true});
@@ -77,7 +87,7 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
     .cap{position:absolute;left:5%;right:5%;top:27%;text-align:center;color:#fff;font-weight:700;font-size:31px;line-height:1.35;opacity:0;
       -webkit-text-stroke:5px #000;paint-order:stroke fill;text-shadow:0 4px 14px rgba(0,0,0,.6)}
     .cap y{color:#ffd23f}.cap r{color:#ff4d4d}
-    .hook{top:22%;font-size:38px}.hook2{top:36%;font-size:34px}.big{font-size:64px;top:30%}
+    .hook{top:22%;font-size:38px}.big2{font-size:46px;top:30%}.hook2{top:36%;font-size:34px}.big{font-size:64px;top:30%}
     .rew{top:44%;font-size:90px;-webkit-text-stroke:0;text-shadow:0 0 24px rgba(0,0,0,.8)}
     #out{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;opacity:0;background:rgba(4,10,20,.72);backdrop-filter:blur(6px)}
     #out img{width:74%;filter:drop-shadow(0 10px 30px rgba(0,0,0,.7)) drop-shadow(0 0 26px rgba(227,185,90,.4))}
@@ -102,6 +112,7 @@ const HITS={empire:[[T(m('cityFall')),.5,6],[T(m('kill')),.7,10]],revenge:[[T(m(
       if(STORY==='upgrades'){const on=t>=2.6&&t<outro;document.getElementById('split').style.opacity=t<outro?1:0;for(const [id,k] of [['ua','killA'],['ub','killB']]){const e=document.getElementById(id),kt=UPK[k];e.style.opacity=on?1:0;const v=Math.max(0,Math.min(kt!=null&&isFinite(kt)?kt:t,t)-2.6);e.textContent='⏱️ '+v.toFixed(1)+'s';}}
       if(STORY==='speed'){const h=document.getElementById('hud2');h.style.opacity=t>=.2&&t<outro?1:0;if(ser){document.getElementById('tmr').textContent='⏱️ '+Math.floor(ser[0]/60)+':'+String(Math.floor(ser[0]%60)).padStart(2,'0');document.getElementById('pct').textContent='🗺️ '+Math.round(ser[1]*100)+'%';}}
       if(STORY==='tribes'){const h=document.getElementById('hud2');h.style.opacity=t>=H&&t<outro?1:0;if(ser){if(ser[0]!=null)document.getElementById('tmr').textContent='⏱️ '+Math.floor(ser[0]/60)+':'+String(Math.floor(ser[0]%60)).padStart(2,'0');document.getElementById('pct').textContent='🏕️ '+ser[1];}}
+      if(STORY==='royale'){const h=document.getElementById('hud2');document.getElementById('tmr').style.display='none';h.style.opacity=t>=H&&t<outro?1:0;if(ser)document.getElementById('pct').textContent='👑 باقي '+ser[0];}
       if(STORY==='survive'){const h=document.getElementById('hud2');document.getElementById('tmr').style.display='none';const lv=left&&left[F.s];h.style.opacity=F.fx==='main'&&lv!=null&&t<outro?1:0;if(lv!=null)document.getElementById('pct').textContent='🏙️ '+lv+' مدن';}
       const bg=document.getElementById('bg');if(bg.dataset.s!==src){bg.src=src;bg.dataset.s=src;await bg.decode().catch(()=>{});}
       // flashes, punch-in and shake on the big moments

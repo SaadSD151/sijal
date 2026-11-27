@@ -4,8 +4,8 @@
 // Writes <outdir>/f/00000.jpg… (1080x1920) and <outdir>/marks.json (scene name -> frame index).
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path');
 const STORY=process.argv[2]||'empire',OUT=path.resolve(process.argv[3]||'clip-'+STORY),FPS=30;
-const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99,mercy:111,six7:167,survive:122,tribes:133},SEED=+(process.argv[4]||SEEDS[STORY]);
-const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'},mercy:{type:'continents',fac:'hawks'},six7:{type:'continents',fac:'hawks'},survive:{type:'continents',fac:'hawks'},tribes:{type:'continents',fac:'hawks'}}[STORY];
+const SEEDS={empire:11,revenge:22,naval:33,swarm:44,betray:55,speed:66,dome:77,upgrades:88,comeback:99,mercy:111,six7:167,survive:122,tribes:133,royale:144,rain:155},SEED=+(process.argv[4]||SEEDS[STORY]);
+const SETUP={empire:{type:'continents',fac:'hawks'},revenge:{type:'continents',fac:'bastion'},naval:{type:'islands',fac:'mariners'},swarm:{type:'continents',fac:'bastion'},betray:{type:'continents',fac:'merchants'},speed:{type:'continents',fac:'hawks'},dome:{type:'continents',fac:'scholars'},upgrades:{type:'pangaea',fac:'hawks'},comeback:{type:'continents',fac:'bastion'},mercy:{type:'continents',fac:'hawks'},six7:{type:'continents',fac:'hawks'},survive:{type:'continents',fac:'hawks'},tribes:{type:'continents',fac:'hawks'},royale:{type:'pangaea',fac:'hawks',size:2,bots:30},rain:{type:'continents',fac:'scholars'}}[STORY];
 
 // helpers that live in the page
 function lib(){
@@ -262,6 +262,48 @@ const STORIES={
         KL.cam(o.cx,o.cy,Math.max(2.6,KL.zFor(o.tiles*1.5)));return false;}},
     {name:'end',max:40,tpf:2,start:()=>{},frame:k=>{const me=KL.me();KL.cam(me.cx,me.cy,KL.zFor(me.tiles*1.6));return false;}}
   ],
+  // ── 'battle royale': thirty realms on one big map, a counter of who is left, and I take the whole world ──
+  royale:[
+    {name:'map',max:45,tpf:0,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});window.__ser=[];window.__n0=g.nations.filter(n=>KL.major(n)).length;KL.cam(g.W/2,g.H/2,.1);window.__CT.snap=1;},
+      frame:k=>{const g=__sijal.G;window.__ser[window.__F]=[g.nations.filter(n=>KL.major(n)).length];KL.cam(g.W/2,g.H/2,.1);return false;}},
+    {name:'war',max:900,tpf:9,start:()=>{KL.mark('go');window.__mine=new Set();},
+      frame:k=>{const g=__sijal.G,me=KL.me(),K=g.nations.length;if(!me.alive)return true;
+        for(const id of [...window.__mine]){const n=g.nations[id];if(!n.alive||!KL.atkOn(id))window.__mine.delete(id);}
+        let free=false;for(let i=0;i<g.N&&!free;i+=9)if(g.M.ter[i]>=2&&!g.owner[i]){const x=i%g.W,y=(i/g.W)|0;if((x-me.cx)**2+(y-me.cy)**2<(Math.sqrt(me.tiles)*1.2+20)**2)free=true;}
+        if(free&&k%3===0)KL.expand(.3);
+        const T=g.nations.filter(n=>n&&n.alive&&n.id!==me.id&&g.nb[me.id*K+n.id]>2&&!window.__mine.has(n.id)).sort((a,b)=>(a.minor?1:0)-(b.minor?1:0)||a.troops-b.troops);
+        for(const n of T){if(window.__mine.size>=(k<60?1:3))break;me.truce[n.id]=0;n.truce[me.id]=0;me.ally[n.id]=0;n.ally[me.id]=0;me.troops=Math.max(me.troops,n.troops*2.8+5000);const r=__sijal.fn.launchAttack(g,me.id,n.id,.5,-1,-1);if(r&&typeof r==='object')window.__mine.add(n.id);}
+        // the last few may sit across the water: send boats at their coasts
+        if(window.__lastL!==g.nations.filter(n=>KL.major(n)).length){window.__lastL=g.nations.filter(n=>KL.major(n)).length;window.__stall=k;}
+        if(window.__lastL<=4&&k-window.__stall>20&&k%4===0)for(const n of g.nations)if(KL.major(n)&&!KL.atkOn(n.id)&&!g.boats.some(b=>b.a===me.id)){const c=KL.coastOf(n);for(const t of c){me.troops=Math.max(me.troops,n.troops*3+20000);const b=__sijal.fn.launchBoat(g,me.id,t,.25);if(b&&typeof b==='object'){KL.mark('boat');break;}}}
+        const left=g.nations.filter(n=>KL.major(n)).length;window.__ser[window.__F]=[left];
+        for(const c of[25,20,15,10,5,3,2,1,0])if(left<=c)KL.mark('n'+c);
+        KL.cam(g.W/2,g.H/2,.1);if(left===0){window.__z=window.__z||k;return k>window.__z+20;}return false;}},
+    {name:'end',max:55,tpf:2,start:()=>{KL.mark('done');const g=__sijal.G,me=KL.me(),K=g.nations.length;window.__dbg=g.nations.filter(n=>KL.major(n)).map(n=>({id:n.id,t:n.tiles,tr:Math.round(n.troops),nb:g.nb[me.id*K+n.id],cap:!!n.cap,lid:n.cap?g.M.lid[n.cap.i]:-1,mylid:g.M.lid[me.cap.i],coast:KL.coastOf(n).length,boats:g.boats.length,res:n.cap?__sijal.fn.launchBoat(g,me.id,KL.coastOf(n)[0],.25):null}));},frame:k=>{const g=__sijal.G;window.__ser[window.__F]=[g.nations.filter(n=>KL.major(n)).length];KL.cam(g.W/2,g.H/2,.1);return false;}}
+  ],
+  // ── 'missile rain': he has five cities, I have five silos; all of them at once ──
+  rain:[
+    {name:'look',max:60,tpf:1,start:()=>{const g=__sijal.G,me=KL.spawn({x:.42,y:.5});KL.preroll(200,.3);const K=g.nations.length;
+        let o=null;for(const n of g.nations)if(KL.major(n)&&g.nb[me.id*K+n.id]>3&&(!o||n.tiles>o.tiles))o=n;o=o||KL.neighbor(1);window.__o=o.id;
+        for(const n of g.nations)if(n&&!n.human){n.ai.nextWar=1e9;n.ai.nextMsl=1e9;}o.ai.nextBuild=1e9;
+        for(const s of g.structs)if(!s.dead&&s.owner===o.id&&s.type==='shield'){s.dead=true;g.structAt[s.i]=0;}
+        const oc=()=>KL.cities(o.id).filter(s=>!s.capital&&s!==o.cap);o.gold=1e9;o.era=Math.max(o.era||0,2);
+        for(let t=0;t<40&&oc().length<4;t++){const a=t/8*6.28,r=6+(t>>3)*3;KL.placeNear(o,'city',o.cx+Math.cos(a)*r,o.cy+Math.sin(a)*r*.8,3);}window.__dbg=[o.tiles,oc().length,String(__sijal.cb(g,o,'city',Math.round(o.cy)*g.W+Math.round(o.cx)))];o.gold=0;
+        while(oc().length>4){const cs=oc();const s=cs[cs.length-1];s.dead=true;g.structAt[s.i]=0;}
+        for(const s of oc())s.level=1;window.__tg=oc().map(s=>s.i);window.__nt=window.__tg.length;
+        me.era=4;me.gold=1e8;for(let j=0;j<window.__nt;j++){const s=KL.placeNear(me,'silo',me.cap.x+(j-1.5)*3,me.cap.y+3,2.5);if(s){s.build=0;s.cd=0;}}
+        KL.cam(o.cx,o.cy,4.6);window.__CT.snap=1;},
+      frame:k=>{const o=__sijal.G.nations[window.__o];KL.cam(o.cx,o.cy,4.6);return false;}},
+    {name:'silos',max:45,tpf:1,start:()=>{const me=KL.me();KL.cam(me.cap.x,me.cap.y+3,7);},frame:k=>false},
+    {name:'launch',max:150,tpf:1,start:()=>{const g=__sijal.G,me=KL.me(),o=g.nations[window.__o];me.gold=1e8;for(const s of g.structs)if(s.type==='silo'&&s.owner===me.id){s.build=0;s.cd=0;}
+        window.__eat=0;for(const i of window.__tg)if(__sijal.fn.launchMissile(g,me.id,'nuke',i)===0)window.__eat++;window.__nb=0;window.__seen=new Set(__sijal.R.fx.filter(f=>f.type==='boom'));
+        KL.cam((o.cx+me.cap.x)/2,(o.cy+me.cap.y)/2,3.4);},
+      frame:k=>{const g=__sijal.G,o=g.nations[window.__o],fx=__sijal.R.fx;for(const f of fx)if(f.type==='boom'&&!window.__seen.has(f)){window.__seen.add(f);window.__nb++;KL.mark('b'+window.__nb);}
+        if(k>14)KL.cam(o.cx,o.cy,4.2);if(!g.missiles.length&&window.__nb){window.__q=window.__q||k;return k>window.__q+24;}return false;}},
+    {name:'after',max:70,tpf:1,start:()=>{const g=__sijal.G;window.__left=window.__tg.map(i=>{const si=g.structAt[i];const s=si?g.structs[si-1]:null;return s&&!s.dead&&s.type==='city'?1:0;}).reduce((a,b)=>a+b,0);},
+      frame:k=>{const o=__sijal.G.nations[window.__o];KL.cam(o.cx,o.cy,4.2);return false;}},
+    {name:'end',max:30,tpf:2,start:()=>{},frame:k=>{const o=__sijal.G.nations[window.__o];KL.cam(o.cx,o.cy,3.2);return false;}}
+  ],
   // ── 'a map full of tribes': how many can I eat before the big realms do? A clock and a counter ──
   tribes:[
     {name:'map',max:80,tpf:0,start:()=>{const g=__sijal.G,me=KL.spawn({x:.5,y:.5});window.__nt=g.nations.filter(n=>n&&n.alive&&n.minor).length;KL.cam(g.W/2,g.H/2,.1);window.__CT.snap=1;window.__ser=[];window.__eat=0;window.__mine=new Set();},
@@ -293,7 +335,7 @@ const STORIES={
   await pg.evaluate(()=>{KL.coastOf=n=>{const g=__sijal.G,W=g.W,r=[];for(let i=W;i<g.N-W;i++){if(g.owner[i]!==n.id)continue;const t=g.M.ter;if(t[i+1]<2||t[i-1]<2||t[i+W]<2||t[i-W]<2)r.push(i);}r.sort((a,b)=>((a%W-n.cap.x)**2+(((a/W)|0)-n.cap.y)**2)-((b%W-n.cap.x)**2+(((b/W)|0)-n.cap.y)**2));
       const out=[];for(const i of r){if(out.every(j=>(i%W-j%W)**2+(((i/W)|0)-((j/W)|0))**2>36))out.push(i);if(out.length>=6)break;}return out;};});
   await pg.evaluate(()=>{const st=document.createElement('style');st.textContent='#hud,#amode,#feed,#hint,#fpick,.anx,#threat,#mini,#lb,#menu,#help,#net,#end,#radial,body:not(.keepts) .ts{display:none!important}.ts .pressed{transform:scale(.9);filter:brightness(1.3)}body.keepts #hud{display:block!important;pointer-events:none}body.keepts #hud>*:not(#toasts){display:none!important}body.keepts #toasts{top:58%!important;bottom:auto!important;transform:translateX(-50%) scale(1.08)!important;transform-origin:50% 0;width:80vw!important;max-width:80vw!important}';document.head.appendChild(st);window.__CT={};window.__ZM=1;});
-  await pg.evaluate(t=>{const S=__sijal;Object.assign(S.UI.prof,{size:1,botsN:10,diff:1,type:t});S.act('go');},SETUP.type);
+  await pg.evaluate(t=>{const S=__sijal;Object.assign(S.UI.prof,{size:t[1],botsN:t[2],diff:1,type:t[0]});S.act('go');},[SETUP.type,SETUP.size!=null?SETUP.size:1,SETUP.bots||10]);
   await pg.clock.runFor(400);await pg.evaluate(()=>{__sijal.R.q=2;});
   const marks={};let f=0;
   for(const sc of STORIES[STORY]){
