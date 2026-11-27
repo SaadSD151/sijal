@@ -96,7 +96,7 @@ function show(name){if(name)radClose();
 function loading(on){const l=$('#load');l.hidden=!on;if(!l.querySelector('.lbar'))l.innerHTML='<div class="lbx"><span></span><div class="lbar"><i></i></div><b></b></div>';l.querySelector('span').textContent=t('loading');if(on)loadPct(null);}
 function loadPct(p){const l=$('#load');if(!l||!l.querySelector('.lbar'))return;const has=p!=null;l.querySelector('.lbar').style.visibility=has?'visible':'hidden';l.querySelector('i').style.width=(has?Math.round(p*100):0)+'%';l.querySelector('b').textContent=has?Math.round(p*100)+'%':'';}
 const mtabs=cur=>`<nav class="bnav">${[['menu','tMenu','🏠'],['pass','bp','🎖️'],['skins','tSkins','🎨']].map(([k,l,ic])=>`<button class="${cur===k?'on':''}" data-a="${k}"><i>${ic}</i><span>${t(l)}</span></button>`).join('')}</nav>`;
-function renderMenu(){
+function renderMenu(){setTimeout(pollSend,1500);
   if(!document.getElementById('swdefs')){const d=document.createElement('div');d.id='swdefs';d.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
     d.innerHTML=`<svg width="0" height="0"><defs>
       <linearGradient id="swSteel" x1="0" x2="1"><stop offset="0" stop-color="#7d8893"/><stop offset=".45" stop-color="#eef3f7"/><stop offset=".55" stop-color="#c3ccd4"/><stop offset="1" stop-color="#5d6772"/></linearGradient>
@@ -118,6 +118,7 @@ function renderMenu(){
     <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
+    ${pollCard(p)}
     <button class="hero" data-a="quick"><span class="sx" aria-hidden="true"><svg class="a" viewBox="0 0 40 160"><use href="#swd"/></svg><svg class="b" viewBox="0 0 40 160"><use href="#swd"/></svg><em></em></span><span class="hb"><b>${t('quick')}</b><small>${t('h_quick')}</small></span><span class="play">▶ ${t('h_play')}</span></button>
     <div class="mtiles">${tile('online','🌐',t('online'),t('h_onl'))}${tile('daily','📅',t('daily'),(done?'✓ '+t('h_done'):t('h_left',left))+(dStreakNow(p)?' · 🔥'+dStreakNow(p):''),done?'dn':'')}${tile('custom','🛠️',t('custom'),t('h_cus'))}</div>
     <div class="lnk"><button data-a="board">🏆 ${t('lb')}</button><button data-a="suggest">💬 ${t('d_sug')}</button><button class="ls" data-a="supMenu">💜 ${t('d_sup')}</button><button data-a="social">📱 ${t('d_follow')}</button><button data-a="hist">📜 ${t('hiT')}</button></div>
@@ -615,10 +616,25 @@ function statTips(a){const W=a.W,T=[],L=TX[UI.prof.lang]&&TX[UI.prof.lang].tips?
   if(!T.some(x=>x[0]==='bad'||x[0]==='mid'))add('good','fine');
   return T;}
 // the owner panel: a summary strip on top and one clear page per job (statistics, supporters, leaderboard, admins, announcement, my account)
+// ── a quick poll on the home screen: one vote per player, stored under polls/<id>/<uid>; ends at POLL.end; results only in the owner panel ──
+const POLL={id:'p1',end:1796018400000,opts:['a','b','c']};
+function pollCard(p){
+  if(Date.now()>=POLL.end)return'';const v=(p.polls||{})[POLL.id];if(v&&!UI.pollJust)return'';
+  if(v)return`<div class="poll done">✅ ${t('pl_thx')}</div>`;
+  return`<div class="poll"><b>🗳️ ${t('pl_q')}</b><div class="plo">${POLL.opts.map(o=>`<button data-a="pollV:${o}">${t('pl_'+o)}</button>`).join('')}</div><small>${t('pl_left',Math.max(1,Math.ceil((POLL.end-Date.now())/36e5)))}</small></div>`;
+}
+function pollSend(){const p=UI.prof,v=(p.polls||{})[POLL.id];if(!v||p.pollSent===POLL.id||!LB_DB||Date.now()>=POLL.end)return;
+  lbAuth().then(f=>fetch(LB_DB+'/polls/'+POLL.id+'/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(v)})).then(r=>{if(r.ok){p.pollSent=POLL.id;saveProf();}}).catch(()=>{});}
+function pollVote(o){if(!POLL.opts.includes(o)||Date.now()>=POLL.end)return;const p=UI.prof;(p.polls||(p.polls={}))[POLL.id]=o;p.pollSent='';saveProf();UI.pollJust=1;sfx('ok');renderMenu();pollSend();setTimeout(()=>{UI.pollJust=0;if(UI.screen==='menu')renderMenu();},5000);}
+function pollHtml(card){const R=UI.admPoll,n=v=>(v|0).toLocaleString('en');
+  if(R==null)return card('🗳️ '+t('pl_q'),'',`<p class="keys">${t('lbLoad')}</p>`);if(R==='err')return card('🗳️ '+t('pl_q'),'',`<p class="bad">${t('admRules')}</p>`);
+  const c={a:0,b:0,c:0};for(const v of Object.values(R||{}))if(c[v]!=null)c[v]++;const tot=c.a+c.b+c.c,left=POLL.end-Date.now();
+  return card('🗳️ '+t('pl_q'),left>0?t('pl_ends',Math.ceil(left/36e5)):t('pl_over'),`<p class="apd">${t('pl_tot',n(tot))}</p><div class="plr">${POLL.opts.map(o=>{const pc=tot?Math.round(c[o]/tot*100):0;return`<div><span>${t('pl_'+o)}</span><b>${n(c[o])} · ${pc}%</b><i><u style="width:${pc}%"></u></i></div>`;}).join('')}</div>`);}
+function admPoll(){UI.admPoll=null;admReq('/polls/'+POLL.id+'.json').then(j=>{UI.admPoll=j||{};}).catch(()=>{UI.admPoll='err';}).then(()=>{if(UI.screen==='help'&&$('.apw'))renderAdmin();});}
 function renderAdmin(){
   const L=UI.admList,B=UI.admLb,p=UI.prof,S=UI.admSt,own=UI.owner,tab=UI.admTab||(own?'stats':'lb'),n=v=>(v|0).toLocaleString('en');
   const D=S&&S!=='err'?(S.d[sDay()]||{}):{},T=S&&S!=='err'?S.t:{};
-  const tabs=[own&&['stats','📊',t('ap_stats')],own&&['sup','💜',t('ap_sup')],['lb','🏆',t('ap_lb')],own&&['adm','🛠️',t('ap_adm')],['msg','📢',t('ap_msg')],['me','⚙️',t('ap_me')]].filter(Boolean);
+  const tabs=[own&&['stats','📊',t('ap_stats')],own&&['sup','💜',t('ap_sup')],['lb','🏆',t('ap_lb')],own&&['poll','🗳️',t('ap_poll')],own&&['adm','🛠️',t('ap_adm')],['msg','📢',t('ap_msg')],['me','⚙️',t('ap_me')]].filter(Boolean);
   const kpi=(ic,l,v)=>`<div class="apk"><span>${ic}</span><b>${v}</b><small>${l}</small></div>`;
   const head=`<div class="aph2"><div><h2>${own?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2><p>${t('ap_sub')}</p></div><button class="btn sm" data-a="admSt">↻ ${t('stRef')}</button></div>
   ${own?`<div class="apks">${kpi('🟢',t('stNow'),S&&S!=='err'?n(S.on.now):'…')}${kpi('👤',t('ap_kToday'),n(D.uniq))}${kpi('⚔️',t('ap_kGames'),n(D.games))}${kpi('🔐',t('stAcc'),S&&S!=='err'&&S.acc!=null?n(S.acc):'…')}${kpi('💜',t('ap_kSup'),n(T.sup))}</div>`:''}
@@ -627,6 +643,7 @@ function renderAdmin(){
   let body='';
   if(tab==='stats')body=statsHtml();
   else if(tab==='sup')body=card('💳 '+t('ap_supAuto'),t('ap_supAutoD'),'')+card('💜 '+t('supAdm'),t('ap_supManD'),`<div class="apf"><input id="grUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn ok" data-a="admGrant">${t('supGrant')}</button></div><p class="apd">${t('supAdmNote')}</p>`);
+  else if(tab==='poll')body=pollHtml(card);
   else if(tab==='lb'){const q=(UI.admQ||'').toLowerCase(),R=B?B.filter(r=>!q||String(r.n||'').toLowerCase().includes(q)):null;
     body=card('🏆 '+t('ap_lb'),t('ap_lbD'),`<div class="apf"><input id="admQ" placeholder="🔎 ${t('ap_search')}" value="${esc(UI.admQ||'')}"></div>${R==null?`<p class="keys">${t('lbLoad')}</p>`:`<p class="apd">${t('ap_count',R.length)}</p><div class="aplist">${R.slice(0,200).map((r,i)=>`<div class="apr"><span class="apn">${i+1}</span><div><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${t('ranks')[r.r!=null?r.r:rankOf({wins:r.w})]||''} · ${r.w|0} ${t('wins')} · ${r.g|0} ${t('accGames')} · ${hrs(r.h||0)} ${t('lbHrs')}${r.lv?' · '+t('lvS',r.lv):''}</small></div><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">🗑️ ${t('admDelRow')}</button></div>`).join('')}</div>`}`);}
   else if(tab==='adm')body=card('🛠️ '+t('admAdmins'),t('ap_admD'),`<div class="apf"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn ok" data-a="admGive">${t('admGive')}</button></div>
@@ -1109,7 +1126,7 @@ function act(a){
       if(v==='gold')me2.gold+=1e5;else if(v==='troops')me2.troops+=1e5;else if(v==='era')me2.era=4;else if(v==='build'||v==='msl')C[v]=!C[v];
       else if(v==='win'&&!g.over){g.over={w:me2.id,win:true,why:'dom'};g.ev.push({t:'over',win:true,w:me2.id});show(null);}
       if(v!=='win'){renderPause();toast('🛠️ '+t('admDone'),'prop',1500);}break;}
-    case'admTab':UI.admTab=v;renderAdmin();break;
+    case'admTab':UI.admTab=v;if(v==='poll')admPoll();renderAdmin();break;case'pollV':pollVote(v);break;
     case'admin':openAdmin();break;case'admSt':admStats();renderAdmin();break;
     case'admGive':admGive();break;case'admDel':admDel(v);break;case'lbDel':admLbDel(v);break;case'admMe':admMe();break;case'admMsg':admMsg();break;
     case'closeCard':closeCard();break;
