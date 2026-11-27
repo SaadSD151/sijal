@@ -33,37 +33,57 @@ const AVATARS=[
   ['#2a1a3a','#6a3a8a','<path d="M44 20h12v14H44z" fill="#c9a24a"/><path d="M40 34h20v6H40z" fill="#f4c542"/><path d="M45 40h10c2 14-2 26-10 38-2-14-2-26 0-38z" fill="#e6ebf1"/><path d="M50 42c1 10-1 20-4 30" stroke="#9aa4b2" stroke-width="1.6" fill="none"/><circle cx="50" cy="26" r="3" fill="#e74c3c"/>']
 ];
 let _svgN=0;
-// the frame for a level: a disc of metal that gains studs, gems, laurels, wings, a crown, light and fire as the level climbs
-// looks change every 10 levels up to 100, then every 50 up to 1000 (29 looks)
-const lvTier=l=>l<100?Math.floor(l/10):Math.min(28,10+Math.floor((l-100)/50));
-const FRAME_MAT=[['#5b5f66','#9aa0a8','#3a3d42'],['#6e4a2a','#b07a45','#4a2e16'],['#8a5a2a','#d49a5a','#5a3412'],['#7f8a96','#e3e9ef','#4f5964'],['#8a6a1a','#ffd86b','#5a420a'],['#1f6e4a','#7ff0b4','#0e3e28'],['#1a4a8a','#8fc8ff','#0b2a55'],['#4a2a8a','#c9a6ff','#26124d'],['#8a1a3a','#ff8fb0','#4d0b1f'],['#9a6a0a','#fff0b0','#5a3a00'],
-  ['#b8860b','#fff3c4','#7a5600'],['#c9d6e3','#ffffff','#7f8fa0'],['#b81d3a','#ffb3c2','#6a0a1e'],['#5a1fb0','#e1c4ff','#2e0b66'],['#0f8f8a','#b6fff8','#06504c'],['#d4a017','#fffbe0','#8a6400']];
+// the frame for a level: a simple shape that changes every 10 levels up to 100, then every 100 levels up to 1000
+const lvTier=l=>l<100?Math.floor(l/10):Math.min(19,10+Math.floor((l-100)/100));
+const FRAME_MAT=[['#7d828a','#b9bec6','#4a4e55'],['#9a6a3a','#d9a46a','#5a3816'],['#a8733a','#e8b57a','#6a4216'],['#8c97a3','#eef2f6','#55606c'],['#9aa6b2','#ffffff','#5a6672'],['#b8860b','#ffe08a','#6a4a00'],['#c9952d','#fff0b0','#7a5400'],['#1f8a5a','#8ff0c0','#0e4a30'],['#1f5fb8','#9fd0ff','#0b2f66'],['#6a3ab8','#d2b4ff','#34146a'],
+  ['#c9952d','#fff3c4','#7a5600'],['#c9d6e3','#ffffff','#6f7f90'],['#d4441a','#ffc070','#7a1e00'],['#e0a020','#fff6c0','#8a5a00'],['#3ab8c8','#d8fbff','#0d5a66'],['#b81d3a','#ffb3c2','#6a0a1e'],['#4fa83a','#e0ffd0','#245a14'],['#e05a1a','#ffe0a0','#7a2400'],['#8a3ad8','#f0d8ff','#40107a'],['#f4c542','#ffffff','#9a6a00']];
+const poly=(n,r,rot,cx=60,cy=60)=>Array.from({length:n},(_,k)=>{const a=rot+k*2*Math.PI/n;return(k?'L':'M')+(cx+r*Math.cos(a)).toFixed(1)+' '+(cy+r*Math.sin(a)).toFixed(1);}).join('')+'Z';
+const starP=(n,R,r,rot=-Math.PI/2)=>Array.from({length:n*2},(_,k)=>{const a=rot+k*Math.PI/n,q=k%2?r:R;return(k?'L':'M')+(60+q*Math.cos(a)).toFixed(1)+' '+(60+q*Math.sin(a)).toFixed(1);}).join('')+'Z';
+const SHIELD='M60 14L98 28V58C98 82 82 98 60 106C38 98 22 82 22 58V28Z';
+function lvShape(t){
+  switch(t){
+    case 0:return'<circle cx="60" cy="60" r="36"/>';
+    case 1:return'<circle cx="60" cy="60" r="38"/>';
+    case 2:return'<rect x="22" y="22" width="76" height="76" rx="18"/>';
+    case 3:return`<path d="${poly(4,48,0)}"/>`;
+    case 4:return`<path d="${poly(6,44,-Math.PI/2)}"/>`;
+    case 5:return`<path d="${poly(8,43,Math.PI/8)}"/>`;
+    case 6:return`<path d="${SHIELD}"/>`;
+    case 7:return`<path d="${starP(8,50,38)}"/>`;
+    case 8:return`<path d="${starP(12,50,40)}"/>`;
+    default:return`<path d="${Array.from({length:16},(_,k)=>{const a=k*Math.PI/8;return`${k?'L':'M'}${(60+40*Math.cos(a)).toFixed(1)} ${(60+40*Math.sin(a)).toFixed(1)}A7 7 0 0 1 ${(60+40*Math.cos(a+Math.PI/8)).toFixed(1)} ${(60+40*Math.sin(a+Math.PI/8)).toFixed(1)}`;}).join('')}Z"/>`;
+  }
+}
 function lvFrame(lv,size,av){
-  const t=lvTier(lv),id='f'+(++_svgN),M=FRAME_MAT[t<10?t:10+((t-10)%6)],A=AVATARS[av|0]||AVATARS[0],hi=t>=10;
-  const g=`<defs><linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${M[1]}"/><stop offset=".5" stop-color="${M[0]}"/><stop offset="1" stop-color="${M[2]}"/></linearGradient>
-    <radialGradient id="${id}a" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="${A[1]}"/><stop offset="1" stop-color="${A[0]}"/></radialGradient>
-    <radialGradient id="${id}g" cx=".5" cy=".5" r=".5"><stop offset=".55" stop-color="${M[1]}" stop-opacity=".55"/><stop offset="1" stop-color="${M[1]}" stop-opacity="0"/></radialGradient>
-    <clipPath id="${id}c"><circle cx="60" cy="60" r="30"/></clipPath></defs>`;
-  let back='',front='';
-  // behind the disc: rays, spikes, wings, aura
-  if(t>=14)back+=`<g class="fr-spin" style="transform-origin:60px 60px">${Array.from({length:16},(_,k)=>`<path d="M60 60L${60+58*Math.cos((k*22.5-4)*Math.PI/180)} ${60+58*Math.sin((k*22.5-4)*Math.PI/180)}L${60+58*Math.cos((k*22.5+4)*Math.PI/180)} ${60+58*Math.sin((k*22.5+4)*Math.PI/180)}z" fill="${M[1]}" opacity=".3"/>`).join('')}</g>`;
-  if(t>=18)back+=`<circle class="fr-pulse" cx="60" cy="60" r="56" fill="url(#${id}g)"/>`;
-  if(t>=6){const n=t>=12?16:12;back+=`<path d="${Array.from({length:n},(_,k)=>{const a=k*2*Math.PI/n,b=a+Math.PI/n;return`${k?'L':'M'}${60+46*Math.cos(a)} ${60+46*Math.sin(a)}L${60+38*Math.cos(b)} ${60+38*Math.sin(b)}`;}).join('')}z" fill="url(#${id}m)" stroke="${M[2]}" stroke-width="1"/>`;}
-  if(t>=8){const wing=s=>`<path transform="translate(60 60) scale(${s} 1)" d="M30 -6c10-10 22-14 28-12-4 4-6 8-6 12 4-2 8-2 10 0-4 2-6 6-6 10 3 0 6 1 8 3-8 4-18 4-26 0z" fill="url(#${id}m)" stroke="${M[2]}" stroke-width="1"/>`;back+=wing(1)+wing(-1);}
-  // the disc: picture, metal ring, an inner line
-  const body=`<circle cx="60" cy="60" r="36" fill="url(#${id}m)" stroke="${M[2]}" stroke-width="1.2"/>${t>=1?`<circle cx="60" cy="60" r="33" fill="none" stroke="${M[1]}" stroke-width="1" opacity=".8"/>`:''}
-    <g clip-path="url(#${id}c)"><circle cx="60" cy="60" r="30" fill="url(#${id}a)"/><g transform="translate(30 30) scale(.6)">${A[2]}</g></g><circle cx="60" cy="60" r="30" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="1.4"/>`;
-  // on top: studs, gems, laurels, crown, orbiting sparks
-  if(t>=2)front+=Array.from({length:8},(_,k)=>{const a=k*Math.PI/4+Math.PI/8;return`<circle cx="${60+34.5*Math.cos(a)}" cy="${60+34.5*Math.sin(a)}" r="1.7" fill="${M[1]}" stroke="${M[2]}" stroke-width=".6"/>`;}).join('');
-  if(t>=4){const leaf=(s)=>Array.from({length:6},(_,k)=>{const a=(100+k*13)*Math.PI/180,x=60+s*41*Math.cos(a),y=60+41*Math.sin(a);return`<ellipse cx="${x}" cy="${y}" rx="5" ry="2.2" transform="rotate(${s*(k*13+10)} ${x} ${y})" fill="${hi?M[1]:'#4f9a3a'}" stroke="${hi?M[2]:'#2a5a1a'}" stroke-width=".6"/>`;}).join('');front+=leaf(1)+leaf(-1);}
-  if(t>=3)front+=`<path d="M60 18l5 6-5 6-5-6z" fill="${t>=12?'#ff3d6e':t>=7?'#3dd6ff':'#e74c3c'}" stroke="#fff" stroke-width=".8"/>`;
-  if(t>=6)front+=`<circle cx="24" cy="60" r="3.4" fill="#2ecc71" stroke="#fff" stroke-width=".7"/><circle cx="96" cy="60" r="3.4" fill="#2ecc71" stroke="#fff" stroke-width=".7"/>`;
-  if(t>=10)front+=`<path d="M44 22l4-14 6 8 6-10 6 10 6-8 4 14z" fill="url(#${id}m)" stroke="${M[2]}" stroke-width="1"/><circle cx="60" cy="10" r="2.6" fill="#ff3d6e"/>`;
-  if(t>=22)front+=`<g class="fr-spin2" style="transform-origin:60px 60px">${Array.from({length:5},(_,k)=>{const a=k*2*Math.PI/5;return`<circle cx="${60+52*Math.cos(a)}" cy="${60+52*Math.sin(a)}" r="2.2" fill="#fff"/>`;}).join('')}</g>`;
-  // the level, on a ribbon
-  const w=lv>=1000?34:lv>=100?28:22;
-  front+=`<path d="M${60-w/2-6} 92l6-5h${w}l6 5-6 5h-${w}z" fill="url(#${id}m)" stroke="${M[2]}" stroke-width="1"/><text x="60" y="95.6" text-anchor="middle" font-family="IBM Plex Sans Arabic,sans-serif" font-weight="800" font-size="10" fill="${t>=4&&t<10?'#1a1205':'#fff'}" stroke="${t>=4&&t<10?'none':'rgba(0,0,0,.6)'}" stroke-width=".6" paint-order="stroke">${lv}</text>`;
-  return`<svg class="lvf" viewBox="0 0 120 120" width="${size}" height="${size}" aria-label="level ${lv}">${g}${back}${body}${front}</svg>`;
+  const t=lvTier(lv),id='f'+(++_svgN),M=FRAME_MAT[t],A=AVATARS[av|0]||AVATARS[0];
+  const defs=`<defs><linearGradient id="${id}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${M[1]}"/><stop offset=".55" stop-color="${M[0]}"/><stop offset="1" stop-color="${M[2]}"/></linearGradient>
+    <radialGradient id="${id}a" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="${A[1]}"/><stop offset="1" stop-color="${A[0]}"/></radialGradient><clipPath id="${id}c"><circle cx="60" cy="60" r="29"/></clipPath></defs>`;
+  const fill=`fill="url(#${id}m)" stroke="${M[2]}" stroke-width="1.4" stroke-linejoin="round"`;
+  let back='',front='',frame;
+  if(t<10)frame=`<g ${fill}>${lvShape(t)}</g>`;
+  else{
+    // level 100 and every 100 after: a new emblem each time
+    const wings=`<g ${fill}><path d="M26 60C14 50 6 36 8 24c6 8 14 12 22 14-6-8-6-16-2-22 6 10 12 16 22 20z"/><path d="M94 60c12-10 20-24 18-36-6 8-14 12-22 14 6-8 6-16 2-22-6 10-12 16-22 20z"/></g>`;
+    const crown=`<path d="M42 26l4-16 8 9 6-12 6 12 8-9 4 16z" ${fill}/><circle cx="60" cy="6" r="2.6" fill="#ff3d6e"/>`;
+    const rays=`<g class="fr-spin" style="transform-origin:60px 60px" fill="${M[1]}" opacity=".45"><path d="${starP(16,58,36)}"/></g>`;
+    const flames=`<g fill="#ff8a2a"><path d="${starP(10,56,40)}" class="fr-pulse"/></g>`;
+    switch(t){
+      case 10:frame=`<path d="${SHIELD}" ${fill}/>`+crown;break;
+      case 11:frame=wings+`<path d="${poly(6,44,-Math.PI/2)}" ${fill}/>`;break;
+      case 12:frame=flames+`<path d="${starP(8,48,38)}" ${fill}/>`;break;
+      case 13:frame=rays+`<circle cx="60" cy="60" r="40" ${fill}/>`;break;
+      case 14:frame=`<path d="${poly(4,54,0)}" ${fill}/><path d="${poly(4,44,0)}" fill="none" stroke="${M[1]}" stroke-width="1.4"/>`+[[60,8],[112,60],[60,112],[8,60]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4" fill="#3dd6ff" stroke="#fff" stroke-width="1"/>`).join('');break;
+      case 15:frame=`<path d="${starP(16,54,42)}" ${fill}/><circle cx="60" cy="60" r="38" fill="none" stroke="${M[1]}" stroke-width="2"/>`;break;
+      case 16:frame=`<circle cx="60" cy="60" r="40" ${fill}/>`+[1,-1].map(s=>Array.from({length:7},(_,k)=>{const a=(105+k*12)*Math.PI/180,x=60+s*46*Math.cos(a),y=60+46*Math.sin(a);return`<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="6" ry="2.6" transform="rotate(${s*(k*12+15)} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${M[1]}" stroke="${M[2]}" stroke-width=".7"/>`;}).join('')).join('');break;
+      case 17:frame=wings+`<path d="${SHIELD}" ${fill}/>`+crown;break;
+      case 18:frame=rays+`<path d="${starP(12,52,40)}" ${fill}/>`+crown;break;
+      default:frame=rays+wings+`<path d="${starP(8,50,40)}" ${fill}/>`+crown+`<g class="fr-spin2" style="transform-origin:60px 60px">${Array.from({length:6},(_,k)=>{const a=k*Math.PI/3;return`<circle cx="${(60+56*Math.cos(a)).toFixed(1)}" cy="${(60+56*Math.sin(a)).toFixed(1)}" r="2.4" fill="#fff"/>`;}).join('')}</g>`;
+    }
+  }
+  const pic=`<circle cx="60" cy="60" r="31.5" fill="${M[2]}"/><g clip-path="url(#${id}c)"><circle cx="60" cy="60" r="29" fill="url(#${id}a)"/><g transform="translate(31 31) scale(.58)">${A[2]}</g></g>`;
+  const w=String(lv).length*6+10;
+  front=`<rect x="${60-w/2}" y="88" width="${w}" height="15" rx="7.5" fill="#0b1626" stroke="${M[1]}" stroke-width="1.6"/><text x="60" y="99.4" text-anchor="middle" font-family="IBM Plex Sans Arabic,sans-serif" font-weight="800" font-size="10.5" fill="#fff">${lv}</text>`;
+  return`<svg class="lvf" viewBox="0 0 120 120" width="${size}" height="${size}" aria-label="level ${lv}">${defs}${back}${frame}${pic}${front}</svg>`;
 }
 // a picture on its own (for the picker)
 function avPic(i,size){const A=AVATARS[i],id='p'+(++_svgN);return`<svg viewBox="0 0 100 100" width="${size}" height="${size}"><defs><radialGradient id="${id}" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="${A[1]}"/><stop offset="1" stop-color="${A[0]}"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#${id})"/>${A[2]}</svg>`;}
