@@ -238,7 +238,7 @@ function lbAuth(){
 // progress lives in the cloud under the player's id: each device sends only what it added since the last sync (server-side increments),
 // so playing on a phone and a PC never overwrites one with the other
 const SK={wins:'w',games:'g',xp:'xp',ms:'ms',xps:'xs'};
-const LVSTEP=l=>l<=20?200:l<=40?250:l<=60?300:350,lifeXp=p=>(p.xp|0)+(p.xps|0);
+const LVSTEP=l=>l<=20?200:l<=40?250:l<=60?300:l<100?350:500,lifeXp=p=>(p.xp|0)+(p.xps|0);
 function lvInfo(xp){let l=1,need=LVSTEP(1);while(xp>=need&&l<5000){xp-=need;l++;need=LVSTEP(l);}return{lv:l,cur:xp,need};}
 const lvAv=(p,ch,size)=>lvFrame(lvInfo(lifeXp(p)).lv,size||58,p.avatar|0);
 const lvMini=(L,av,size)=>lvFrame(L,size||34,av|0);
@@ -436,7 +436,7 @@ function lvCard(p){
     <small>${t('lvLeft',fmt(L.need-L.cur),L.lv+1)}</small><small>${nx?t('lvNext',nx[0],t('sk_'+nx[2])):L.lv<1000?t('lvLook'):t('lvMax')}</small></div>
   ${lvRoad(p,L)}
   <details class="lvhow"><summary>❓ ${t('lvHowT')}</summary><ul>${t('lvHow').split('|').map(x=>`<li>${x}</li>`).join('')}</ul>
-    <p>${t('lvTab')}</p><div class="lvtab">${[['1–20',200],['21–40',250],['41–60',300],['61+',350]].map(([a,b])=>`<span><b dir="ltr">${a}</b>${b} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>
+    <p>${t('lvTab')}</p><div class="lvtab">${[['1–20',200],['21–40',250],['41–60',300],['61–99',350],['100+',500]].map(([a,b])=>`<span><b dir="ltr">${a}</b>${b} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>
   <h3 class="avh">${t('avPick')}</h3><div class="avg">${AVATARS.map((a,i)=>`<button class="${(p.avatar|0)===i?'on':''}" data-a="avPick:${i}" aria-label="picture ${i+1}">${avPic(i,52)}</button>`).join('')}</div>
   <div class="lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
 }
