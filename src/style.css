@@ -673,3 +673,25 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #acchint{position:fixed;z-index:40;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,#14243a,#0b1626);border:1.5px solid #f1cf6e;box-shadow:0 12px 34px rgba(0,0,0,.6);text-align:center;animation:fdin .25s}
 #acchint b{display:block;font-size:17px;color:#ffe08a;margin-bottom:4px}#acchint p{margin:0 0 10px;font-size:14px;color:#e6eef7;line-height:1.5}#acchint .row{justify-content:center;gap:8px}
 #acchint .ar{position:absolute;top:-10px;width:18px;height:18px;background:#14243a;border-left:1.5px solid #f1cf6e;border-top:1.5px solid #f1cf6e;transform:rotate(45deg)}
+/* level ring around the player's picture */
+.lvr{position:relative;display:inline-grid;place-items:center;border-radius:50%;padding:var(--rw,3px);background:var(--rc,#8a8f98);flex:none}
+.lvr .av{margin:0!important}
+.lvr.lvx{background:conic-gradient(from 0deg,var(--rc),var(--rc2),var(--rc3),var(--rc2),var(--rc));box-shadow:0 0 var(--rg,10px) var(--rc)}
+.lvr.lvy::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,var(--rc),var(--rc2),var(--rc3),var(--rc2),var(--rc));animation:lvspin var(--rs,4s) linear infinite}.lvr>.av{position:relative;z-index:1}.lvn{z-index:2}
+.lvr.lvz::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px dashed var(--rc2);opacity:.7;animation:lvspin calc(var(--rs,4s)*2) linear infinite reverse}
+@keyframes lvspin{to{transform:rotate(360deg)}}
+.lvn{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);min-width:20px;padding:0 5px;border-radius:999px;background:#0b1626;border:1.5px solid var(--rc,#8a8f98);color:#fff;font-style:normal;font-size:10.5px;font-weight:800;line-height:15px;text-align:center}
+.lvb{display:inline-block;margin-inline-end:6px;padding:0 6px;border-radius:999px;font-style:normal;font-size:11px;font-weight:800;color:#0b1626;background:var(--rc,#8a8f98);vertical-align:middle}.lvb.lvx{background:linear-gradient(90deg,var(--rc),var(--rc2));box-shadow:0 0 8px var(--rc)}.lvb.lvy{animation:none}
+.lvcard{display:flex;align-items:center;gap:16px;width:min(420px,100%);padding:14px 16px;border-radius:16px;background:rgba(6,12,22,.9);border:1px solid rgba(241,207,110,.35)}
+.lvbig .lvr .av{width:64px!important;height:64px!important;font-size:28px!important}.lvi{flex:1;display:flex;flex-direction:column;gap:6px}.lvi b{font-size:18px;color:#ffe08a}.lvi small{color:#cfe0f0}
+.lvbar{position:relative;height:16px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.lvbar u{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#c9952d,#f1cf6e)}.lvbar span{position:relative;display:block;text-align:center;font-size:11px;font-weight:700;line-height:16px}
+.lvsk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(420px,100%)}.lvsk div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:12px;background:rgba(6,12,22,.88);border:1px solid rgba(255,255,255,.08);opacity:.6}.lvsk div.got{opacity:1;border-color:rgba(95,211,122,.5)}
+.lvsk img{width:64px;height:43px;border-radius:7px;image-rendering:pixelated}.lvsk b{font-size:12px}.lvsk small{font-size:11px;color:#c3d0de}
+.lvset{display:flex;align-items:center;justify-content:space-between;gap:10px;width:min(420px,100%);padding:10px 14px;border-radius:14px;background:rgba(6,12,22,.88)}
+/* rank colours: green, purple, and a shining legendary */
+.rkt.rk-g{color:#6fe39a;font-weight:700}.rkt.rk-p{color:#c69bff;font-weight:700;text-shadow:0 0 8px rgba(160,100,255,.5)}
+.rkt.rk-l{font-weight:800;background:linear-gradient(90deg,#ffd86b,#fff6d0,#ff9d3d,#ffd86b);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rkshine 2.4s linear infinite;filter:drop-shadow(0 0 6px rgba(255,200,90,.6))}
+@keyframes rkshine{to{background-position:200% 0}}
+.rks div.rk-g{border-color:rgba(111,227,154,.6)!important}.rks div.rk-p{border-color:rgba(198,155,255,.7)!important;box-shadow:0 0 10px rgba(160,100,255,.25)}.rks div.rk-l{border-color:#ffd86b!important;box-shadow:0 0 14px rgba(255,200,90,.35)}
+.rks div.rk-g b{color:#6fe39a}.rks div.rk-p b{color:#c69bff}.rks div.rk-l b{background:linear-gradient(90deg,#ffd86b,#fff6d0,#ff9d3d,#ffd86b);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rkshine 2.4s linear infinite}
+.rks div em{font-style:normal;font-size:12px;color:#8fe3a8}

@@ -4,7 +4,7 @@ let G=null,acc=0,lastTs=0;
 // online leaderboard (Firebase Realtime Database + anonymous sign-in); empty = turned off
 const LB_DB='https://sijal-fa367-default-rtdb.firebaseio.com',LB_KEY='AIzaSyABuacot7I8S6r-7bsTHbYgMWhQC7OHXi4';
 const SUGGEST_KEY='137b52a0-fd63-4170-99f2-83a421aef9f4';
-const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(21,Math.ceil(p.wins/25)),SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
+const $=s=>document.querySelector(s),BAR=['city','fort','port','coast','factory','silo','shield','rocket','nuke','doom','ult'],rankOf=p=>p.wins<=0?0:Math.min(40,Math.ceil(p.wins/25)),rankShow=p=>{const r=rankOf(p);return p.rankPick!=null&&p.rankPick>=0&&p.rankPick<=r?p.rankPick:r;},rankCls=i=>i>=20?'rk-l':i>=18?'rk-p':i>=14?'rk-g':'',SIZES=[[420,264],[540,340],[680,428],[840,528]],BOTS=[6,10,14,18,23];
 
 // ── profile (per-device convenience only) ──
 function loadProf(){
@@ -108,13 +108,13 @@ function renderMenu(){
         <path d="M17 108 L20 101 L23 108 Z" fill="url(#swGold)"/>
         <rect x="16" y="116" width="8" height="30" rx="2" fill="url(#swGrip)"/>${[0,1,2,3,4,5].map(k=>`<path d="M16 ${119+k*4.6} L24 ${121.5+k*4.6}" stroke="#1d0f06" stroke-width="1.1" opacity=".7"/>`).join('')}
         <circle cx="20" cy="151" r="6.5" fill="url(#swGold)" stroke="#6b4710" stroke-width=".8"/><circle cx="18.5" cy="149.5" r="1.8" fill="#fff6d6" opacity=".8"/></g></defs></svg>`;document.body.appendChild(d);}
-  const p=UI.prof,rk=rankOf(p),f=p.fb||{},nm=p.name||f.user||t('defName'),d=new Date(),dk=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
+  const p=UI.prof,rk=rankOf(p),LV=lvInfo(lifeXp(p)),f=p.fb||{},nm=p.name||f.user||t('defName'),d=new Date(),dk=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
   const left=Math.max(1,Math.ceil((new Date(d.getFullYear(),d.getMonth(),d.getDate()+1)-d)/36e5)),done=p.dailyDone===dk;
   const nx=PASS_AT,xp=p.xp|0,pct=Math.max(4,Math.min(100,Math.round(xp/nx*100)));
   const TT='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>';
   const tile=(a,ic,lb,sub,cls)=>`<button class="mtile${cls?' '+cls:''}" data-a="${a}"><i>${ic}</i><b>${lb}</b><small>${sub}</small></button>`;
   // a game-style home: who you are on top, one big battle card, three modes, a few quiet links, and the tabs at the bottom
-  $('#menu').innerHTML=`<div class="topbar"><button class="pchip" data-a="account"><span class="av">${esc([...nm][0]||'?')}</span><span class="pi"><b>${hasBadge(p)?BADGE:''}${esc(nm)}</b><small>${t('ranks')[rk]} · ${p.wins|0} ${t('wins')}</small><em class="xpb"><u style="width:${pct}%"></u></em></span></button>
+  $('#menu').innerHTML=`<div class="topbar"><button class="pchip" data-a="account">${lvAv(p,esc([...nm][0]||'?'))}<span class="pi"><b>${hasBadge(p)?BADGE:''}${esc(nm)}</b><small><span class="rkt ${rankCls(rankShow(p))}">${t('ranks')[rankShow(p)]}</span> · ${t('lvS',LV.lv)}</small><em class="xpb"><u style="width:${Math.max(4,Math.round(LV.cur/LV.need*100))}%"></u></em></span></button>
     <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
@@ -230,7 +230,17 @@ function lbAuth(){
 }
 // progress lives in the cloud under the player's id: each device sends only what it added since the last sync (server-side increments),
 // so playing on a phone and a PC never overwrites one with the other
-const SK={wins:'w',games:'g',xp:'xp',ms:'ms'};
+const SK={wins:'w',games:'g',xp:'xp',ms:'ms',xps:'xs'};
+const LVSTEP=l=>l<=20?200:l<=40?250:l<=60?300:350,lifeXp=p=>(p.xp|0)+(p.xps|0);
+function lvInfo(xp){let l=1,need=LVSTEP(1);while(xp>=need&&l<5000){xp-=need;l++;need=LVSTEP(l);}return{lv:l,cur:xp,need};}
+// the ring around the player's picture: a new look every 10 levels up to 100, then every 50 up to 1000
+const lvTier=l=>l<100?Math.floor(l/10):Math.min(28,10+Math.floor((l-100)/50));
+function lvRing(l){const t=lvTier(l),C=['#8a8f98','#b07a45','#c9884e','#c9d3dc','#4fcf7a','#2ec4c4','#3d8bff','#6d5cff','#a55cff','#ff5cc8'];
+  if(t<10)return`--rc:${C[t]};--rw:${2+t*.25}px`;
+  const P=[['#ffd86b','#fff3c4','#c9952d'],['#ff7a3d','#ffd86b','#ff3d3d'],['#5ce1ff','#e9fbff','#3d8bff'],['#4fcf7a','#d6ffe9','#1f9e5a'],['#c084ff','#ffe1ff','#7a3dff'],['#ff3d6e','#ffd1dc','#a3123b']],q=P[(t-10)%P.length];
+  return`--rc:${q[0]};--rc2:${q[1]};--rc3:${q[2]};--rw:${4+Math.min(3,(t-10)*.2)}px;--rs:${Math.max(1.6,6-(t-10)*.22)}s;--rg:${10+(t-10)*1.6}px`;}
+const lvCls=l=>{const t=lvTier(l);return'lvr'+(t>=10?' lvx':'')+(t>=16?' lvy':'')+(t>=22?' lvz':'');};
+const lvAv=(p,ch)=>{const L=lvInfo(lifeXp(p)).lv;return`<span class="${lvCls(L)}" style="${lvRing(L)}"><span class="av">${ch}</span><i class="lvn">${L}</i></span>`;};
 function addStat(k,v){const p=UI.prof;p[k]=(p[k]||0)+v;const d=p.pend||(p.pend={});d[k]=(d[k]||0)+v;}
 // never from automated test browsers or the local test mode, so tests cannot leave rows on the real leaderboard
 const cloudOn=()=>!!(LB_DB&&LB_KEY&&/^https?:/.test(location.protocol)&&!navigator.webdriver&&!/[?&]bc=1/.test(location.search));
@@ -238,17 +248,18 @@ function cloudSync(){
   const p=UI.prof;if(!cloudOn())return Promise.resolve();if(UI.syncing)return UI.syncing;
   if(!p.cloudInit){p.cloudInit=1;p.pend={wins:p.wins|0,games:p.games|0,xp:p.xp|0,ms:Math.round(p.ms||0)};saveProf();}
   if(!p.histUp){p.histUp=1;p.histPend=(p.hist||[]).slice();saveProf();}
+  if(p.xps==null){const n=p.passT==null?-1:p.passT,v=n>=0&&!p.supporter?PASS_AT+n*PASS_STEP:0;p.xps=0;if(v)addStat('xps',v);saveProf();}
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{}),hSent=(Array.isArray(p.histPend)?p.histPend:[]).slice();let uid;
   return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;if(p.dLast){body.dl=p.dLast;body.ds=p.dStreak|0;}if(p.dailyDone)body.dd=p.dailyDone;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
-    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});
+    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,r:rankShow(p),lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
       if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);if(u.dl>(p.dLast|0)){p.dLast=u.dl;p.dStreak=u.ds|0;}if(u.dd>(p.dailyDone|0))p.dailyDone=u.dd;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       fetch(LB_DB+'/grants/'+uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(gr=>{if(gr&&(p.passT==null?-1:p.passT)<PASS.length){p.passT=PASS.length;p.supporter=1;saveProf();toast(t('supOn'),'prop',6000);fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:PASS.length})}).catch(()=>{});}}).catch(()=>{});
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
-      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,t:{'.sv':'timestamp'}})});});})
+      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,r:rankShow(p),lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});});})
     .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
 }
 const lbPush=cloudSync;
@@ -339,18 +350,19 @@ function renderLB(){
   const rows=UI.lbRows;
   $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
     `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
-    rows.map((r,i)=>`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${r.b?BADGE:''}${esc(r.n||'')}</span><span>${t('ranks')[rankOf({wins:r.w})]}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
+    rows.map((r,i)=>{const rk=r.r!=null&&r.r<=rankOf({wins:r.w})?r.r:rankOf({wins:r.w}),L=r.lv|0;return`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${L?`<i class="lvb ${lvCls(L)}" style="${lvRing(L)}">${L}</i>`:''}${r.b?BADGE:''}${esc(r.n||'')}</span><span class="rkt ${rankCls(rk)}">${t('ranks')[rk]||''}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`;}).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
     `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
 }
 function openLB(){
-  UI.lbRows=null;renderLB();show('help');if(!cloudOn())return;const s=UI.lbSort||'w';
+  UI.lbRows=null;renderLB();show('help');if(!cloudOn())return;const s=UI.lbSort||'w',me=(UI.prof.fb||{}).uid;
   lbPush().then(()=>fetch(LB_DB+'/lb.json?orderBy=%22'+s+'%22&limitToLast=100')).then(r=>{if(!r.ok)throw 0;return r.json();}).then(j=>{
-    const a=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).filter(r=>r&&typeof r.n==='string'&&(r.g|0)>0);a.sort((x,y)=>(y[s]||0)-(x[s]||0)||(y[s==='w'?'h':'w']||0)-(x[s==='w'?'h':'w']||0));
+    const a=Object.entries(j||{}).map(([id,v])=>Object.assign({id},v)).filter(r=>r&&typeof r.n==='string'&&(r.g|0)>0&&(r.id===me||(r.n.trim()&&r.n!=='دولتي'&&r.n!=='My Realm')));a.sort((x,y)=>(y[s]||0)-(x[s]||0)||(y[s==='w'?'h':'w']||0)-(x[s==='w'?'h':'w']||0));
     if((UI.lbSort||'w')===s){UI.lbRows=a;if($('#help .lbh'))renderLB();}}).catch(()=>{UI.lbRows='err';if($('#help .lbh'))renderLB();});
 }
 function renderRanks(){
   const p=UI.prof,rk=rankOf(p),R=t('ranks');
-  $('#help').innerHTML=`<h2>${t('allRanks')}</h2><div class="rks">${R.map((n,i)=>`<div class="${i===rk?'cur':i<rk?'done':''}"><b>${n}</b><span>${i===0?'0':i===21?'501+':((i-1)*25+1)+' – '+i*25}</span></div>`).join('')}</div><p class="keys">${t('ranksNote')}</p><div class="row"><button class="btn big" data-a="account">${t('back')}</button></div>`;
+  const sh=rankShow(p);
+  $('#help').innerHTML=`<h2>${t('allRanks')}</h2><p class="keys">${t('rkPickNote')}</p><div class="rks">${R.map((n,i)=>`<div class="${i===sh?'cur':i<=rk?'done':''} ${rankCls(i)}"><b>${n}</b><span>${i===0?'0':((i-1)*25+1)+' – '+i*25}</span>${i<=rk?(i===sh?`<em>✓ ${t('rkOn')}</em>`:`<button class="btn sm ok" data-a="rkPick:${i}">${t('rkUse')}</button>`):'<em>🔒</em>'}</div>`).join('')}</div><div class="row"><button class="btn big" data-a="account">${t('back')}</button></div>`;
 }
 function renderSuggest(done){
   $('#help').innerHTML=`<h2>${t('suggest')}</h2>`+(done?`<p class="best">${t('sgDone')}</p><div class="row"><button class="btn big" data-a="menu">${t('ok')}</button></div>`:
@@ -401,11 +413,19 @@ function accPanel(){
   if(GOOGLE_CID)setTimeout(()=>gMount('in'),0);
   return`<div class="accb"><h3>${t('ac_title')}</h3>${UI.relog?`<p class="bad">${t('ac_relog')}</p>`:''}<p class="keys">${t('ac_note')}</p><div class="accf">${userIn(t('ac_userIn'),'email')}${pwIn('inPass',t('ac_pass'),'current-password')}</div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div><button class="lnkb" data-a="accForgot">🔑 ${t('fg_btn')}</button>${GOOGLE_CID?`<div class="gor"><span>${t('gg_or')}</span></div><div id="gBtn"></div>`:''}</div>`;
 }
+function lvCard(p){
+  const L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv),nm=p.name||(p.fb||{}).user||t('defName');
+  return`<div class="lvcard"><div class="lvbig">${lvAv(p,esc([...nm][0]||'?'))}</div><div class="lvi"><b>${t('lvL',L.lv)}</b><div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u><span dir="ltr">${fmt(L.cur)} / ${fmt(L.need)}</span></div>
+    <small>${nx?t('lvNext',nx[0],t('sk_'+nx[2])):L.lv<1000?t('lvLook'):t('lvMax')}</small></div></div>
+  <div class="lvsk">${LVSK.map(([l,ty,id])=>`<div class="${L.lv>=l?'got':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><small>${L.lv>=l?'✓ '+t('bpGot'):'🔒 '+t('lvS',l)}</small></div>`).join('')}</div>
+  <div class="lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
+}
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
   $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)">${!p.name?`<p class="nmask">✍️ ${t('nameAsk')}</p>`:''}<label class="fld${!p.name?' nmglow':''}"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
-  <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
-  <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  ${lvCard(p)}
+  <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),`<span class="rkt ${rankCls(rankShow(p))}">${t('ranks')[rankShow(p)]}</span>`],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
+  <p class="keys">${rk<40?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 function renderNews(latest){
   // one update per day: everything released on the same date shows as a single entry, numbered by the day's first version
@@ -439,12 +459,12 @@ const passTier=p=>UI.owner?PASS.length:p.passT>0?Math.min(PASS.length,p.passT):0
 function passBuy(){
   const p=UI.prof;if(p.passT==null)p.passT=-1;const on=p.passT>=0,cost=on?PASS_STEP:PASS_AT;
   if(on&&p.passT>=PASS.length)return;if((p.xp|0)<cost){sfx('err');toast(t('bpNeed',fmt(cost-(p.xp|0))),'bad',2600);return;}
-  addStat('xp',-cost);p.passT=on?p.passT+1:0;saveProf();sfx('era');toast(on?t('bpGotTier',p.passT):t('bpOpened'),'prop',3500);cloudSync();
+  addStat('xp',-cost);addStat('xps',cost);p.passT=on?p.passT+1:0;saveProf();sfx('era');toast(on?t('bpGotTier',p.passT):t('bpOpened'),'prop',3500);cloudSync();
   // redraw without losing where the player had scrolled to
   const h=$('#help'),hs=h?h.scrollTop:0,ws=window.scrollY;renderPass();if(h)h.scrollTop=hs;window.scrollTo(0,ws);
 }
 const canBuy=p=>{const n=p.passT==null?-1:p.passT;return n<0?(p.xp|0)>=PASS_AT:n<PASS.length&&(p.xp|0)>=PASS_STEP;};
-const owns=(p,t,k)=>{const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
+const owns=(p,t,k)=>{const L=lvInfo(lifeXp(p)).lv;for(const e of LVSK)if(e[1]===t&&e[2]===k)return L>=e[0];const n=passTier(p);for(let j=0;j<n;j++)if(PASS[j][0]===t&&PASS[j][1]===k)return true;return false;};
 const hasPass=p=>UI.owner||(p.passT==null?-1:p.passT)>=0,hasBadge=p=>hasPass(p)&&!p.hideBadge;
 const BADGE='<span class="lgb" title="Season 0" aria-label="Season 0"></span>';
 function mySkin(){const p=UI.prof,k=p.skin||{};return{pat:k.pat&&owns(p,'pat',k.pat)?k.pat:'',bld:k.bld&&owns(p,'bld',k.bld)?k.bld:'',badge:hasBadge(p)?1:0,pass:hasPass(p)?1:0};}
@@ -466,9 +486,9 @@ function renderPass(){
 }
 // customization: equip what you have unlocked
 function renderSkins(){
-  const p=UI.prof,k=p.skin||{},n=passTier(p),sec=(ty,lab)=>{const L=PASS.slice(0,n).filter(e=>e[0]===ty);return`<h3>${lab}</h3><div class="bpg free"><div class="bpc got${!k[ty]?' eq':''}"><div class="none">✕</div><b>${t('skNone')}</b><button class="btn sm${!k[ty]?'':' ok'}" data-a="skin:${ty}:">${!k[ty]?'✓ '+t('bpOn'):t('bpWear')}</button></div>${L.map(([,id])=>{const eq=k[ty]===id;return`<div class="bpc got${eq?' eq':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><button class="btn sm${eq?'':' ok'}" data-a="skin:${ty}:${eq?'':id}">${eq?'✓ '+t('bpOn'):t('bpWear')}</button></div>`;}).join('')}</div>`;};
+  const p=UI.prof,k=p.skin||{},n=passTier(p),LVN=lvInfo(lifeXp(p)).lv,sec=(ty,lab)=>{const L=PASS.slice(0,n).filter(e=>e[0]===ty).concat(LVSK.filter(e=>e[1]===ty&&LVN>=e[0]).map(e=>[e[1],e[2]]));return`<h3>${lab}</h3><div class="bpg free"><div class="bpc got${!k[ty]?' eq':''}"><div class="none">✕</div><b>${t('skNone')}</b><button class="btn sm${!k[ty]?'':' ok'}" data-a="skin:${ty}:">${!k[ty]?'✓ '+t('bpOn'):t('bpWear')}</button></div>${L.map(([,id])=>{const eq=k[ty]===id;return`<div class="bpc got${eq?' eq':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><button class="btn sm${eq?'':' ok'}" data-a="skin:${ty}:${eq?'':id}">${eq?'✓ '+t('bpOn'):t('bpWear')}</button></div>`;}).join('')}</div>`;};
   const bdg=hasPass(p)?`<h3>${t('bdgT')}</h3><div class="bdgrow"><span class="bdgshow">${BADGE}<b>${esc(p.name||t('defName'))}</b></span><div class="chips"><button class="chip${!p.hideBadge?' on':''}" data-a="badge:1">${t('bdgOn')}</button><button class="chip${p.hideBadge?' on':''}" data-a="badge:0">${t('bdgOff')}</button></div></div><p class="keys">${t('bdgNote')}</p>`:'';
-  $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}`;
+  $('#help').innerHTML=`${mtabs('skins')}<h2>🎨 ${t('tSkins')}</h2>${bdg}${n||LVN>=25?`<p class="keys">${t('skNote')}</p>${sec('pat',t('bpPat'))}${sec('bld',t('bpBld'))}`:`<p class="keys">${t('skEmpty')}</p>`}`;
 }
 // ── admins: the root account plus anyone it (or another admin) grants; checked against the database, which enforces it ──
 const ADMIN_ROOT='saadsd';
@@ -1030,6 +1050,8 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');ppMount();break;
     case'social':renderSocial();show('help');break;
+    case'rkPick':p.rankPick=+v;saveProf();lbPush();renderRanks();break;
+    case'lvShow':p.hideLv=v==='0'?1:0;saveProf();lbPush();renderAccount();break;
     case'eye':{const i=$('#'+v),b=document.querySelector(`[data-a="eye:${v}"]`);if(i){const sh=i.type==='password';i.type=sh?'text':'password';if(b)b.textContent=sh?'🙈':'👁️';i.focus();}break;}
     case'acHintGo':case'acHintX':{UI.prof.accHint=1;saveProf();const d=$('#acchint');if(d)d.remove();if(a==='acHintGo'){stat('acchgo');act('account');}break;}
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
