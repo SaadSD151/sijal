@@ -162,8 +162,12 @@ function renderSetup(){
   ${host?`<div class="chips"><span class="rk">${t('roomType')}:</span><button class="chip${p.pub!==false?' on':''}" data-a="pub:1">${t('pubRoom')}</button><button class="chip${p.pub===false?' on':''}" data-a="pub:0">${t('privRoom')}</button></div>`:''}
   ${NET.on&&NET.host?`<div class="row"><button class="btn" data-a="lobbyBack">${t('lobby')} (${NET.players.length})</button><button class="btn big" data-a="netStart">${t('startNet')}</button></div>`:`${host?`<div class="row"><button class="btn" data-a="online">${t('back')}</button><button class="btn big" data-a="hostRoom">${t('hostRoom')}</button></div>`:`<div class="row"><button class="btn" data-a="menu">${t('back')}</button><button class="btn big" data-a="go">${t('start')}</button></div>`}`}`;
 }
+// how to play: the short version first, then every topic in detail with a picture from the game (pictures live next to the page on the website)
 function renderHelp(){
-  $('#help').innerHTML=`<h2>${t('how')}</h2><div class="hl">${t('help').map(h=>`<div><b>${h[0]}</b><p>${h[1]}</p></div>`).join('')}</div><p class="keys">${t('keys')}</p><div class="row"><button class="btn big" data-a="helpBack">${t('back')}</button></div>`;
+  const web=/^https?:/.test(location.protocol);
+  $('#help').innerHTML=`<h2>${t('how')}</h2><div class="hwq"><h3>⚡ ${t('hwQuick')}</h3><ol>${t('hwQ').map(x=>`<li>${x}</li>`).join('')}</ol></div>
+  <h3 class="hwh">📖 ${t('hwFull')}</h3><div class="hwd">${t('hwD').map((d,i)=>`<details${i===0?' open':''}><summary><span>${d[0]}</span></summary><div>${d[1]&&web?`<img loading="lazy" src="howto/${d[1]}.jpg" alt="">`:''}${d[2].map(x=>`<p>${x}</p>`).join('')}</div></details>`).join('')}</div>
+  <p class="keys">${t('keys')}</p><div class="row"><button class="btn big" data-a="helpBack">${t('back')}</button></div>`;
 }
 const dayKey=()=>{const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();};
 // the daily challenge: one world and one rule of the day for everyone, one attempt, a board of the fastest wins, and a streak

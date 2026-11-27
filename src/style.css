@@ -707,3 +707,13 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .avg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(420px,100%)}
 .avg button{padding:3px;border-radius:50%;border:2px solid transparent;background:rgba(6,12,22,.7);cursor:pointer;display:grid;place-items:center}.avg button.on{border-color:#f1cf6e;box-shadow:0 0 12px rgba(241,207,110,.6)}
 .avg svg{width:100%;height:auto;max-width:56px}
+/* how to play */
+.hwq{width:min(620px,100%);padding:14px 18px;border-radius:16px;background:linear-gradient(180deg,rgba(60,40,8,.92),rgba(30,20,4,.92));border:1.5px solid #f1cf6e}
+.hwq h3{margin:0 0 8px;color:#ffe08a}.hwq ol{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:6px;line-height:1.6;font-size:15px}
+.hwh{margin:6px 0 0;color:#ffe08a;text-shadow:0 2px 8px #000}
+.hwd{display:flex;flex-direction:column;gap:8px;width:min(620px,100%)}
+.hwd details{border-radius:14px;background:rgba(6,12,22,.92);border:1px solid rgba(255,255,255,.1);overflow:hidden}
+.hwd summary{cursor:pointer;list-style:none;padding:13px 16px;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:space-between}
+.hwd summary::-webkit-details-marker{display:none}.hwd summary::after{content:'▾';color:#f1cf6e;transition:transform .2s}.hwd details[open] summary::after{transform:rotate(180deg)}
+.hwd details>div{padding:0 16px 14px}.hwd img{display:block;width:100%;border-radius:10px;margin:2px 0 10px;border:1px solid rgba(241,207,110,.35)}
+.hwd p{margin:0 0 8px;line-height:1.7;font-size:14.5px;color:#e6eef7}
