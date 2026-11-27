@@ -538,7 +538,7 @@ function admStats(){UI.admSt=null;statFlush();
     const now=Date.now(),O={now:0,g:0,o:0,m:0,mob:0,day:0};const old={};
     for(const[id,v]of Object.entries(on||{})){const a=now-(v&&v.t||0);if(a<150000){O.now++;O[v.s]=(O[v.s]||0)+1;if(v.m)O.mob++;}if(a<864e5)O.day++;if(a>3*864e5)old[id]=null;}
     if(Object.keys(old).length)admReq('/stats/on.json',{method:'PATCH',body:JSON.stringify(old)}).catch(()=>{});
-    UI.admSt={d:d||{},t:tt||{},on:O,acc:nm?Object.keys(nm).length:null,at:now};if(UI.screen==='help'&&$('#help .stp'))renderAdmin();}).catch(()=>{UI.admSt='err';if($('#help .stp'))renderAdmin();});}
+    UI.admSt={d:d||{},t:tt||{},on:O,acc:nm?Object.keys(nm).length:null,at:now};if(UI.screen==='help'&&$('#help .apw'))renderAdmin();}).catch(()=>{UI.admSt='err';if($('#help .apw'))renderAdmin();});}
 function statsHtml(){const S=UI.admSt;
   if(S==null)return`<div class="hp stp"><h3>📊 ${t('stT')}</h3><p class="keys">${t('lbLoad')}</p></div>`;
   if(S==='err')return`<div class="hp stp"><h3>📊 ${t('stT')}</h3><p class="bad">${t('stRules')}</p><div class="row"><button class="btn sm" data-a="admSt">${t('stRef')}</button></div></div>`;
@@ -555,7 +555,7 @@ function statsHtml(){const S=UI.admSt;
   const avgMin=W.g?W.ms/W.g/60:0,wr=W.w+W.l?W.w/(W.w+W.l):0,ret=W.u?Math.max(0,W.u-W.nw)/W.u:0,ppv=W.u?W.g/W.u:0;
   let pk=-1,pv=0;for(let h=0;h<24;h++){const v=sum(0,7,'h'+String(h).padStart(2,'0'));if(v>pv){pv=v;pk=h;}}
   const tips=statTips({W,PW,avgMin,wr,ret,ppv,pk,days:Object.keys(S.d).length});
-  return`<div class="hp stp"><div class="sth"><h3>📊 ${t('stT')}</h3><button class="btn sm" data-a="admSt">↻ ${t('stRef')}</button></div>
+  return`<div class="hp stp"><div class="sth"><h3>📊 ${t('stT')}</h3></div>
   <div class="stnow"><i></i><b>${n(O.now)}</b> ${t('stNow')}<small>${t('stIn',n(O.g),n(O.o),n(O.m))} · ${t('stDay',n(O.day))}</small></div>
   <h4>${t('stToday')}</h4><div class="stg">
   ${tile('👀',t('stVis'),n(D.visits),cmp(D.visits,Y.visits))}${tile('👤',t('stUniq'),n(D.uniq),cmp(D.uniq,Y.uniq))}${tile('✨',t('stNew'),n(D.new),cmp(D.new,Y.new))}
@@ -596,16 +596,26 @@ function statTips(a){const W=a.W,T=[],L=TX[UI.prof.lang]&&TX[UI.prof.lang].tips?
   if(a.pk>=0&&W.u>=15)add('info','peak',a.pk+':00',post+':00');
   if(!T.some(x=>x[0]==='bad'||x[0]==='mid'))add('good','fine');
   return T;}
+// the owner panel: a summary strip on top and one clear page per job (statistics, supporters, leaderboard, admins, announcement, my account)
 function renderAdmin(){
-  const L=UI.admList,B=UI.admLb,p=UI.prof;
-  $('#help').innerHTML=`<h2>${UI.owner?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2>${UI.owner?statsHtml():''}
-  <div class="hp"><h3>${t('admAdmins')}</h3>${UI.owner?`<div class="row"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGive">${t('admGive')}</button></div>`:''}
-  ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:Object.entries(L).map(([uid,n])=>`<div class="hpr"><b dir="ltr">${esc(typeof n==='string'?n:uid.slice(0,8))}</b>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:UI.owner?`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`:''}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>
-  ${UI.owner?`<div class="hp"><h3>💜 ${t('supAdm')}</h3><div class="row"><input id="grUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn sm ok" data-a="admGrant">${t('supGrant')}</button></div><p class="keys">${t('supAdmNote')}</p></div>`:''}
-  <div class="hp"><h3>${t('admMsgT')}</h3><div class="row"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn sm ok" data-a="admMsg">${t('admSend')}</button></div></div>
-  <div class="hp"><h3>${t('admMeT')}</h3><div class="row"><label>${t('x_xp')} <input id="admXp" type="number" min="0" value="${p.xp|0}" style="width:7em"></label><label>${t('bpTierL')} <input id="admPt" type="number" min="-1" max="${PASS.length}" value="${p.passT==null?-1:p.passT}" style="width:4em"></label><button class="btn sm ok" data-a="admMe">${t('admSave')}</button></div></div>
-  <div class="hp"><h3>${t('lb')}</h3>${B==null?`<p class="keys">${t('lbLoad')}</p>`:B.map(r=>`<div class="hpr"><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${r.w|0} ${t('wins')} · ${r.g|0}</small><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">${t('admDelRow')}</button></div>`).join('')}</div>
-  <div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  const L=UI.admList,B=UI.admLb,p=UI.prof,S=UI.admSt,own=UI.owner,tab=UI.admTab||(own?'stats':'lb'),n=v=>(v|0).toLocaleString('en');
+  const D=S&&S!=='err'?(S.d[sDay()]||{}):{},T=S&&S!=='err'?S.t:{};
+  const tabs=[own&&['stats','📊',t('ap_stats')],own&&['sup','💜',t('ap_sup')],['lb','🏆',t('ap_lb')],own&&['adm','🛠️',t('ap_adm')],['msg','📢',t('ap_msg')],['me','⚙️',t('ap_me')]].filter(Boolean);
+  const kpi=(ic,l,v)=>`<div class="apk"><span>${ic}</span><b>${v}</b><small>${l}</small></div>`;
+  const head=`<div class="aph2"><div><h2>${own?'👑 '+t('owner'):'🛠️ '+t('admin')}</h2><p>${t('ap_sub')}</p></div><button class="btn sm" data-a="admSt">↻ ${t('stRef')}</button></div>
+  ${own?`<div class="apks">${kpi('🟢',t('stNow'),S&&S!=='err'?n(S.on.now):'…')}${kpi('👤',t('ap_kToday'),n(D.uniq))}${kpi('⚔️',t('ap_kGames'),n(D.games))}${kpi('🔐',t('stAcc'),S&&S!=='err'&&S.acc!=null?n(S.acc):'…')}${kpi('💜',t('ap_kSup'),n(T.sup))}</div>`:''}
+  <div class="aptabs">${tabs.map(([k,ic,l])=>`<button class="${tab===k?'on':''}" data-a="admTab:${k}"><span>${ic}</span>${l}</button>`).join('')}</div>`;
+  const card=(title,desc,body)=>`<div class="apc2"><h3>${title}</h3>${desc?`<p class="apd">${desc}</p>`:''}${body}</div>`;
+  let body='';
+  if(tab==='stats')body=statsHtml();
+  else if(tab==='sup')body=card('💳 '+t('ap_supAuto'),t('ap_supAutoD'),'')+card('💜 '+t('supAdm'),t('ap_supManD'),`<div class="apf"><input id="grUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn ok" data-a="admGrant">${t('supGrant')}</button></div><p class="apd">${t('supAdmNote')}</p>`);
+  else if(tab==='lb'){const q=(UI.admQ||'').toLowerCase(),R=B?B.filter(r=>!q||String(r.n||'').toLowerCase().includes(q)):null;
+    body=card('🏆 '+t('ap_lb'),t('ap_lbD'),`<div class="apf"><input id="admQ" placeholder="🔎 ${t('ap_search')}" value="${esc(UI.admQ||'')}"></div>${R==null?`<p class="keys">${t('lbLoad')}</p>`:`<p class="apd">${t('ap_count',R.length)}</p><div class="aplist">${R.slice(0,200).map((r,i)=>`<div class="apr"><span class="apn">${i+1}</span><div><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${t('ranks')[r.r!=null?r.r:rankOf({wins:r.w})]||''} · ${r.w|0} ${t('wins')} · ${r.g|0} ${t('accGames')} · ${hrs(r.h||0)} ${t('lbHrs')}${r.lv?' · '+t('lvS',r.lv):''}</small></div><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">🗑️ ${t('admDelRow')}</button></div>`).join('')}</div>`}`);}
+  else if(tab==='adm')body=card('🛠️ '+t('admAdmins'),t('ap_admD'),`<div class="apf"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn ok" data-a="admGive">${t('admGive')}</button></div>
+    ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:`<div class="aplist">${Object.entries(L).map(([uid,nm])=>`<div class="apr"><span class="apn">🛠️</span><div><b dir="ltr">${esc(typeof nm==='string'?nm:uid.slice(0,8))}</b></div>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>`}`);
+  else if(tab==='msg')body=card('📢 '+t('admMsgT'),t('ap_msgD'),`<div class="apf"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn ok" data-a="admMsg">${t('admSend')}</button></div>`);
+  else body=card('⚙️ '+t('admMeT'),t('ap_meD'),`<div class="apf"><label>${t('x_xp')}<input id="admXp" type="number" min="0" value="${p.xp|0}"></label><label>${t('bpTierL')}<input id="admPt" type="number" min="-1" max="${PASS.length}" value="${p.passT==null?-1:p.passT}"></label><button class="btn ok" data-a="admMe">${t('admSave')}</button></div>`);
+  $('#help').innerHTML=`<div class="apw">${head}${body}</div><div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
 function admGive(){const u=(($('#admUser')||{}).value||'').trim().toLowerCase();if(!/^[a-z0-9_]{3,16}$/.test(u))return err('admUser');
   admReq('/names/'+u+'.json').then(uid=>{if(!uid)throw 1;return admReq('/admins/'+uid+'.json',{method:'PUT',body:JSON.stringify(u)});}).then(()=>{toast('🛠️ '+t('admGiven',u),'prop',2500);openAdmin();}).catch(e=>err(e===1?'admNoUser':'admFail'));}
@@ -1078,6 +1088,7 @@ function act(a){
       if(v==='gold')me2.gold+=1e5;else if(v==='troops')me2.troops+=1e5;else if(v==='era')me2.era=4;else if(v==='build'||v==='msl')C[v]=!C[v];
       else if(v==='win'&&!g.over){g.over={w:me2.id,win:true,why:'dom'};g.ev.push({t:'over',win:true,w:me2.id});show(null);}
       if(v!=='win'){renderPause();toast('🛠️ '+t('admDone'),'prop',1500);}break;}
+    case'admTab':UI.admTab=v;renderAdmin();break;
     case'admin':openAdmin();break;case'admSt':admStats();renderAdmin();break;
     case'admGive':admGive();break;case'admDel':admDel(v);break;case'lbDel':admLbDel(v);break;case'admMe':admMe();break;case'admMsg':admMsg();break;
     case'closeCard':closeCard();break;
@@ -1243,7 +1254,7 @@ function bindInput(){
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inTribes'){UI.prof.tribes=clamp(+e.target.value|0,30,240);$('#tribesV').textContent=UI.prof.tribes;saveProf();return;}if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
   $('#app').addEventListener('change',e=>{if(e.target.id==='auKeep'||e.target.id==='auMax'||e.target.id==='auRate'){const a=auCfg();a[{auKeep:'keep',auMax:'max',auRate:'rate'}[e.target.id]]=+e.target.value;saveProf();UI.auNext=0;auOpen();}});
-  $('#app').addEventListener('input',e=>{if(e.target.id==='inName'){UI.nameDraft=e.target.value.trim().slice(0,18);const ch=UI.nameDraft!==(UI.prof.name||'');const b=$('#nameSave'),u=$('#nameUndo');if(b)b.disabled=!ch;if(u)u.disabled=!ch;const m=$('#nameMsg');if(m)m.textContent='';}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='admQ'){UI.admQ=e.target.value;renderAdmin();const q=$('#admQ');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length);}return;}if(e.target.id==='inName'){UI.nameDraft=e.target.value.trim().slice(0,18);const ch=UI.nameDraft!==(UI.prof.name||'');const b=$('#nameSave'),u=$('#nameUndo');if(b)b.disabled=!ch;if(u)u.disabled=!ch;const m=$('#nameMsg');if(m)m.textContent='';}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
     if(!G||G.o.demo)return;
