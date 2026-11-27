@@ -418,11 +418,25 @@ function accPanel(){
   if(GOOGLE_CID)setTimeout(()=>gMount('in'),0);
   return`<div class="accb"><h3>${t('ac_title')}</h3>${UI.relog?`<p class="bad">${t('ac_relog')}</p>`:''}<p class="keys">${t('ac_note')}</p><div class="accf">${userIn(t('ac_userIn'),'email')}${pwIn('inPass',t('ac_pass'),'current-password')}</div>${m}<div class="row"><button class="btn ok" data-a="accReg">${t('ac_reg')}</button><button class="btn" data-a="accIn">${t('ac_in')}</button></div><button class="lnkb" data-a="accForgot">🔑 ${t('fg_btn')}</button>${GOOGLE_CID?`<div class="gor"><span>${t('gg_or')}</span></div><div id="gBtn"></div>`:''}</div>`;
 }
+function lvRoad(p,L){
+  const av=p.avatar|0,M=new Map();
+  for(let l=10;l<=100;l+=10)M.set(l,{fr:1});for(let l=200;l<=1000;l+=100)M.set(l,{fr:1});
+  for(const e of LVSK)M.set(e[0],Object.assign(M.get(e[0])||{},{sk:e}));
+  const ks=[1,...[...M.keys()].sort((a,b)=>a-b)];M.set(1,{fr:1,start:1});
+  const nx=ks.find(l=>l>L.lv);
+  return`<div class="lroad"><h3>🛣️ ${t('lrT')}</h3><div class="lrt" id="lrt">${ks.map(l=>{const m=M.get(l),got=L.lv>=l,cur=l===nx;
+    return`<div class="lrn${got?' got':''}${cur?' cur':''}"${cur?' id="lrcur"':''}><i></i><div class="lrf">${lvMini(l,av,cur?86:70)}</div><b>${t('lvS',l)}</b>
+      ${m.sk?`<img src="${skinPreview(m.sk[1],m.sk[2])}" alt=""><small>🎁 ${t('sk_'+m.sk[2])}</small>`:`<small>${m.start?t('lrStart'):'✨ '+t('lrFr')}</small>`}
+      <em>${got?'✓':cur?t('lrNext'):'🔒'}</em></div>`;}).join('')}</div></div>`;
+}
 function lvCard(p){
-  const L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv),nm=p.name||(p.fb||{}).user||t('defName');
-  return`<div class="lvcard"><div class="lvbig">${lvAv(p,'',112)}</div><div class="lvi"><b>${t('lvL',L.lv)}</b><div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u><span dir="ltr">${fmt(L.cur)} / ${fmt(L.need)}</span></div>
-    <small>${nx?t('lvNext',nx[0],t('sk_'+nx[2])):L.lv<1000?t('lvLook'):t('lvMax')}</small></div></div>
-  <div class="lvsk">${LVSK.map(([l,ty,id])=>`<div class="${L.lv>=l?'got':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><small>${L.lv>=l?'✓ '+t('bpGot'):'🔒 '+t('lvS',l)}</small></div>`).join('')}</div>
+  const L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv);
+  setTimeout(()=>{const tr=document.getElementById('lrt'),c=document.getElementById('lrcur');if(!tr)return;if(c){const r=c.getBoundingClientRect(),q=tr.getBoundingClientRect();tr.scrollBy({left:r.left+r.width/2-q.left-q.width/2,behavior:'smooth'});}tr.onwheel=e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){tr.scrollBy({left:-e.deltaY});e.preventDefault();}};},350);
+  return`<div class="lvcard lvhero"><div class="lvbig">${lvAv(p,'',UI.mob?150:180)}</div><b class="lvnum">${t('lvL',L.lv)}</b><div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u><span dir="ltr">${fmt(L.cur)} / ${fmt(L.need)} XP</span></div>
+    <small>${t('lvLeft',fmt(L.need-L.cur),L.lv+1)}</small><small>${nx?t('lvNext',nx[0],t('sk_'+nx[2])):L.lv<1000?t('lvLook'):t('lvMax')}</small></div>
+  ${lvRoad(p,L)}
+  <details class="lvhow"><summary>❓ ${t('lvHowT')}</summary><ul>${t('lvHow').split('|').map(x=>`<li>${x}</li>`).join('')}</ul>
+    <p>${t('lvTab')}</p><div class="lvtab">${[['1–20',200],['21–40',250],['41–60',300],['61+',350]].map(([a,b])=>`<span><b dir="ltr">${a}</b>${b} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>
   <h3 class="avh">${t('avPick')}</h3><div class="avg">${AVATARS.map((a,i)=>`<button class="${(p.avatar|0)===i?'on':''}" data-a="avPick:${i}" aria-label="picture ${i+1}">${avPic(i,52)}</button>`).join('')}</div>
   <div class="lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
 }
