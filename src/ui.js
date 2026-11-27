@@ -720,16 +720,19 @@ function histMerge(p,cloud,sent,uid,tok){
 }
 function histAdd(g,res,xp){
   const p=UI.prof,me=g.nations[g.human];if(!me)return;const si=SIZES.findIndex(s=>s[0]===g.W&&s[1]===g.H);
-  const e={d:Date.now(),r:res,xp:xp|0,m:g.o.daily?'d':NET.on?'o':UI.mType||'c',s:si,f:g.o.diff|0,t:Math.round(g.tick/TPS),c:me.st.cities|0,k:me.st.kills|0,ch:g.o.cheats?1:0,dv:UI.mob?'m':'p'};
+  const e={d:Date.now(),r:res,xp:xp|0,m:g.o.daily?'d':NET.on?'o':UI.mType||'c',s:si,f:g.o.diff|0,t:Math.round(g.tick/TPS),c:me.st.cities|0,k:me.st.kills|0,ch:g.o.cheats?1:0,dv:UI.mob?'m':'p',x:+(g.o.daily?1.5:g.o.xpm||1).toFixed(2)};
   p.hist=[e].concat(Array.isArray(p.hist)?p.hist:[]).slice(0,40);p.histPend=(Array.isArray(p.histPend)?p.histPend:[]).concat([e]).slice(-40);saveProf();
 }
 function renderHist(){
   const H=Array.isArray(UI.prof.hist)?UI.prof.hist:[],w=H.filter(e=>e.r==='w').length,xs=H.reduce((a,e)=>a+(e.xp|0),0),L=UI.lang==='ar';
   const ago=d=>{const m=Math.max(0,Math.round((Date.now()-d)/6e4));return m<1?t('hiNow'):m<60?t('hiMin',m):m<1440?t('hiHr',Math.round(m/60)):t('hiDay',Math.round(m/1440));};
   const mm=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  const brk=e=>{if(!(e.xp>0))return'';const P=[];if(e.r!=='q')P.push(['🎮',10]);if(e.r==='w')P.push(['🏆',60]);if(e.c)P.push(['🏙️',e.c*4]);if(e.k)P.push(['💀',e.k*15]);
+    const sum=P.reduce((a,x)=>a+x[1],0);if(!sum)return'';const mul=e.x||Math.max(1,Math.round(e.xp/sum*10)/10),extra=e.x?e.xp-Math.round(sum*mul):0;
+    return`<div class="hbrk">${P.map(x=>`<span>${x[0]} +${fmt(x[1])}</span>`).join('')}${mul!==1?`<span class="hm">×${mul}</span>`:''}${extra>0?`<span>🎁 +${fmt(extra)}</span>`:''}<span class="ht">= ${fmt(e.xp)} XP</span></div>`;};
   const row=e=>{const R={w:['🏆',t('hiW'),'w'],l:['💀',t('hiL'),'l'],q:['🏳️',t('hiQ'),'q']}[e.r]||['•','',''];
     const mode={q:t('hiMq'),c:t('hiMc'),d:t('hiMd'),o:t('hiMo')}[e.m]||'',sz=e.s>=0?(t('sizes')[e.s]||''):'',df=t('diffs')[e.f]||'';
-    return `<div class="hrow ${R[2]}"><div class="hres"><span>${R[0]}</span><b>${R[1]}</b></div><div class="hmid"><b>${mode}${e.ch?' 🧪':''}${e.dv?`<span class="hdv">${e.dv==='m'?'📱 '+t('hiMob'):'💻 '+t('hiPc')}</span>`:''}</b><small>${[sz,df].filter(Boolean).join(' · ')}</small><small>⏱️ ${mm(e.t)} · 🏙️ ${e.c} · 💀 ${e.k} · ${ago(e.d)}</small></div><div class="hxp">+${fmt(e.xp)}<small>⭐ ${t('xpBon')}</small></div></div>`;};
+    return `<div class="hrow ${R[2]}"><div class="hres"><span>${R[0]}</span><b>${R[1]}</b></div><div class="hmid"><b>${mode}${e.ch?' 🧪':''}${e.dv?`<span class="hdv">${e.dv==='m'?'📱 '+t('hiMob'):'💻 '+t('hiPc')}</span>`:''}</b><small>${[sz,df].filter(Boolean).join(' · ')}</small><small>⏱️ ${mm(e.t)} · 🏙️ ${e.c} · 💀 ${e.k} · ${ago(e.d)}</small></div><div class="hxp"><small>${t('hiGot')}</small>+${fmt(e.xp)}<small>⭐ XP</small></div>${brk(e)}</div>`;};
   $('#help').innerHTML=`<div class="socH"><h2>📜 ${t('hiT')}</h2>${H.length?`<div class="hsum"><div><b>${H.length}</b><small>${t('hiG')}</small></div><div><b>${w}</b><small>${t('hiWs')}</small></div><div><b>${Math.round(w/H.length*100)}%</b><small>${t('hiRate')}</small></div><div><b>${fmt(xs)}</b><small>⭐ ${t('xpBon')}</small></div></div>`:''}</div>
   <div class="hlist">${H.length?H.map(row).join(''):`<p class="hempty">${t('hiNone')}</p>`}</div><div class="row"><button class="btn" data-a="menu">${t('back')}</button></div>`;
 }
