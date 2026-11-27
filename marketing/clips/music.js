@@ -135,6 +135,26 @@ const marks=JSON.parse(fs.readFileSync(process.argv[2],'utf8')),OUT=process.argv
       if(kl){impact(kl,.8);chime(kl+.1);}
       if(endS)pad(endS,[155.56,233.08,311.13],end-endS+.4,.07);
       outroHits();
+    }else if(M.story==='trailer'){
+      // an epic war score: a bomb and a braam, a Hijaz choir, drums that build to a full march, silence before the doomsday bomb, and a last rise into the address
+      const B=M.booms||[],Hs=M.hits||[],tl=M.title||3.4,end=M.outro,D=[73.42,110,146.83];
+      braam(0,1);choir(0,3.4,[146.83,220],.06);for(let t=.6;t<3.2;t+=.6)heart(t,.9);
+      if(tl){braam(tl,1.1);taiko(tl,1);taiko(tl+.5,.8);choir(tl,2.2,[146.83,220,293.66],.07);}
+      const s1=tl+2.2,s2=s1+12,s3=s2+12,brk=s3+8,ms=brk+4.4,dm=B[1]||ms+10,fin=dm+4.3;
+      // 1 · the build: strings and taiko, rising
+      ost(s1,s2,[73.42,73.42,87.31,73.42,110,73.42,87.31,98],.16,.05);for(let t=s1;t<s2;t+=.5){const i=Math.round((t-s1)/.5);taiko(t,.55+.3*i/24);if(i%8===0)sub(t,36.71,4,.35);}swell(s1,s2-s1,D,.05);riser(s2-1.6,1.6,.3);
+      // 2 · war: the full march with a Hijaz brass line
+      const march=(a,z,big)=>{for(let t=a;t<z;t+=.25){const i=Math.round((t-a)/.25);if(i%4===0)taiko(t,1);if(i%4===2)snare(t,.9);if(i%2===1)tak(t,.5);hat(t,.55);if(i%8===0)sub(t,i%16?55:36.71,2,.45);if(i%8===0)brass(t,[[146.83,220],[155.56,233.08],[146.83,220],[130.81,196]][(i/8)%4],1.8,big?.16:.12);}
+        const L=[7,8,9,10,9,8,7,6];for(let t=a,i=0;t<z-.2;t+=.5,i++)if(i%2===0)pluck(t,H[L[(i/2)%8]],.12);};
+      march(s2,brk,0);
+      // 3 · the army: a held breath with a ticking pulse
+      pad(brk,[146.83,174.61,220],ms-brk,.16);choir(brk,ms-brk,[73.42,146.83],.08);for(let t=brk;t<ms;t+=.5){osc(t,1600,.03,'square',.06,{lp:4000,dst:fx});if(Math.round((t-brk)*2)%2===0)taiko(t,.45);}riser(ms-1.2,1.2,.3);
+      // 4 · missiles: drums under the launches, then nothing before the doomsday bomb
+      march(ms,dm-1.1,1);silence(dm-1,1);
+      // 5 · the finale: everything at once, then the address
+      if(dm){drop(dm);choir(dm+.3,fin-dm,[73.42,110,146.83],.09);swell(dm+.6,fin-dm,[146.83,220,293.66],.07);for(let t=dm+1.2;t<fin;t+=.6)taiko(t,.6);}march(fin,end,1);swell(fin,end-fin,[146.83,185,220,293.66],.08);
+      for(const h of Hs)if(h>1)impact(h,.55);for(const t of B){boom(t);braam(t,1);}
+      outroHits();for(let t=end+1.2;t<end+8;t+=.6)taiko(t,.7);swell(end,M.len-end,[73.42,146.83,220,293.66],.1);choir(end+2,M.len-end-2,[146.83,220,293.66],.07);brass(end+6,[146.83,220,293.66],M.len-end-6.5,.12);
     }else if(M.story==='six7'){
       // a bouncy, cheeky beat: a "six-seven" two-note hook, drums for the fight, then the beat drops back in for the 67
       const h=M.hook,at=m('attack'),kl=m('kill'),s7=m('67'),endS=m('end');

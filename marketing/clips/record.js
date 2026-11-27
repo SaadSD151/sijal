@@ -281,7 +281,8 @@ const STORIES={
 (async()=>{
   fs.rmSync(OUT,{recursive:true,force:true});fs.mkdirSync(path.join(OUT,'f'),{recursive:true});
   const b=await chromium.launch();
-  const ctx=await b.newContext({viewport:{width:360,height:640},deviceScaleFactor:3,isMobile:true,hasTouch:true});
+  // ORIENT=h records a 1920x1080 version for the computer trailer
+  const ctx=await b.newContext(process.env.ORIENT==='h'?{viewport:{width:640,height:360},deviceScaleFactor:3}:{viewport:{width:360,height:640},deviceScaleFactor:3,isMobile:true,hasTouch:true});
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   await pg.clock.install({time:new Date('2026-11-23T20:00:00')});await pg.clock.pauseAt(new Date('2026-11-23T20:00:01'));
   await pg.addInitScript(([seed,fac,process_UPG])=>{let a=seed;Math.random=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
