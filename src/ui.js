@@ -114,7 +114,7 @@ function renderMenu(){
   const TT='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M16.6 3c.4 2.2 1.8 3.7 4 3.9v3.1c-1.5 0-2.8-.4-4-1.2v6.3c0 3.4-2.6 5.9-5.8 5.9S5 18.4 5 15.1c0-3.4 2.9-6 6.4-5.6v3.2c-1.6-.4-3.2.7-3.2 2.4 0 1.4 1.1 2.5 2.6 2.5s2.6-1.1 2.6-2.8V3h3.2z"/></svg>';
   const tile=(a,ic,lb,sub,cls)=>`<button class="mtile${cls?' '+cls:''}" data-a="${a}"><i>${ic}</i><b>${lb}</b><small>${sub}</small></button>`;
   // a game-style home: who you are on top, one big battle card, three modes, a few quiet links, and the tabs at the bottom
-  $('#menu').innerHTML=`<div class="topbar"><button class="pchip" data-a="account">${lvAv(p,esc([...nm][0]||'?'))}<span class="pi"><b>${hasBadge(p)?BADGE:''}${esc(nm)}</b><small><span class="rkt ${rankCls(rankShow(p))}">${t('ranks')[rankShow(p)]}</span> · ${t('lvS',LV.lv)}</small><em class="xpb"><u style="width:${Math.max(4,Math.round(LV.cur/LV.need*100))}%"></u></em></span></button>
+  $('#menu').innerHTML=`<div class="topbar"><button class="pchip" data-a="account">${lvAv(p,'',UI.mob?54:62)}<span class="pi"><b>${hasBadge(p)?BADGE:''}${esc(nm)}</b><small><span class="rkt ${rankCls(rankShow(p))}">${t('ranks')[rankShow(p)]}</span> · ${t('lvS',LV.lv)}</small><em class="xpb"><u style="width:${Math.max(4,Math.round(LV.cur/LV.need*100))}%"></u></em></span></button>
     <div class="tbi">${UI.admin?`<button class="ibn adm" data-a="admin" aria-label="${UI.owner?t('owner'):t('admin')}">${UI.owner?'👑':'🛠️'}</button>`:''}<button class="ibn" data-a="how" aria-label="${t('how')}">❓</button><button class="ibn" data-a="news" aria-label="${t('news')}">🔔</button><button class="ibn" data-a="settings" aria-label="${t('settings')}">⚙️</button></div></div>
   <div class="logo"><div class="l1">${t('title')}</div><div class="l2">${t('sub')}</div></div>
   <div class="home">
@@ -233,14 +233,8 @@ function lbAuth(){
 const SK={wins:'w',games:'g',xp:'xp',ms:'ms',xps:'xs'};
 const LVSTEP=l=>l<=20?200:l<=40?250:l<=60?300:350,lifeXp=p=>(p.xp|0)+(p.xps|0);
 function lvInfo(xp){let l=1,need=LVSTEP(1);while(xp>=need&&l<5000){xp-=need;l++;need=LVSTEP(l);}return{lv:l,cur:xp,need};}
-// the ring around the player's picture: a new look every 10 levels up to 100, then every 50 up to 1000
-const lvTier=l=>l<100?Math.floor(l/10):Math.min(28,10+Math.floor((l-100)/50));
-function lvRing(l){const t=lvTier(l),C=['#8a8f98','#b07a45','#c9884e','#c9d3dc','#4fcf7a','#2ec4c4','#3d8bff','#6d5cff','#a55cff','#ff5cc8'];
-  if(t<10)return`--rc:${C[t]};--rw:${2+t*.25}px`;
-  const P=[['#ffd86b','#fff3c4','#c9952d'],['#ff7a3d','#ffd86b','#ff3d3d'],['#5ce1ff','#e9fbff','#3d8bff'],['#4fcf7a','#d6ffe9','#1f9e5a'],['#c084ff','#ffe1ff','#7a3dff'],['#ff3d6e','#ffd1dc','#a3123b']],q=P[(t-10)%P.length];
-  return`--rc:${q[0]};--rc2:${q[1]};--rc3:${q[2]};--rw:${4+Math.min(3,(t-10)*.2)}px;--rs:${Math.max(1.6,6-(t-10)*.22)}s;--rg:${10+(t-10)*1.6}px`;}
-const lvCls=l=>{const t=lvTier(l);return'lvr'+(t>=10?' lvx':'')+(t>=16?' lvy':'')+(t>=22?' lvz':'');};
-const lvAv=(p,ch)=>{const L=lvInfo(lifeXp(p)).lv;return`<span class="${lvCls(L)}" style="${lvRing(L)}"><span class="av">${ch}</span><i class="lvn">${L}</i></span>`;};
+const lvAv=(p,ch,size)=>lvFrame(lvInfo(lifeXp(p)).lv,size||58,p.avatar|0);
+const lvMini=(L,av,size)=>lvFrame(L,size||34,av|0);
 function addStat(k,v){const p=UI.prof;p[k]=(p[k]||0)+v;const d=p.pend||(p.pend={});d[k]=(d[k]||0)+v;}
 // never from automated test browsers or the local test mode, so tests cannot leave rows on the real leaderboard
 const cloudOn=()=>!!(LB_DB&&LB_KEY&&/^https?:/.test(location.protocol)&&!navigator.webdriver&&!/[?&]bc=1/.test(location.search));
@@ -251,15 +245,15 @@ function cloudSync(){
   if(p.xps==null){const n=p.passT==null?-1:p.passT,v=n>=0&&!p.supporter?PASS_AT+n*PASS_STEP:0;p.xps=0;if(v)addStat('xps',v);saveProf();}
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{}),hSent=(Array.isArray(p.histPend)?p.histPend:[]).slice();let uid;
-  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;if(p.dLast){body.dl=p.dLast;body.ds=p.dStreak|0;}if(p.dailyDone)body.dd=p.dailyDone;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
-    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,r:rankShow(p),lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});
+  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;body.av=p.avatar|0;if(p.dLast){body.dl=p.dLast;body.ds=p.dStreak|0;}if(p.dailyDone)body.dd=p.dailyDone;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
+    const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,r:rankShow(p),av:p.avatar|0,lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
-      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);if(u.dl>(p.dLast|0)){p.dLast=u.dl;p.dStreak=u.ds|0;}if(u.dd>(p.dailyDone|0))p.dailyDone=u.dd;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
+      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);if(u.av!=null&&p.avatar==null)p.avatar=u.av|0;if(u.dl>(p.dLast|0)){p.dLast=u.dl;p.dStreak=u.ds|0;}if(u.dd>(p.dailyDone|0))p.dailyDone=u.dd;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       fetch(LB_DB+'/grants/'+uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(gr=>{if(gr&&(p.passT==null?-1:p.passT)<PASS.length){p.passT=PASS.length;p.supporter=1;saveProf();toast(t('supOn'),'prop',6000);fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:PASS.length})}).catch(()=>{});}}).catch(()=>{});
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
-      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,r:rankShow(p),lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});});})
+      return fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:u.w|0,h:Math.round(u.ms||0),g:u.g|0,b:hasBadge(p)?1:0,r:rankShow(p),av:p.avatar|0,lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});});})
     .then(()=>{UI.lbPushed=Date.now();if(UI.screen==='menu')renderMenu();}).catch(()=>{}).then(()=>{UI.syncing=null;});
 }
 const lbPush=cloudSync;
@@ -317,18 +311,22 @@ function accForgot(){
 // Google sign-in: Google's own button gives an ID token, and Firebase turns it into a Sijal account (or links it to the one you are in)
 const GOOGLE_CID=location.hostname==='saadsd151.github.io'?'':'79742214940-mtg3fatfeo2064v40mrtrhocedru9t2o.apps.googleusercontent.com';
 const inAppBrowser=()=>/FBAN|FBAV|Instagram|TikTok|musical_ly|Bytedance|Snapchat|Line\//i.test(navigator.userAgent);
+// our own Google button (Google's colours and logo, our layout): a click asks Google for a token in a popup, and Firebase turns it into the account
+const GLOGO='<svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+function gLoad(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();if(UI.gsi)return UI.gsi;
+  return UI.gsi=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=ok;s.onerror=()=>{UI.gsi=null;no();};document.head.appendChild(s);});}
 function gMount(mode){
   const box=$('#gBtn');if(!box||!GOOGLE_CID)return;
   if(inAppBrowser()){box.innerHTML=`<p class="keys">${t('gg_app')}</p><button class="btn sm" data-a="copyLink">📋 ${t('gg_copy')}</button>`;return;}
-  const go=()=>{try{google.accounts.id.initialize({client_id:GOOGLE_CID,callback:r=>gCred(r.credential,mode),ux_mode:'popup',auto_select:false});
-    google.accounts.id.renderButton(box,{theme:'filled_black',size:'large',shape:'pill',text:mode==='link'?'continue_with':'signin_with',locale:UI.lang,width:Math.min(320,box.clientWidth||300)});}catch(e){}};
-  if(window.google&&google.accounts&&google.accounts.id)return go();
-  if(UI.gsi)return UI.gsi.then(go);
-  UI.gsi=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=ok;s.onerror=no;document.head.appendChild(s);}).then(go).catch(()=>{UI.gsi=null;box.innerHTML=`<p class="keys">${t('acm_net')}</p>`;});
+  box.innerHTML=`<button type="button" class="gbtn" data-a="gGo:${mode}">${GLOGO}<span>${t(mode==='link'?'gg_btnLink':'gg_btn')}</span></button>`;gLoad().catch(()=>{});
+}
+function gGo(mode){
+  const ask=()=>{try{const c=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CID,scope:'openid email profile',prompt:'select_account',callback:r=>{if(r&&r.access_token)gCred({at:r.access_token},mode);else if(r&&r.error)accDone('ggFail');}});c.requestAccessToken();}catch(e){accDone('ggFail');}};
+  if(window.google&&google.accounts&&google.accounts.oauth2)return ask();gLoad().then(ask).catch(()=>accDone('net'));
 }
 function gCred(cred,mode){
   if(!cred)return;loading(true);
-  const send=tok=>authPost('signInWithIdp',Object.assign({postBody:'id_token='+cred+'&providerId=google.com',requestUri:location.origin,returnSecureToken:true,returnIdpCredential:true},tok?{idToken:tok}:{}));
+  const send=tok=>authPost('signInWithIdp',Object.assign({postBody:(cred&&cred.at?'access_token='+cred.at:'id_token='+cred)+'&providerId=google.com',requestUri:location.origin,returnSecureToken:true,returnIdpCredential:true},tok?{idToken:tok}:{}));
   if(mode==='link')return lbAuth().then(f=>send(f.tok)).then(j=>{if(!j.idToken){const m=(j.error&&j.error.message)||'';return accDone(/ALREADY_LINKED|EMAIL_EXISTS|CREDENTIAL_ALREADY/.test(m)?'ggUsed':'ggFail');}
     const f=UI.prof.fb;f.tok=j.idToken;f.rt=j.refreshToken||f.rt;f.exp=Date.now()+(+j.expiresIn||3600)*1000;saveProf();UI.accInfo=null;stat('glink');accDone('ggLinked');}).catch(()=>accDone('net'));
   send(null).then(j=>{if(!j.idToken)return accDone(j.needConfirmation?'ggNeedPw':'ggFail');
@@ -350,7 +348,7 @@ function renderLB(){
   const rows=UI.lbRows;
   $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
     `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
-    rows.map((r,i)=>{const rk=r.r!=null&&r.r<=rankOf({wins:r.w})?r.r:rankOf({wins:r.w}),L=r.lv|0;return`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${L?`<i class="lvb ${lvCls(L)}" style="${lvRing(L)}">${L}</i>`:''}${r.b?BADGE:''}${esc(r.n||'')}</span><span class="rkt ${rankCls(rk)}">${t('ranks')[rk]||''}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`;}).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
+    rows.map((r,i)=>{const rk=r.r!=null&&r.r<=rankOf({wins:r.w})?r.r:rankOf({wins:r.w}),L=r.lv|0;return`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${L?`<i class="lvm">${lvMini(L,r.av)}</i>`:''}${r.b?BADGE:''}${esc(r.n||'')}</span><span class="rkt ${rankCls(rk)}">${t('ranks')[rk]||''}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`;}).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
     `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
 }
 function openLB(){
@@ -415,9 +413,10 @@ function accPanel(){
 }
 function lvCard(p){
   const L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv),nm=p.name||(p.fb||{}).user||t('defName');
-  return`<div class="lvcard"><div class="lvbig">${lvAv(p,esc([...nm][0]||'?'))}</div><div class="lvi"><b>${t('lvL',L.lv)}</b><div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u><span dir="ltr">${fmt(L.cur)} / ${fmt(L.need)}</span></div>
+  return`<div class="lvcard"><div class="lvbig">${lvAv(p,'',112)}</div><div class="lvi"><b>${t('lvL',L.lv)}</b><div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u><span dir="ltr">${fmt(L.cur)} / ${fmt(L.need)}</span></div>
     <small>${nx?t('lvNext',nx[0],t('sk_'+nx[2])):L.lv<1000?t('lvLook'):t('lvMax')}</small></div></div>
   <div class="lvsk">${LVSK.map(([l,ty,id])=>`<div class="${L.lv>=l?'got':''}"><img src="${skinPreview(ty,id)}" alt=""><b>${t('sk_'+id)}</b><small>${L.lv>=l?'✓ '+t('bpGot'):'🔒 '+t('lvS',l)}</small></div>`).join('')}</div>
+  <h3 class="avh">${t('avPick')}</h3><div class="avg">${AVATARS.map((a,i)=>`<button class="${(p.avatar|0)===i?'on':''}" data-a="avPick:${i}" aria-label="picture ${i+1}">${avPic(i,52)}</button>`).join('')}</div>
   <div class="lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
 }
 function renderAccount(){
@@ -1050,8 +1049,10 @@ function act(a){
     case'bpBuy':passBuy();break;
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');ppMount();break;
     case'social':renderSocial();show('help');break;
+    case'avPick':p.avatar=+v;saveProf();lbPush();{const h=$('#help'),y=h?h.scrollTop:0;renderAccount();if(h)h.scrollTop=y;}break;
     case'rkPick':p.rankPick=+v;saveProf();lbPush();renderRanks();break;
     case'lvShow':p.hideLv=v==='0'?1:0;saveProf();lbPush();renderAccount();break;
+    case'gGo':gGo(v);break;
     case'eye':{const i=$('#'+v),b=document.querySelector(`[data-a="eye:${v}"]`);if(i){const sh=i.type==='password';i.type=sh?'text':'password';if(b)b.textContent=sh?'🙈':'👁️';i.focus();}break;}
     case'acHintGo':case'acHintX':{UI.prof.accHint=1;saveProf();const d=$('#acchint');if(d)d.remove();if(a==='acHintGo'){stat('acchgo');act('account');}break;}
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
