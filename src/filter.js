@@ -30,17 +30,21 @@ function nfWordBad(w){
   // English plurals and endings: dicks, nazis…
   return /^[a-z]+$/.test(w)&&(NF_W.has(w.replace(/(e?s)$/,''))||NF_W.has(w.replace(/(ed|er|ing)$/,'')));
 }
+// words the owner adds from the owner panel (stored in the database under bw/): 3+ letters match anywhere, shorter ones only as a word
+let NF_X=[],NF_XW=new Set();
+function nfSetExtra(L){NF_X=[];NF_XW=new Set();for(const w of L||[]){const a=nfSquash(nfNorm(w));if(a.length>=3)NF_X.push([a,nfOne(a)]);else if(a)NF_XW.add(a);}}
 // true when the name must not be used
 function badName(s){
   const raw=String(s||'');if(!raw.trim())return false;
   for(const r of NF_RAW)if(raw.includes(r))return true;
   const n=nfNorm(raw),sq=nfSquash(n),one=nfOne(sq);
+  for(const[a,b]of NF_X)if(sq.includes(a)||one.includes(b))return true;
   for(const[a,b]of NF_S)if((a.length>=3&&sq.includes(a))||(b.length>=3&&one.includes(b)))return true;
   // whole words; runs of single letters (n a z i) are joined into one word first
   const toks=[],parts=n.split(/[^a-zء-ي]+/).filter(Boolean);let run='';
   for(const t of parts){if(t.length===1)run+=t;else{if(run)toks.push(run);run='';toks.push(t);}}if(run)toks.push(run);
   toks.push(sq);
-  return toks.some(nfWordBad);
+  return toks.some(w=>nfWordBad(w)||NF_XW.has(w)||NF_XW.has(w.replace(/^(وال|بال|يال|ال|يا|و)/,'')));
 }
 // what other players see: a banned name shows as a plain placeholder
 const cleanName=(s,fb)=>badName(s)?(fb||t('defPlayer')):s;

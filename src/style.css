@@ -774,3 +774,5 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .plo button:hover{border-color:#f1cf6e;background:rgba(241,207,110,.15)}.plo button:active{transform:scale(.96)}
 .plr{display:flex;flex-direction:column;gap:10px}.plr div{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center}.plr span{font-weight:700}.plr b{color:#ffe08a;font-size:13px}
 .plr i{grid-column:1/-1;height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.plr u{display:block;height:100%;background:linear-gradient(90deg,#c9952d,#f1cf6e)}
+.bwl{display:flex;flex-wrap:wrap;gap:6px}.bwl span{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(255,90,90,.14);border:1px solid rgba(255,90,90,.35);font-size:13px}
+.bwl button{border:0;background:none;color:#ff9a9a;font-size:13px;cursor:pointer;padding:0 2px}.bwl.ro span{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);font-size:12px}.bwd summary{cursor:pointer;font-weight:700;margin-bottom:8px}

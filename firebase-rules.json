@@ -65,6 +65,13 @@
         }
       }
     },
+    "bw": {
+      ".read": true,
+      "$k": {
+        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game'))",
+        ".validate": "!newData.exists() || (newData.isString() && newData.val().length >= 2 && newData.val().length <= 30)"
+      }
+    },
     "polls": {
       ".read": "auth != null && (auth.uid === 'iEZ50WCKXcXKddkd2kPMdZ65QxM2' || auth.token.email === 'saadsd@players.sijal.game')",
       "$pid": {
