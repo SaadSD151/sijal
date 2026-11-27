@@ -666,3 +666,10 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 #load .lbar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#c9952d,#f1cf6e);transition:width .15s ease-out}
 #load b{font-family:'IBM Plex Sans Arabic',sans-serif;font-size:18px;color:#ffe7a6;direction:ltr;font-variant-numeric:tabular-nums}
 .dhow ul{margin:0;padding:0 18px 0 0;display:flex;flex-direction:column;gap:7px;line-height:1.6;font-size:14.5px;color:#e6eef7}.dhow li{list-style:none}
+/* ask for a name right after an account is made */
+.nmask{margin:0 0 8px;padding:10px 14px;border-radius:12px;background:rgba(241,207,110,.16);border:1.5px solid rgba(241,207,110,.6);color:#ffe7a6;font-weight:700;text-align:center}
+.fld.nmglow input{border-color:#f1cf6e!important;box-shadow:0 0 0 3px rgba(241,207,110,.35),0 0 18px rgba(241,207,110,.45);animation:nmg 1.4s ease-in-out infinite}@keyframes nmg{50%{box-shadow:0 0 0 3px rgba(241,207,110,.15),0 0 6px rgba(241,207,110,.2)}}
+/* first-visit card pointing at the player card */
+#acchint{position:fixed;z-index:40;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,#14243a,#0b1626);border:1.5px solid #f1cf6e;box-shadow:0 12px 34px rgba(0,0,0,.6);text-align:center;animation:fdin .25s}
+#acchint b{display:block;font-size:17px;color:#ffe08a;margin-bottom:4px}#acchint p{margin:0 0 10px;font-size:14px;color:#e6eef7;line-height:1.5}#acchint .row{justify-content:center;gap:8px}
+#acchint .ar{position:absolute;top:-10px;width:18px;height:18px;background:#14243a;border-left:1.5px solid #f1cf6e;border-top:1.5px solid #f1cf6e;transform:rotate(45deg)}

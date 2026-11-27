@@ -257,7 +257,7 @@ const accMail=u=>u.toLowerCase()+'@players.sijal.game';
 function accErr(j){const m=(j&&j.error&&j.error.message)||'';return /EMAIL_EXISTS/.test(m)?'taken':/WEAK_PASSWORD/.test(m)?'weak':/TOO_MANY/.test(m)?'many':/OPERATION_NOT_ALLOWED|ADMIN_ONLY/.test(m)?'off':/INVALID|NOT_FOUND|PASSWORD/.test(m)?'bad':'net';}
 const isMail=s=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
 function accForm(login){const u=(($('#inUser')||{}).value||'').trim(),pw=($('#inPass')||{}).value||'',m=login&&isMail(u);if(!m&&!/^[A-Za-z0-9_]{3,16}$/.test(u))return null;if(pw.length<6)return'pw';return{u:m?'':u,mail:m?u.toLowerCase():'',pw};}
-function accDone(code){UI.accMsg=code;loading(false);renderAccount();}
+function accDone(code){UI.accMsg=code;loading(false);renderAccount();if(code==='made'&&!UI.prof.name)setTimeout(()=>{const i=$('#inName');if(i){i.focus();i.scrollIntoView({block:'center'});}},120);}
 const AUTH='https://identitytoolkit.googleapis.com/v1/accounts:';
 function accReq(kind,F){return fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:F.mail||accMail(F.u),password:F.pw,returnSecureToken:true})}).then(r=>r.json());}
 const authPost=(kind,body,lang)=>fetch(AUTH+kind+'?key='+LB_KEY,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},lang?{'X-Firebase-Locale':UI.lang}:{}),body:JSON.stringify(body)}).then(r=>r.json());
@@ -403,7 +403,7 @@ function accPanel(){
 }
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p);
-  $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)"><label class="fld"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
+  $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)">${!p.name?`<p class="nmask">✍️ ${t('nameAsk')}</p>`:''}<label class="fld${!p.name?' nmglow':''}"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
   <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),t('ranks')[rk]],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
   <p class="keys">${rk<21?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
 }
@@ -1007,7 +1007,7 @@ function act(a){
   switch(k){
     case'quick':renderQuick();show('help');break;case'go':startMatch({});break;case'goQ':startMatch({quick:true});break;case'cfm':placeAt(UI.pend);break;case'cfx':setMode(null);break;case'again':if(NET.on)return toMenu();startMatch({same:true});break;
     case'online':renderNet();show('net');break;case'joinR':netJoin(v);break;case'rematch':netRematch();break;case'lobbyBack':renderLobby();show('net');break;case'pub':p.pub=v==='1';if(NET.on&&NET.host){NET.pub=p.pub;if(NET.pub)regSend();else regUnreg();}renderSetup();break;case'hostRoom':netHost();break;case'join':netJoin(($('#inCode')||{}).value);break;case'netStart':hostStart();break;case'leave':netClose();renderMenu();show('menu');break;case'daily':renderDaily();show('help');break;case'dailyGo':if(p.dailyDone===dayKey()){renderDaily();break;}startMatch({daily:true});break;
-    case'custom':UI.setupMode='solo';renderSetup();show('setup');break;case'hostSetup':UI.setupMode='host';renderSetup();show('setup');break;case'menu':renderMenu();show('menu');break;case'toMenu':toMenu();break;
+    case'custom':UI.setupMode='solo';renderSetup();show('setup');break;case'hostSetup':UI.setupMode='host';renderSetup();show('setup');break;case'menu':renderMenu();show('menu');setTimeout(accHint,900);break;case'toMenu':toMenu();break;
     case'how':UI.helpBack=UI.screen;renderHelp();show('help');break;case'helpBack':show(UI.helpBack==='pause'?'pause':'menu');break;
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
@@ -1031,6 +1031,7 @@ function act(a){
     case'supOpen':UI.supFrom='pass';renderSupport();show('help');ppMount();break;
     case'social':renderSocial();show('help');break;
     case'eye':{const i=$('#'+v),b=document.querySelector(`[data-a="eye:${v}"]`);if(i){const sh=i.type==='password';i.type=sh?'text':'password';if(b)b.textContent=sh?'🙈':'👁️';i.focus();}break;}
+    case'acHintGo':case'acHintX':{UI.prof.accHint=1;saveProf();const d=$('#acchint');if(d)d.remove();if(a==='acHintGo'){stat('acchgo');act('account');}break;}
     case'mailLink':mailLink();break;case'accForgot':accForgot();break;case'gName':gName();break;case'gCancel':UI.gNew=null;UI.accMsg='';renderAccount();break;
     case'copyLink':{const l=location.origin+location.pathname;try{navigator.clipboard.writeText(l).then(()=>toast(t('gg_copied'),'prop',2500)).catch(()=>toast(l,'prop',5000));}catch(e){toast(l,'prop',5000);}break;}
     case'moveGo':{saveProf();const raw=localStorage.getItem('sijal.v1')||'',rc=(location.hash||'').slice(1).toUpperCase(),h=[];if(raw.length>2)h.push('mv='+b64u(raw));if(/^[A-Z0-9]{5}$/.test(rc))h.push('r='+rc);stat('moved');statFlush(true);location.href=NEW_SITE+(h.length?'#'+h.join('&'):'');break;}
@@ -1252,6 +1253,14 @@ function moveNotice(){
   // no staying behind: the move happens by itself after a short countdown
   let n=5;const tm=setInterval(()=>{n--;const e=$('#mvN');if(e)e.textContent=n>0?n:'';if(n<=0){clearInterval(tm);act('moveGo');}},1000);
 }
+// new players without an account get one friendly card pointing at the player card in the top corner
+function accHint(){
+  const p=UI.prof;if((p.fb||{}).user||p.accHint||UI.screen!=='menu'||!cloudOn()||$('#acchint')||$('#moved'))return;
+  const chip=document.querySelector('#menu .pchip');if(!chip)return;const r=chip.getBoundingClientRect(),d=document.createElement('div');d.id='acchint';
+  d.innerHTML=`<i class="ar"></i><b>💾 ${t('ahT')}</b><p>${t('ahD')}</p><div class="row"><button class="btn sm ok" data-a="acHintGo">${t('ahGo')}</button><button class="btn sm" data-a="acHintX">${t('ahLater')}</button></div>`;
+  $('#app').appendChild(d);const w=Math.min(320,innerWidth-24),x=Math.min(Math.max(12,r.left+r.width/2-w/2),innerWidth-w-12);d.style.cssText=`left:${x}px;top:${r.bottom+14}px;width:${w}px`;
+  d.querySelector('.ar').style.left=(r.left+r.width/2-x-9)+'px';stat('acchint');
+}
 function boot(){
   moveIn();
   cv=$('#cv');ctx=cv.getContext('2d');loadProf();applyMode();makeGlyphs();
@@ -1274,6 +1283,7 @@ function boot(){
   {const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{5}$/.test(h)){UI.joinCode=h;renderNet();show('net');}}
   // players without the full season get PayPal ready in the background a few seconds after start
   setTimeout(()=>{if((UI.prof.passT==null?-1:UI.prof.passT)<PASS.length)ppPrep();},5000);
+  setTimeout(accHint,4000);
   moveNotice();if(UI.movedIn)setTimeout(()=>toast(t('mvDone'),'prop',4500),1200);
   window.__sijal={get G(){return G;},cb:canBuild,NET,LOBBY,snd:{AU,SFX,atkBeat,defBeat,tone,noise},fn:{launchMissile,build,launchAttack,setAlly,breakAlly,gift,seaIsShorter,launchBoat,waterPath,useUlt},UI,R,cam,act,tap:onMapTap,setOwnerX:(i,o)=>setOwner(G,i,o),stat:{flush:statFlush,ping:statPing},acc:{gCred,accInfoLoad},run:n=>{for(let i=0;i<n;i++)tick(G);}};
 }
