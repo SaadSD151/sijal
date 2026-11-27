@@ -102,7 +102,7 @@ function netClose(){
 }
 function netFail(code){const was=NET.started;netClose();loading(false);if(was)toMenu();else{renderNet();show('net');}err(code);}
 // ── lobby ──
-const myName=()=>(UI.prof.name||t('defName')).slice(0,18),roomName=()=>(UI.prof.room||t('roomOf',myName())).slice(0,24);
+const myName=()=>cleanName(UI.prof.name||t('defName'),t('defName')).slice(0,15),roomName=()=>(UI.prof.room&&!badName(UI.prof.room)?UI.prof.room:t('roomOf',myName())).slice(0,24);
 function netHost(tries){
   if(!BCMODE&&!rtcOk())return err('old');loading(true);
   loadPeer(()=>{const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<5;i++)code+=A[(Math.random()*A.length)|0];if(BCMODE&&window.SIJAL_CODE)code=window.SIJAL_CODE;
@@ -111,7 +111,7 @@ function netHost(tries){
           if(d.t==='ping')return k.send({t:'pong',ts:d.ts});
           if(d.t==='hi'&&d.v!==BUILD_ID)return k.send({t:'ver'});
           if(d.t==='ack'){k.ack=d.k;return;}
-          if(d.t==='hi'){if(NET.ban&&NET.ban.has(String(d.name||'').slice(0,18)))return k.send({t:'kicked'});if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=String(d.name||'').slice(0,18)||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.pass=d.pass?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
+          if(d.t==='hi'){if(NET.ban&&NET.ban.has(String(d.name||'').slice(0,18)))return k.send({t:'kicked'});if(NET.started||pl.in||NET.players.length>=maxP())return k.send({t:'full'});pl.name=cleanName(String(d.name||'').slice(0,15))||'?';pl.fac=FAC[d.fac]?d.fac:'hawks';pl.pat=PATS.includes(d.pat)?d.pat:'';pl.bld=BLDS.includes(d.bld)?d.bld:'';pl.badge=d.badge?1:0;pl.pass=d.pass?1:0;pl.in=true;NET.players.push(pl);NET.conns.push(k);lobbyOut();regSend();}
           else if(d.t==='c'&&NET.started&&k.pid)NET.q.push([k.pid,d.c]);
           else if(d.t==='sum'&&NET.sums[d.k]!=null&&NET.sums[d.k]!==d.v&&!k.bad){k.bad=true;k.send({t:'desync'});toast(t('mpDesync'),'bad',5000);}};
         k.onClose=()=>{if(!pl.in)return;pl.in=false;if(NET.started){if(k.pid)NET.q.push([k.pid,{k:'drop'}]);}else{NET.players=NET.players.filter(x=>x!==pl);NET.conns=NET.conns.filter(x=>x!==k);lobbyOut();regSend();}};},
@@ -199,7 +199,7 @@ function pingRooms(){
 }
 function regDraw(){
   const e=$('#rooms');if(!e||NET.on)return;const L=LOBBY.list.filter(r=>r.code!==NET.code);
-  e.innerHTML=!LOBBY.ok?`<p class="keys">${t('roomsWait')}</p>`:!L.length?`<p class="keys">${t('roomsNone')}</p>`:L.map(r=>`<div class="room"><div><b>${esc(r.name)}</b><small>${esc(t('types')[r.type]||'')} · ${esc(t('sizes')[r.size]||'')} · ${esc(t('diffs')[r.diff]||'')}</small></div><span>${r.n|0}/${(r.m|0)||16}</span><button class="btn sm ok" data-a="joinR:${esc(r.code)}"${(r.n|0)>=((r.m|0)||16)?' disabled':''}>${(r.n|0)>=((r.m|0)||16)?t('e_full'):t('join')}</button>${pingTag(PING[r.code]?PING[r.code].ms:null)}</div>`).join('');
+  e.innerHTML=!LOBBY.ok?`<p class="keys">${t('roomsWait')}</p>`:!L.length?`<p class="keys">${t('roomsNone')}</p>`:L.map(r=>`<div class="room"><div><b>${esc(cleanName(r.name))}</b><small>${esc(t('types')[r.type]||'')} · ${esc(t('sizes')[r.size]||'')} · ${esc(t('diffs')[r.diff]||'')}</small></div><span>${r.n|0}/${(r.m|0)||16}</span><button class="btn sm ok" data-a="joinR:${esc(r.code)}"${(r.n|0)>=((r.m|0)||16)?' disabled':''}>${(r.n|0)>=((r.m|0)||16)?t('e_full'):t('join')}</button>${pingTag(PING[r.code]?PING[r.code].ms:null)}</div>`).join('');
 }
 function renderNet(){
   $('#net').innerHTML=`<h2>${t('online')}</h2><p class="keys">${t('netNote')}</p>

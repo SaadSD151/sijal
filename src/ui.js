@@ -11,6 +11,8 @@ function loadProf(){
   let p={};try{p=JSON.parse(localStorage.getItem('sijal.v1')||'{}')||{};}catch(e){}
   UI.prof=Object.assign({xp:0,games:0,wins:0,ms:0,fb:{},lang:'ar',sound:true,music:true,ui:0,fac:'hawks',name:'',type:'continents',size:-1,bots:-1,diff:1,daily:{}},p);
   UI.lang=UI.prof.lang==='en'?'en':'ar';
+  // a name saved before the filter existed is dropped, so the player is asked for a new one
+  if(UI.prof.name&&badName(UI.prof.name))UI.prof.name='';if(UI.prof.room&&badName(UI.prof.room))UI.prof.room='';
 }
 function saveProf(){try{localStorage.setItem('sijal.v1',JSON.stringify(UI.prof));}catch(e){}}
 function applyMode(){
@@ -186,12 +188,12 @@ function dailyBoard(key){
 function dailySubmit(key,tk){
   const p=UI.prof;if(!cloudOn())return Promise.resolve();
   return lbAuth().then(f=>fetch(LB_DB+'/daily/'+key+'/'+f.uid+'.json').then(r=>r.ok?r.json():null).then(old=>{if(old&&old.t<=tk)return;
-    return fetch(LB_DB+'/daily/'+key+'/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:(p.name||t('defName')).slice(0,18),t:tk,s:dStreakNow(p)})});})).catch(()=>{});
+    return fetch(LB_DB+'/daily/'+key+'/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:cleanName(p.name||t('defName'),t('defName')).slice(0,15),t:tk,s:dStreakNow(p)})});})).catch(()=>{});
 }
 function boardHTML(B,key){
   const me=(UI.prof.fb||{}).uid;if(!B)return`<p class="keys">${t('dOff')}</p>`;
   if(!B.top.length)return`<p class="dcount">${t('dNoOne')}</p>`;
-  return`<p class="dcount">${t('dCount',B.n)}</p><ol class="dbrd">${B.top.slice(0,10).map((e,i)=>`<li class="${e.uid===me?'me':''}"><span class="rk">${['🥇','🥈','🥉'][i]||i+1}</span><b>${esc(e.n||t('defName'))}${e.uid===me?` <small>(${t('dYou')})</small>`:''}</b>${e.s>1?`<em>🔥${e.s}</em>`:''}<i dir="ltr">${clock(e.t)}</i></li>`).join('')}</ol>`;
+  return`<p class="dcount">${t('dCount',B.n)}</p><ol class="dbrd">${B.top.slice(0,10).map((e,i)=>`<li class="${e.uid===me?'me':''}"><span class="rk">${['🥇','🥈','🥉'][i]||i+1}</span><b>${esc(cleanName(e.n||t('defName')))}${e.uid===me?` <small>(${t('dYou')})</small>`:''}</b>${e.s>1?`<em>🔥${e.s}</em>`:''}<i dir="ltr">${clock(e.t)}</i></li>`).join('')}</ol>`;
 }
 function renderDaily(){
   const p=UI.prof,key=dayKey(),ty=Object.keys(TX.ar.types)[key%9],b=p.daily[key],mod=dMod(key),done=p.dailyDone===key,st=dStreakNow(p);
@@ -253,11 +255,11 @@ function cloudSync(){
   if(p.xps==null){const n=p.passT==null?-1:p.passT,v=n>=0&&!p.supporter?PASS_AT+n*PASS_STEP:0;p.xps=0;if(v)addStat('xps',v);saveProf();}
   if(!p.games&&!(p.fb&&p.fb.user))return Promise.resolve();
   const sent=Object.assign({},p.pend||{}),hSent=(Array.isArray(p.histPend)?p.histPend:[]).slice();let uid;
-  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:(p.name||t('defName')).slice(0,18),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;body.av=p.avatar|0;if(p.dLast){body.dl=p.dLast;body.ds=p.dStreak|0;}if(p.dailyDone)body.dd=p.dailyDone;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
+  return UI.syncing=lbAuth().then(f=>{uid=f.uid;const body={n:cleanName(p.name||t('defName'),t('defName')).slice(0,15),t:{'.sv':'timestamp'}};if(p.fb&&p.fb.user)body.u=p.fb.user;body.av=p.avatar|0;if(p.dLast){body.dl=p.dLast;body.ds=p.dStreak|0;}if(p.dailyDone)body.dd=p.dailyDone;if(p.polls&&Object.keys(p.polls).length)body.pv=p.polls;for(const k in SK){const v=Math.round(sent[k]||0);if(v)body[SK[k]]={'.sv':{increment:v}};}for(const e of hSent)body['hist/h'+e.d]=e;
     const flat=()=>fetch(LB_DB+'/lb/'+uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify({n:body.n,w:p.wins|0,h:Math.round(p.ms||0),g:p.games|0,b:hasBadge(p)?1:0,r:rankShow(p),av:p.avatar|0,lv:p.hideLv?0:lvInfo(lifeXp(p)).lv,t:{'.sv':'timestamp'}})});
     return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify(body)}).then(r=>{if(!r.ok){UI.noUsers=1;return null;}return fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok).then(r=>r.json());}).then(u=>{
       if(UI.noUsers&&!u)return flat();
-      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);if(u.av!=null&&p.avatar==null)p.avatar=u.av|0;if(u.dl>(p.dLast|0)){p.dLast=u.dl;p.dStreak=u.ds|0;}if(u.dd>(p.dailyDone|0))p.dailyDone=u.dd;const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
+      if(!u||(p.fb||{}).uid!==uid)return;histMerge(p,u.hist,hSent,uid,f.tok);if(u.av!=null&&p.avatar==null)p.avatar=u.av|0;if(u.dl>(p.dLast|0)){p.dLast=u.dl;p.dStreak=u.ds|0;}if(u.dd>(p.dailyDone|0))p.dailyDone=u.dd;if(u.pv&&typeof u.pv==='object'){let ch=0;const P=p.polls||(p.polls={});for(const k in u.pv)if(!P[k]&&/^[abc]$/.test(u.pv[k])){P[k]=u.pv[k];ch=1;}if(ch&&UI.screen==='menu')setTimeout(renderMenu,0);}const d=p.pend||{};for(const k in SK){d[k]=(d[k]||0)-(sent[k]||0);if(Math.abs(d[k])<1)d[k]=0;p[k]=(u[SK[k]]||0)+d[k];}
       fetch(LB_DB+'/grants/'+uid+'.json?auth='+f.tok).then(r=>r.ok?r.json():null).then(gr=>{if(gr&&(p.passT==null?-1:p.passT)<PASS.length){p.passT=PASS.length;p.supporter=1;saveProf();toast(t('supOn'),'prop',6000);fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:PASS.length})}).catch(()=>{});}}).catch(()=>{});
       const cpt=u.pt!=null?u.pt|0:-1;if(cpt>(p.passT==null?-1:p.passT))p.passT=cpt;saveProf();
       if((p.passT==null?-1:p.passT)>cpt)fetch(LB_DB+'/users/'+uid+'.json?auth='+f.tok,{method:'PATCH',body:JSON.stringify({pt:p.passT})}).catch(()=>{});
@@ -283,10 +285,10 @@ function accEnter(j,F,okMsg){
   return drop.then(()=>fetch(LB_DB+'/users/'+j.localId+'.json?auth='+j.idToken)).then(r=>r.json()).then(u=>{
     p.fb={tok:j.idToken,rt:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn||3600)*1000,user:F.u||(u&&u.u)||(F.mail||'player').split('@')[0].replace(/[^A-Za-z0-9_]/g,'').slice(0,16)||'player'};p.cloudInit=1;setTimeout(adminCheck,500);
     const gpt=p.passT==null?-1:p.passT;p.passT=Math.max(guest?gpt:-1,u&&u.pt!=null?u.pt|0:-1);
-    for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=u.n;p.pend=guest||{};if(guest)p.histPend=(p.hist||[]).slice();else{p.hist=[];p.histPend=[];}for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
+    for(const k in SK)p[k]=(u&&u[SK[k]])||0;if(u&&u.n)p.name=badName(u.n)?'':u.n;p.pend=guest||{};if(guest)p.histPend=(p.hist||[]).slice();else{p.hist=[];p.histPend=[];}for(const k in SK)p[k]+=(p.pend[k]||0);saveProf();return cloudSync().then(()=>{accDone(okMsg);renderMenu();});});
 }
 function accRegister(){
-  const F=accForm();if(!F)return accDone('user');if(F==='pw')return accDone('weak');if(!cloudOn())return accDone('net');loading(true);
+  const F=accForm();if(!F)return accDone('user');if(F!=='pw'&&badName(F.u))return accDone('badname');if(F==='pw')return accDone('weak');if(!cloudOn())return accDone('net');loading(true);
   lbAuth().catch(()=>{}).then(()=>cloudSync()).then(()=>accReq('signUp',F)).then(j=>j.idToken?accEnter(j,F,'made'):accDone(accErr(j))).catch(()=>accDone('net'));
 }
 function accLogin(){
@@ -356,7 +358,7 @@ function renderLB(){
   const rows=UI.lbRows;
   $('#help').innerHTML=head+(rows==null?`<p class="keys">${t('lbLoad')}</p>`:rows==='err'?`<p class="bad">${t('lbErr')}</p>`:
     `<div class="lbt"><div class="lh"><span>#</span><span>${t('lbName')}</span><span>${t('rank')}</span><span>${t('wins')}</span><span>${t('lbHrs')}</span></div>`+
-    rows.map((r,i)=>{const rk=r.r!=null&&r.r<=rankOf({wins:r.w})?r.r:rankOf({wins:r.w}),L=r.lv|0;return`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${L?`<i class="lvm">${lvMini(L,r.av)}</i>`:''}${r.b?BADGE:''}${esc(r.n||'')}</span><span class="rkt ${rankCls(rk)}">${t('ranks')[rk]||''}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`;}).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
+    rows.map((r,i)=>{const rk=r.r!=null&&r.r<=rankOf({wins:r.w})?r.r:rankOf({wins:r.w}),L=r.lv|0;return`<div class="${r.id===me?'me':''}"><span>${i+1}</span><span>${L?`<i class="lvm">${lvMini(L,r.av)}</i>`:''}${r.b?BADGE:''}${esc(cleanName(r.n||''))}</span><span class="rkt ${rankCls(rk)}">${t('ranks')[rk]||''}</span><span>${r.w|0}</span><span>${hrs(r.h||0)}</span></div>`;}).join('')+'</div>'+(rows.length?'':`<p class="keys">${t('lbNone')}</p>`))+
     `<p class="keys">${t('lbYou',p.wins,hrs(p.ms||0))}</p>`+back;
 }
 function openLB(){
@@ -446,7 +448,7 @@ function renderAccount(){
     <div class="acbox acrk"><div><small>${t('rank')}</small><span class="rkt ${rankCls(rs)}">${t('ranks')[rs]}</span>${rk<40?`<small>${t('accNext',rk*25+1-p.wins,t('ranks')[rk+1])}</small>`:''}</div><button class="btn sm" data-a="ranks">${t('allRanks')}</button></div>
     ${nx?`<p class="acnote">🎁 ${t('lvNext',nx[0],t('sk_'+nx[2]))}</p>`:''}${lvRoad(p,L)}${lvHow()}`;lvRoadScroll();
   }else if(tab==='look'){
-    body=`<div class="acbox">${!p.name?`<p class="nmask">✍️ ${t('nameAsk')}</p>`:''}<label class="fld${!p.name?' nmglow':''}"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
+    body=`<div class="acbox">${!p.name?`<p class="nmask">✍️ ${t('nameAsk')}</p>`:''}<label class="fld${!p.name?' nmglow':''}"><h3>${t('accName')}</h3><input id="inName" maxlength="15" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
     <div class="acbox"><h3>${t('avPick')}</h3><div class="avg">${AVATARS.map((a,i)=>`<button class="${(p.avatar|0)===i?'on':''}" data-a="avPick:${i}" aria-label="picture ${i+1}">${avPic(i,52)}</button>`).join('')}</div></div>
     <div class="acbox lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
   }else body=`<div class="acbox">${accPanel()}</div>`;
@@ -625,7 +627,7 @@ function pollCard(p){
 }
 function pollSend(){const p=UI.prof,v=(p.polls||{})[POLL.id];if(!v||p.pollSent===POLL.id||!LB_DB||Date.now()>=POLL.end)return;
   lbAuth().then(f=>fetch(LB_DB+'/polls/'+POLL.id+'/'+f.uid+'.json?auth='+f.tok,{method:'PUT',body:JSON.stringify(v)})).then(r=>{if(r.ok){p.pollSent=POLL.id;saveProf();}}).catch(()=>{});}
-function pollVote(o){if(!POLL.opts.includes(o)||Date.now()>=POLL.end)return;const p=UI.prof;(p.polls||(p.polls={}))[POLL.id]=o;p.pollSent='';saveProf();UI.pollJust=1;sfx('ok');renderMenu();pollSend();setTimeout(()=>{UI.pollJust=0;if(UI.screen==='menu')renderMenu();},5000);}
+function pollVote(o){if(!POLL.opts.includes(o)||Date.now()>=POLL.end)return;const p=UI.prof;(p.polls||(p.polls={}))[POLL.id]=o;p.pollSent='';saveProf();UI.pollJust=1;sfx('ok');renderMenu();pollSend();lbPush();setTimeout(()=>{UI.pollJust=0;if(UI.screen==='menu')renderMenu();},5000);}
 function pollHtml(card){const R=UI.admPoll,n=v=>(v|0).toLocaleString('en');
   if(R==null)return card('🗳️ '+t('pl_q'),'',`<p class="keys">${t('lbLoad')}</p>`);if(R==='err')return card('🗳️ '+t('pl_q'),'',`<p class="bad">${t('admRules')}</p>`);
   const c={a:0,b:0,c:0};for(const v of Object.values(R||{}))if(c[v]!=null)c[v]++;const tot=c.a+c.b+c.c,left=POLL.end-Date.now();
@@ -644,8 +646,8 @@ function renderAdmin(){
   if(tab==='stats')body=statsHtml();
   else if(tab==='sup')body=card('💳 '+t('ap_supAuto'),t('ap_supAutoD'),'')+card('💜 '+t('supAdm'),t('ap_supManD'),`<div class="apf"><input id="grUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn ok" data-a="admGrant">${t('supGrant')}</button></div><p class="apd">${t('supAdmNote')}</p>`);
   else if(tab==='poll')body=pollHtml(card);
-  else if(tab==='lb'){const q=(UI.admQ||'').toLowerCase(),R=B?B.filter(r=>!q||String(r.n||'').toLowerCase().includes(q)):null;
-    body=card('🏆 '+t('ap_lb'),t('ap_lbD'),`<div class="apf"><input id="admQ" placeholder="🔎 ${t('ap_search')}" value="${esc(UI.admQ||'')}"></div>${R==null?`<p class="keys">${t('lbLoad')}</p>`:`<p class="apd">${t('ap_count',R.length)}</p><div class="aplist">${R.slice(0,200).map((r,i)=>`<div class="apr"><span class="apn">${i+1}</span><div><b>${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${t('ranks')[r.r!=null?r.r:rankOf({wins:r.w})]||''} · ${r.w|0} ${t('wins')} · ${r.g|0} ${t('accGames')} · ${hrs(r.h||0)} ${t('lbHrs')}${r.lv?' · '+t('lvS',r.lv):''}</small></div><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">🗑️ ${t('admDelRow')}</button></div>`).join('')}</div>`}`);}
+  else if(tab==='lb'){const q=(UI.admQ||'').toLowerCase(),R=B?B.filter(r=>(!q||String(r.n||'').toLowerCase().includes(q))&&(!UI.admBad||badName(r.n))):null,nb=B?B.filter(r=>badName(r.n)).length:0;
+    body=card('🏆 '+t('ap_lb'),t('ap_lbD'),`<div class="apf"><input id="admQ" placeholder="🔎 ${t('ap_search')}" value="${esc(UI.admQ||'')}"></div><div class="chips"><button class="chip${UI.admBad?'':' on'}" data-a="admBad:0">${t('ap_all')}</button><button class="chip${UI.admBad?' on':''}" data-a="admBad:1">🚫 ${t('ap_bad',nb)}</button></div>${R==null?`<p class="keys">${t('lbLoad')}</p>`:`<p class="apd">${t('ap_count',R.length)}</p><div class="aplist">${R.slice(0,200).map((r,i)=>`<div class="apr"><span class="apn">${i+1}</span><div><b>${badName(r.n)?'🚫 ':''}${r.b?BADGE:''}${esc(r.n||'?')}</b><small>${t('ranks')[r.r!=null?r.r:rankOf({wins:r.w})]||''} · ${r.w|0} ${t('wins')} · ${r.g|0} ${t('accGames')} · ${hrs(r.h||0)} ${t('lbHrs')}${r.lv?' · '+t('lvS',r.lv):''}</small></div><button class="btn sm warn" data-a="lbDel:${esc(r.id)}">🗑️ ${t('admDelRow')}</button></div>`).join('')}</div>`}`);}
   else if(tab==='adm')body=card('🛠️ '+t('admAdmins'),t('ap_admD'),`<div class="apf"><input id="admUser" dir="ltr" placeholder="${t('ac_user')}" autocomplete="off" autocapitalize="none"><button class="btn ok" data-a="admGive">${t('admGive')}</button></div>
     ${L==null?`<p class="keys">${t('lbLoad')}</p>`:L==='err'?`<p class="bad">${t('admRules')}</p>`:`<div class="aplist">${Object.entries(L).map(([uid,nm])=>`<div class="apr"><span class="apn">🛠️</span><div><b dir="ltr">${esc(typeof nm==='string'?nm:uid.slice(0,8))}</b></div>${uid===(p.fb||{}).uid?`<small>${t('you')}</small>`:`<button class="btn sm warn" data-a="admDel:${esc(uid)}">${t('admRemove')}</button>`}</div>`).join('')||`<p class="keys">${t('admNone')}</p>`}</div>`}`);
   else if(tab==='msg')body=card('📢 '+t('admMsgT'),t('ap_msgD'),`<div class="apf"><input id="admMsgIn" maxlength="140" placeholder="${t('admMsgPh')}"><button class="btn ok" data-a="admMsg">${t('admSend')}</button></div>`);
@@ -1095,7 +1097,7 @@ function act(a){
     case'lb':$('#lb').classList.toggle('open');break;
     case'home':if(me&&me.cap)lookAt(me.cap.x,me.cap.y,Math.max(cam.tz,7));break;
     case'nat':if(+v!==g.human)openCard(+v);else if(me.cap)lookAt(me.cap.x,me.cap.y);if(UI.mob)$('#lb').classList.remove('open');break;
-    case'nameSave':{const v=(UI.nameDraft!=null?UI.nameDraft:p.name)||'';p.name=v;UI.nameDraft=null;saveProf();cloudSync();renderAccount();const m=$('#nameMsg');if(m)m.textContent=t('nameSaved',v||t('defName'));break;}
+    case'nameSave':{const v=((UI.nameDraft!=null?UI.nameDraft:p.name)||'').slice(0,15);if(badName(v)){sfx('err');const m=$('#nameMsg');if(m){m.className='bad';m.textContent=t('nameBad');}break;}p.name=v;UI.nameDraft=null;saveProf();cloudSync();renderAccount();const m=$('#nameMsg');if(m)m.textContent=t('nameSaved',v||t('defName'));break;}
     case'nameUndo':UI.nameDraft=null;renderAccount();break;
     case'cheat':{const c=p.cheat||(p.cheat={});c[v]=!c[v];saveProf();renderSetup();break;}
     case'radR':UI.ratio=+v/100;{const r=$('#rs');if(r)r.value=+v;}hudUpdate();if(UI.rad)radOpen(UI.rad.i,UI.rad.x,UI.rad.y,UI.rad.more);break;
@@ -1126,7 +1128,7 @@ function act(a){
       if(v==='gold')me2.gold+=1e5;else if(v==='troops')me2.troops+=1e5;else if(v==='era')me2.era=4;else if(v==='build'||v==='msl')C[v]=!C[v];
       else if(v==='win'&&!g.over){g.over={w:me2.id,win:true,why:'dom'};g.ev.push({t:'over',win:true,w:me2.id});show(null);}
       if(v!=='win'){renderPause();toast('🛠️ '+t('admDone'),'prop',1500);}break;}
-    case'admTab':UI.admTab=v;if(v==='poll')admPoll();renderAdmin();break;case'pollV':pollVote(v);break;
+    case'admTab':UI.admTab=v;if(v==='poll')admPoll();renderAdmin();break;case'pollV':pollVote(v);break;case'admBad':UI.admBad=v==='1';renderAdmin();break;
     case'admin':openAdmin();break;case'admSt':admStats();renderAdmin();break;
     case'admGive':admGive();break;case'admDel':admDel(v);break;case'lbDel':admLbDel(v);break;case'admMe':admMe();break;case'admMsg':admMsg();break;
     case'closeCard':closeCard();break;
@@ -1292,7 +1294,7 @@ function bindInput(){
   $('#app').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled)act(b.dataset.a);});
   $('#app').addEventListener('input',e=>{if(e.target.id==='inTribes'){UI.prof.tribes=clamp(+e.target.value|0,30,240);$('#tribesV').textContent=UI.prof.tribes;saveProf();return;}if(e.target.id==='inMaxP'){let v=clamp(+e.target.value|0,2,32);if(NET.on&&NET.host)v=Math.max(v,NET.players.length);UI.prof.maxP=v;e.target.value=v;$('#maxPV').textContent=v;saveProf();if(NET.on&&NET.host){regSend();if(UI.screen==='net')renderLobby();}}});
   $('#app').addEventListener('change',e=>{if(e.target.id==='auKeep'||e.target.id==='auMax'||e.target.id==='auRate'){const a=auCfg();a[{auKeep:'keep',auMax:'max',auRate:'rate'}[e.target.id]]=+e.target.value;saveProf();UI.auNext=0;auOpen();}});
-  $('#app').addEventListener('input',e=>{if(e.target.id==='admQ'){UI.admQ=e.target.value;renderAdmin();const q=$('#admQ');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length);}return;}if(e.target.id==='inName'){UI.nameDraft=e.target.value.trim().slice(0,18);const ch=UI.nameDraft!==(UI.prof.name||'');const b=$('#nameSave'),u=$('#nameUndo');if(b)b.disabled=!ch;if(u)u.disabled=!ch;const m=$('#nameMsg');if(m)m.textContent='';}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
+  $('#app').addEventListener('input',e=>{if(e.target.id==='admQ'){UI.admQ=e.target.value;renderAdmin();const q=$('#admQ');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length);}return;}if(e.target.id==='inName'){UI.nameDraft=e.target.value.trim().slice(0,15);const ch=UI.nameDraft!==(UI.prof.name||'');const b=$('#nameSave'),u=$('#nameUndo');if(b)b.disabled=!ch;if(u)u.disabled=!ch;const m=$('#nameMsg');if(m)m.textContent='';}else if(e.target.id==='amtR'){amtSet(+e.target.value);}else if(e.target.id==='inRoom'){UI.prof.room=e.target.value.trim().slice(0,24);saveProf();if(NET.on&&NET.host)regSend();}else if(e.target.id==='volM'||e.target.id==='volS'){const k=e.target.id;UI.prof[k]=+e.target.value;UI.prof[k==='volM'?'music':'sound']=+e.target.value>0;$('#'+k+'v').textContent=e.target.value;applyVol();if(k==='volS')sfx('coin');saveProf();}else if(e.target.id==='inBots'){UI.prof.botsN=+e.target.value;$('#botsV').textContent=e.target.value;saveProf();}});
   addEventListener('keydown',e=>{
     if(e.target.tagName==='TEXTAREA'||(e.target.tagName==='INPUT'&&e.target.type!=='range'))return;const k=e.key.toLowerCase();UI.keys[k]=true;
     if(!G||G.o.demo)return;
