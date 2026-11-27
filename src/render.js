@@ -424,7 +424,7 @@ function draw(g,dt,ts){
     c.save();c.translate(q.x,q.y);c.rotate(F.sa);c.font=`800 ${fs}px ${FONT}`;c.direction='ltr';c.lineWidth=Math.max(3,fs*.2);c.strokeStyle='rgba(6,12,20,.85)';c.globalAlpha=.95;txt(c,fmt(k.troops*F.sh),0,0,k.a===me?'#bfe4ff':'#ffc2b8');c.restore();}}}
   drawSmoke(c,z,cw,ch);
   for(const m of g.missiles){
-    {const dm=m.type==='doom',nk=m.type==='nuke',q=R.q==null?2:R.q,zs=Math.min(1.8,Math.max(.7,z/3)),r0=(dm?4:nk?3:2.2)*zs,span=.42,N=40;
+    {const dm=m.type==='doom',nk=m.type==='nuke',q=R.q==null?2:R.q,zs=Math.max(.3,z/3),r0=(dm?4:nk?3:2.2)*zs,span=.42,N=40;
       if(q){const P=mslW(m,m.t),step=q===2?.45:.9;if(!m._lp)m._lp={x:mslW(m,0).x,y:mslW(m,0).y};let dx=P.x-m._lp.x,dy=P.y-m._lp.y,d=Math.hypot(dx,dy);
         while(d>=step){m._lp.x+=dx/d*step;m._lp.y+=dy/d*step;puff(m._lp.x,m._lp.y,(dm?.85:nk?.65:.45)*Math.min(1,.35+m.t*12),dm?5000:nk?4000:3000,dm,-Math.min(1500,d/step*30));dx=P.x-m._lp.x;dy=P.y-m._lp.y;d=Math.hypot(dx,dy);}}
       else{c.strokeStyle='rgba(200,200,205,.6)';c.lineWidth=2;c.beginPath();for(let k=0;k<=12;k++){const t0=Math.max(0,m.t-k*.02),a=mslPos(m,t0);k?c.lineTo(a.x,a.y):c.moveTo(a.x,a.y);}c.stroke();}
@@ -437,7 +437,7 @@ function draw(g,dt,ts){
     if(!m._seen){m._seen=1;const q=R.q==null?2:R.q;addFx('flash',m.sx,m.sy,{dur:450});addFx('ring',m.sx,m.sy,{r:2.2,dur:700,col:'rgba(255,200,140,.9)'});
       const n=q===2?14:q===1?6:0;for(let i=0;i<n;i++){const a=i/n*6.28;puff(m.sx+.5+Math.cos(a)*.9,m.sy+.5+Math.sin(a)*.5,.7+Math.random()*.5,2500+Math.random()*1500,false);}}
     const grow=Math.min(1,.25+m.t/.05*.75);
-    {const b=mslPos(m,Math.max(0,m.t-.01)),ang=Math.atan2(h.y-b.y,h.x-b.x),sp=mslSprite(m.type),base=Math.max(16,Math.min(44,12+z*2)),L=base*(m.type==='doom'?2:m.type==='nuke'?1.35:1),Hh=L*sp.height/sp.width,ts=performance.now();
+    {const b=mslPos(m,Math.max(0,m.t-.01)),ang=Math.atan2(h.y-b.y,h.x-b.x),sp=mslSprite(m.type),base=Math.max(8,z*5.5),L=base*(m.type==='doom'?2:m.type==='nuke'?1.35:1),Hh=L*sp.height/sp.width,ts=performance.now();
       c.save();c.translate(h.x,h.y);c.rotate(ang);c.scale(grow,grow);
       if(m.type==='doom'){const pu=.6+.4*Math.sin(ts/160),ag=c.createRadialGradient(-L*.2,0,0,-L*.2,0,L*.9);ag.addColorStop(0,`rgba(255,40,20,${.38*pu})`);ag.addColorStop(1,'rgba(120,0,0,0)');c.globalCompositeOperation='lighter';c.fillStyle=ag;c.beginPath();c.arc(-L*.2,0,L*.9,0,7);c.fill();c.globalCompositeOperation='source-over';}
       {const ng=c.createRadialGradient(-L*.6,0,0,-L*.6,0,L*.85);ng.addColorStop(0,'rgba(255,235,170,.95)');ng.addColorStop(.35,'rgba(255,150,40,.6)');ng.addColorStop(1,'rgba(255,70,10,0)');c.globalCompositeOperation='lighter';c.fillStyle=ng;c.beginPath();c.arc(-L*.6,0,L*.85,0,7);c.fill();c.globalCompositeOperation='source-over';}
@@ -505,7 +505,7 @@ function draw(g,dt,ts){
       const q=w2s(f.mx,f.my),cx=p.x,cy=p.y-Math.max(60,Math.abs(q.y-p.y)*1.1),pt=u=>({x:(1-u)*(1-u)*p.x+2*(1-u)*u*cx+u*u*q.x,y:(1-u)*(1-u)*p.y+2*(1-u)*u*cy+u*u*q.y}),u=Math.min(1,f.t*1.02);
       if(f.t<.35){const k=f.t/.35;c.fillStyle=`rgba(230,236,244,${.5*(1-k)})`;for(let j=0;j<5;j++){const a=j*1.26;c.beginPath();c.arc(p.x+Math.cos(a)*(6+k*14),p.y+Math.abs(Math.sin(a))*4-k*4,5+k*7,0,7);c.fill();}}
       for(let k=34;k>=1;k--){const v=u-k*.022;if(v<0)continue;const P=pt(v),fk=1-k/34;c.fillStyle=`rgba(238,242,248,${.55*Math.pow(fk,1.3)})`;c.beginPath();c.arc(P.x,P.y,1.4+k*.2,0,7);c.fill();}
-      const H=pt(u),B=pt(Math.max(0,u-.02)),ang=Math.atan2(H.y-B.y,H.x-B.x),sp=mslSprite('intc'),L=Math.max(16,Math.min(34,10+z*1.8));
+      const H=pt(u),B=pt(Math.max(0,u-.02)),ang=Math.atan2(H.y-B.y,H.x-B.x),sp=mslSprite('intc'),L=Math.max(7,z*4);
       c.save();c.translate(H.x,H.y);c.rotate(ang);mslFlame(c,L*1,L*.14,performance.now(),'rgba(255,175,60,.95)');c.drawImage(sp,-L*.55,-L*sp.height/sp.width/2,L,L*sp.height/sp.width);c.restore();}
     else if(f.type==='flash'){c.globalAlpha=1-f.t;c.fillStyle='rgba(160,215,255,.9)';c.beginPath();c.arc(p.x,p.y,6+f.t*16,0,7);c.fill();c.globalAlpha=1;}
     else if(f.type==='airburst'){const q=w2s(f.mx,f.my),r=10+f.t*42,gr=c.createRadialGradient(q.x,q.y,0,q.x,q.y,r);gr.addColorStop(0,`rgba(255,255,240,${1-f.t})`);gr.addColorStop(.4,`rgba(150,215,255,${.8*(1-f.t)})`);gr.addColorStop(1,'rgba(80,140,255,0)');
