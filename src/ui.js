@@ -429,23 +429,27 @@ function lvRoad(p,L){
       ${m.sk?`<img src="${skinPreview(m.sk[1],m.sk[2])}" alt=""><small>🎁 ${t('sk_'+m.sk[2])}</small>`:`<small>${m.start?t('lrStart'):'✨ '+t('lrFr')}</small>`}
       <em>${got?'✓':cur?t('lrNext'):'🔒'}</em></div>`;}).join('')}</div></div>`;
 }
-function lvCard(p){
-  const L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv);
-  setTimeout(()=>{const tr=document.getElementById('lrt'),c=document.getElementById('lrcur');if(!tr)return;if(c){const r=c.getBoundingClientRect(),q=tr.getBoundingClientRect();tr.scrollBy({left:r.left+r.width/2-q.left-q.width/2,behavior:'smooth'});}tr.onwheel=e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){tr.scrollBy({left:-e.deltaY});e.preventDefault();}};},350);
-  return`<div class="lvcard lvhero"><div class="lvbig">${lvAv(p,'',UI.mob?150:180)}</div><b class="lvnum">${t('lvL',L.lv)}</b><div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u><span dir="ltr">${fmt(L.cur)} / ${fmt(L.need)} XP</span></div>
-    <small>${t('lvLeft',fmt(L.need-L.cur),L.lv+1)}</small><small>${nx?t('lvNext',nx[0],t('sk_'+nx[2])):L.lv<1000?t('lvLook'):t('lvMax')}</small></div>
-  ${lvRoad(p,L)}
-  <details class="lvhow"><summary>❓ ${t('lvHowT')}</summary><ul>${t('lvHow').split('|').map(x=>`<li>${x}</li>`).join('')}</ul>
-    <p>${t('lvTab')}</p><div class="lvtab">${[['1–20',200],['21–40',250],['41–60',300],['61–99',350],['100+',500]].map(([a,b])=>`<span><b dir="ltr">${a}</b>${b} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>
-  <h3 class="avh">${t('avPick')}</h3><div class="avg">${AVATARS.map((a,i)=>`<button class="${(p.avatar|0)===i?'on':''}" data-a="avPick:${i}" aria-label="picture ${i+1}">${avPic(i,52)}</button>`).join('')}</div>
-  <div class="lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
-}
+function lvHow(){return`<details class="lvhow"><summary>❓ ${t('lvHowT')}</summary><ul>${t('lvHow').split('|').map(x=>`<li>${x}</li>`).join('')}</ul>
+    <p>${t('lvTab')}</p><div class="lvtab">${[['1–20',200],['21–40',250],['41–60',300],['61–99',350],['100+',500]].map(([a,b])=>`<span><b dir="ltr">${a}</b>${b} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>`;}
+function lvRoadScroll(){setTimeout(()=>{const tr=document.getElementById('lrt'),c=document.getElementById('lrcur');if(!tr)return;if(c){const r=c.getBoundingClientRect(),q=tr.getBoundingClientRect();tr.scrollBy({left:r.left+r.width/2-q.left-q.width/2,behavior:'smooth'});}tr.onwheel=e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){tr.scrollBy({left:-e.deltaY});e.preventDefault();}};},300);}
 function renderAccount(){
-  const p=UI.prof,rk=rankOf(p);
-  $('#help').innerHTML=`<h2>${t('account')}</h2><div class="opts" style="grid-template-columns:minmax(0,1fr);width:min(420px,100%)">${!p.name?`<p class="nmask">✍️ ${t('nameAsk')}</p>`:''}<label class="fld${!p.name?' nmglow':''}"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
-  ${lvCard(p)}
-  <div class="stats" style="width:min(420px,100%);grid-template-columns:repeat(5,minmax(0,1fr))">${[[t('rank'),`<span class="rkt ${rankCls(rankShow(p))}">${t('ranks')[rankShow(p)]}</span>`],[t('x_xp'),p.xp],[t('accGames'),p.games],[t('wins'),p.wins],[t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b></div>`).join('')}</div>
-  <p class="keys">${rk<40?t('accNext',rk*25+1-p.wins,t('ranks')[rk+1]):''}</p>${accPanel()}<div class="row"><button class="btn" data-a="ranks">${t('allRanks')}</button><button class="btn big" data-a="menu">${t('back')}</button></div>`;
+  const p=UI.prof,rk=rankOf(p),rs=rankShow(p),L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv),nm=p.name||(p.fb||{}).user||t('defName');
+  const tab=!p.name&&!UI.accTab?'look':UI.accTab||'prog',I=(p.fb||{}).user;
+  const head=`<div class="ach"><div class="achf">${lvAv(p,'',UI.mob?104:120)}</div><div class="achi"><b class="achn">${esc(nm)}</b>
+    <span class="rkt ${rankCls(rs)}">${t('ranks')[rs]}</span><div class="achl"><span>${t('lvL',L.lv)}</span><small dir="ltr">${fmt(L.cur)} / ${fmt(L.need)} XP</small></div>
+    <div class="lvbar"><u style="width:${Math.round(L.cur/L.need*100)}%"></u></div><small class="achs">${t('lvLeft',fmt(L.need-L.cur),L.lv+1)}</small></div></div>`;
+  const tabs=`<div class="actabs">${[['prog','📈',t('acT_prog')],['look','🎨',t('acT_look')],['login',I?'✅':'🔐',t('acT_login')]].map(([k,ic,lb])=>`<button class="${tab===k?'on':''}" data-a="accTab:${k}">${ic} ${lb}</button>`).join('')}</div>`;
+  let body='';
+  if(tab==='prog'){
+    body=`<div class="acst">${[['🏆',t('wins'),fmt(p.wins)],['🎮',t('accGames'),fmt(p.games)],['⭐',t('x_xp'),fmt(lifeXp(p))],['⏱️',t('lbHrs'),hrs(p.ms||0)]].map(x=>`<div><i>${x[0]}</i><b>${x[2]}</b><small>${x[1]}</small></div>`).join('')}</div>
+    <div class="acbox acrk"><div><small>${t('rank')}</small><span class="rkt ${rankCls(rs)}">${t('ranks')[rs]}</span>${rk<40?`<small>${t('accNext',rk*25+1-p.wins,t('ranks')[rk+1])}</small>`:''}</div><button class="btn sm" data-a="ranks">${t('allRanks')}</button></div>
+    ${nx?`<p class="acnote">🎁 ${t('lvNext',nx[0],t('sk_'+nx[2]))}</p>`:''}${lvRoad(p,L)}${lvHow()}`;lvRoadScroll();
+  }else if(tab==='look'){
+    body=`<div class="acbox">${!p.name?`<p class="nmask">✍️ ${t('nameAsk')}</p>`:''}<label class="fld${!p.name?' nmglow':''}"><h3>${t('accName')}</h3><input id="inName" maxlength="18" value="${esc(p.name)}" placeholder="${t('defName')}" autocomplete="off"></label><div class="row namer"><button class="btn sm" id="nameUndo" data-a="nameUndo" disabled>${t('nameUndo')}</button><button class="btn sm ok" id="nameSave" data-a="nameSave" disabled>${t('nameSave')}</button></div><p class="good" id="nameMsg"></p></div>
+    <div class="acbox"><h3>${t('avPick')}</h3><div class="avg">${AVATARS.map((a,i)=>`<button class="${(p.avatar|0)===i?'on':''}" data-a="avPick:${i}" aria-label="picture ${i+1}">${avPic(i,52)}</button>`).join('')}</div></div>
+    <div class="acbox lvset"><span>${t('lvShowT')}</span><div class="chips"><button class="chip${!p.hideLv?' on':''}" data-a="lvShow:1">${t('lvShow1')}</button><button class="chip${p.hideLv?' on':''}" data-a="lvShow:0">${t('lvShow0')}</button></div></div>`;
+  }else body=`<div class="acbox">${accPanel()}</div>`;
+  $('#help').innerHTML=`<div class="acw"><h2>${t('account')}</h2>${head}${tabs}<div class="acbody">${body}</div><div class="row"><button class="btn big" data-a="menu">${t('back')}</button></div></div>`;
 }
 function renderNews(latest){
   // one update per day: everything released on the same date shows as a single entry, numbered by the day's first version
@@ -1062,7 +1066,7 @@ function act(a){
     case'lang':p.lang=UI.lang=v||(UI.lang==='ar'?'en':'ar');applyMode();if(G&&!G.o.demo)buildHud();renderSettings();break;
     case'snd':p.sound=!p.sound;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;case'mus':p.music=!p.music;applyVol();UI.screen==='pause'?renderPause():renderMenu();break;
     case'ifc':p.ui=v==null?(p.ui+1)%3:+v;applyMode();resize();renderSettings();break;
-    case'fac':p.fac=v;renderFac();break;case'account':UI.accMsg='';UI.nameDraft=null;renderAccount();show('help');break;case'accReg':accRegister();break;case'accIn':accLogin();break;case'accOut':accLogout();break;case'board':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
+    case'fac':p.fac=v;renderFac();break;case'accTab':UI.accTab=v;renderAccount();break;case'account':UI.accTab=null;UI.accMsg='';UI.nameDraft=null;renderAccount();show('help');break;case'accReg':accRegister();break;case'accIn':accLogin();break;case'accOut':accLogout();break;case'board':openLB();break;case'lbS':UI.lbSort=v;openLB();break;case'suggest':renderSuggest();show('help');break;case'sgSend':sendSuggest();break;case'ranks':renderRanks();show('help');break;case'settings':UI.setBack=UI.screen;renderSettings();show('help');break;case'setBack':if(UI.setBack==='pause'){renderPause();show('pause');}else{renderMenu();show('menu');}break;case'news':renderNews();show('help');break;
     case'atk':{const n=g.nations[+v],ti=UI.cardTile>=0&&g.owner[UI.cardTile]===+v?UI.cardTile:n.cap?n.cap.i:-1;closeCard();if(ti>=0)send({k:'atk',i:ti,r:UI.ratio,m:UI.prof.amode||'pt'});break;}case'type':p.type=v;renderSetup();break;case'set':p[v]=+w;UI.screen==='help'?renderQuick():renderSetup();break;
     case'pause':if(UI.phase==='play'||UI.phase==='spawn'||UI.phase==='wait'){renderPause();show('pause');}break;case'resume':show(null);break;
     case'sp':if(NET.on&&!NET.host)return err('hostOnly');if(+v===0)UI.paused=!UI.paused;else{UI.speed=+v;UI.paused=false;}hudUpdate();break;
