@@ -747,7 +747,7 @@ h3{font-size:13px;color:var(--dim);font-weight:600;margin-bottom:6px}
 .lvhow{width:min(420px,100%);padding:10px 14px;border-radius:14px;background:rgba(6,12,22,.88);border:1px solid rgba(241,207,110,.25)}.lvhow summary{cursor:pointer;font-weight:700;color:#ffe08a}
 .lvhow ul{margin:8px 0;padding-inline-start:4px;list-style:none;display:flex;flex-direction:column;gap:5px;font-size:13px}.lvhow p{margin:6px 0;font-size:13px;color:#cfe0f0}
 .lvtab{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.lvtab span{display:flex;flex-direction:column;padding:6px 2px;border-radius:10px;background:rgba(255,255,255,.06);font-size:12px;text-align:center}.lvtab b{color:#ffe08a}
-.lvtab{grid-template-columns:repeat(5,1fr)}
+.lvtab{grid-template-columns:repeat(3,1fr)}
 
 .acw{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(440px,100%);margin:0 auto}.acw>h2{margin:0}
 .acw>*:not(h2):not(.row){width:100%}.acbody{display:flex;flex-direction:column;gap:12px}.acbody>*{width:100%!important}

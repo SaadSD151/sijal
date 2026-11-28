@@ -241,7 +241,8 @@ function lbAuth(){
 // progress lives in the cloud under the player's id: each device sends only what it added since the last sync (server-side increments),
 // so playing on a phone and a PC never overwrites one with the other
 const SK={wins:'w',games:'g',xp:'xp',ms:'ms',xps:'xs'};
-const LVSTEP=l=>l<=20?200:l<=40?250:l<=60?300:l<100?350:500,lifeXp=p=>(p.xp|0)+(p.xps|0);
+// every level needs a bit more than the one before: +10 XP per level up to 100, then +5 per level
+const LVSTEP=l=>l<=100?200+10*(l-1):1200+5*(l-100),lifeXp=p=>(p.xp|0)+(p.xps|0);
 function lvInfo(xp){let l=1,need=LVSTEP(1);while(xp>=need&&l<5000){xp-=need;l++;need=LVSTEP(l);}return{lv:l,cur:xp,need};}
 const lvAv=(p,ch,size)=>lvFrame(lvInfo(lifeXp(p)).lv,size||58,p.avatar|0);
 const lvMini=(L,av,size)=>lvFrame(L,size||34,av|0);
@@ -433,7 +434,7 @@ function lvRoad(p,L){
       <em>${got?'✓':cur?t('lrNext'):'🔒'}</em></div>`;}).join('')}</div></div>`;
 }
 function lvHow(){return`<details class="lvhow"><summary>❓ ${t('lvHowT')}</summary><ul>${t('lvHow').split('|').map(x=>`<li>${x}</li>`).join('')}</ul>
-    <p>${t('lvTab')}</p><div class="lvtab">${[['1–20',200],['21–40',250],['41–60',300],['61–99',350],['100+',500]].map(([a,b])=>`<span><b dir="ltr">${a}</b>${b} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>`;}
+    <p>${t('lvTab')}</p><div class="lvtab">${[1,10,50,100,500,1000].map(l=>`<span><b>${t('lvS',l)}</b>${fmt(LVSTEP(l))} XP</span>`).join('')}</div><p>${t('lvRw')}</p></details>`;}
 function lvRoadScroll(){setTimeout(()=>{const tr=document.getElementById('lrt'),c=document.getElementById('lrcur');if(!tr)return;if(c){const r=c.getBoundingClientRect(),q=tr.getBoundingClientRect();tr.scrollBy({left:r.left+r.width/2-q.left-q.width/2,behavior:'smooth'});}tr.onwheel=e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){tr.scrollBy({left:-e.deltaY});e.preventDefault();}};},300);}
 function renderAccount(){
   const p=UI.prof,rk=rankOf(p),rs=rankShow(p),L=lvInfo(lifeXp(p)),nx=LVSK.find(e=>e[0]>L.lv),nm=p.name||(p.fb||{}).user||t('defName');
